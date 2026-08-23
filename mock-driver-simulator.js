@@ -12,10 +12,10 @@
 const SUPABASE_URL = "https://hprgaaynsucaguzlcndd.supabase.co";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwcmdhYXluc3VjYWd1emxjbmRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNDY4MDUsImV4cCI6MjEwMjYyMjgwNX0.d2lKpZpTUEEcBxmqu1trZuejAgQ4q5icQrpHojgSyCY";
 
-const DRIVER_EMAIL = "driver1@test.com";
+const DRIVER_EMAIL = "ramosjhoven05@gmail.com";
 const DRIVER_PASSWORD = "testpass123";
 
-const TERMINAL_ID = "PASTE_TERMINAL_ID_FROM_TABLE_EDITOR";
+const TERMINAL_ID = "7a63fbe5-adf2-482f-98dd-a8162a7044e1";
 // route_id isn't needed here directly — it's read from the driver's own
 // profile server-side, so make sure this driver already has a `drivers`
 // row with a route_id set (see the manual insert from earlier).
