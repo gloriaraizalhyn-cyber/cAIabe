@@ -15,7 +15,7 @@ const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const DRIVER_EMAIL = "ramosjhoven05@gmail.com";
 const DRIVER_PASSWORD = "testpass123";
 
-const TERMINAL_ID = "7a63fbe5-adf2-482f-98dd-a8162a7044e1";
+const TERMINAL_ID = "cc959960-f5dd-45fd-b8ae-9265928833bb";
 // route_id isn't needed here directly — it's read from the driver's own
 // profile server-side, so make sure this driver already has a `drivers`
 // row with a route_id set (see the manual insert from earlier).
