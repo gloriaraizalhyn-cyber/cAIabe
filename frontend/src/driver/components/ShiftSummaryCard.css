@@ -1,0 +1,59 @@
+.shift-summary-card {
+  border: 1px solid #e6e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 24px;
+}
+
+.shift-summary-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 0;
+  border-bottom: 1px solid #edeef1;
+}
+
+.shift-summary-card__field-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #9a9fa8;
+}
+
+.shift-summary-card__field-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.shift-summary-card__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0 20px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #6a6f79;
+}
+
+.shift-summary-card__status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #9a9fa8;
+}
+
+.shift-summary-card__start-button {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 14px;
+}
+
+.shift-summary-card__start-button:hover {
+  background: #333333;
+}

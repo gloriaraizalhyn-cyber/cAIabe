@@ -1,0 +1,101 @@
+.location-input {
+  position: relative;
+  padding: 10px 0;
+}
+
+.location-input + .location-input {
+  border-top: 1px solid #edeef1;
+}
+
+.location-input__label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #9a9fa8;
+  margin-bottom: 4px;
+}
+
+.location-input__field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.location-input__text {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  padding: 2px 0;
+  background: transparent;
+}
+
+.location-input__text::placeholder {
+  font-weight: 400;
+  color: #b3b7bf;
+}
+
+.location-input__gps-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #1a9e5c;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.location-input__gps-button:hover:not(:disabled) {
+  background: #eafaf1;
+}
+
+.location-input__gps-icon--spinning {
+  animation: location-input-spin 1s linear infinite;
+}
+
+@keyframes location-input-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.location-input__suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  margin: 4px 0 0;
+  padding: 6px;
+  list-style: none;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.location-input__suggestion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #333333;
+}
+
+.location-input__suggestion:hover {
+  background: #f2f4f7;
+}

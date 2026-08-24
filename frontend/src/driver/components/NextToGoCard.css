@@ -1,0 +1,52 @@
+.next-to-go-card__heading {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.next-to-go-card__body {
+  margin: 0 0 20px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #6a6f79;
+}
+
+.next-to-go-card__body strong {
+  color: #1a1a1a;
+}
+
+.next-to-go-card__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.next-to-go-card__wait-button {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 14px;
+}
+
+.next-to-go-card__wait-button:hover {
+  background: #333333;
+}
+
+.next-to-go-card__go-button {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  background: #1a9e5c;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 14px;
+}
+
+.next-to-go-card__go-button:hover {
+  background: #157a48;
+}

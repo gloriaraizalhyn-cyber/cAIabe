@@ -1,0 +1,20 @@
+.on-route-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background: #eceeef;
+}
+
+.on-route-page__panel {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #faf6f0;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
+}
+
+.on-route-page__panel .journey-timeline {
+  flex: 1;
+}

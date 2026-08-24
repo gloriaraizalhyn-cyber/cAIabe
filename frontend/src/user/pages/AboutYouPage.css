@@ -1,0 +1,67 @@
+.about-you-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.about-you-page__question {
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.about-you-page__prompt {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+  color: #444444;
+}
+
+.about-you-page__options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.about-you-page__option {
+  padding: 14px 16px;
+  font-size: 1rem;
+  border: 2px solid #d7dbe3;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #1a1a1a;
+}
+
+.about-you-page__option:hover {
+  border-color: #2f6fed;
+}
+
+.about-you-page__option--selected {
+  border-color: #2f6fed;
+  background-color: #eaf0ff;
+  font-weight: 600;
+}
+
+.about-you-page__next-button {
+  margin-top: 24px;
+  padding: 14px 32px;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #2f6fed;
+  color: #ffffff;
+}
+
+.about-you-page__next-button:hover:not(:disabled) {
+  background-color: #2559c9;
+}
+
+.about-you-page__next-button:disabled {
+  background-color: #b7c4dd;
+  cursor: not-allowed;
+}

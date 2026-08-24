@@ -1,0 +1,72 @@
+.driver-registration-page {
+  min-height: 100vh;
+  background: #f5f6f8;
+  padding: 32px 16px 60px;
+}
+
+.driver-registration-page__form {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.driver-registration-page__header {
+  margin-bottom: 20px;
+}
+
+.driver-registration-page__title {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.driver-registration-page__subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6a6f79;
+}
+
+.driver-registration-page__review-notice {
+  margin: 20px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #6a6f79;
+  background: #eef0f3;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.driver-registration-page__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.driver-registration-page__submit-button {
+  border: none;
+  border-radius: 10px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 15px;
+}
+
+.driver-registration-page__submit-button:hover {
+  background: #333333;
+}
+
+.driver-registration-page__cancel-button {
+  border: 1px solid #d8dade;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 13px;
+}
+
+.driver-registration-page__cancel-button:hover {
+  border-color: #1a1a1a;
+}
