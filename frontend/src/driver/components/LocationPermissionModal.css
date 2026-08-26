@@ -1,0 +1,80 @@
+.location-permission-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 26, 26, 0.45);
+  padding: 16px;
+}
+
+.location-permission-modal {
+  width: 100%;
+  max-width: 360px;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 24px;
+  text-align: center;
+}
+
+.location-permission-modal__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #eaf0ff;
+  color: #2f6fed;
+  margin-bottom: 12px;
+}
+
+.location-permission-modal__title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.location-permission-modal__body {
+  margin: 0 0 22px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #6a6f79;
+}
+
+.location-permission-modal__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.location-permission-modal__cancel-button {
+  flex: 1;
+  border: 1px solid #d8dade;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 12px;
+}
+
+.location-permission-modal__cancel-button:hover {
+  border-color: #1a1a1a;
+}
+
+.location-permission-modal__enable-button {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 12px;
+}
+
+.location-permission-modal__enable-button:hover {
+  background: #333333;
+}

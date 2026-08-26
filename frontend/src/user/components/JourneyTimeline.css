@@ -1,0 +1,86 @@
+.journey-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 24px 20px;
+}
+
+.journey-timeline__item {
+  display: flex;
+  gap: 14px;
+}
+
+.journey-timeline__marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.journey-timeline__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid #d8dade;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.journey-timeline__connector {
+  width: 2px;
+  flex: 1;
+  min-height: 34px;
+  background: #d8dade;
+}
+
+.journey-timeline__text {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 26px;
+}
+
+.journey-timeline__name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #b9bcc2;
+}
+
+.journey-timeline__timestamp {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #b9bcc2;
+  margin-top: 2px;
+}
+
+/* Completed steps: filled green dot, green connector down to the next step */
+.journey-timeline__item--completed .journey-timeline__dot {
+  border-color: #1a9e5c;
+  background: #1a9e5c;
+}
+
+.journey-timeline__item--completed .journey-timeline__connector {
+  background: #1a9e5c;
+}
+
+.journey-timeline__item--completed .journey-timeline__name,
+.journey-timeline__item--completed .journey-timeline__timestamp {
+  color: #6a6f79;
+}
+
+/* Current step: larger black dot with a ring, bold dark text */
+.journey-timeline__item--current .journey-timeline__dot {
+  width: 20px;
+  height: 20px;
+  border-color: #1a1a1a;
+  background: #1a1a1a;
+  box-shadow: 0 0 0 3px #e6e7eb;
+}
+
+.journey-timeline__item--current .journey-timeline__name {
+  color: #1a1a1a;
+}
+
+.journey-timeline__item--current .journey-timeline__timestamp {
+  color: #1a1a1a;
+  font-weight: 700;
+}

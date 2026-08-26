@@ -1,0 +1,41 @@
+.walk-to-bay-card__step {
+  margin: 0 0 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #9a9fa8;
+}
+
+.walk-to-bay-card__title {
+  margin: 0 0 10px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1.25;
+}
+
+.walk-to-bay-card__body {
+  margin: 0 0 22px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #5a5f6b;
+}
+
+.walk-to-bay-card__body strong {
+  color: #1a1a1a;
+}
+
+.walk-to-bay-card__arrived-button {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  background: #f0b429;
+  color: #1a1a1a;
+  font-size: 1.05rem;
+  font-weight: 800;
+  padding: 16px;
+}
+
+.walk-to-bay-card__arrived-button:hover {
+  background: #dba01c;
+}

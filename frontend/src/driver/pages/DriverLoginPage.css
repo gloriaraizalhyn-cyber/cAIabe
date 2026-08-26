@@ -1,0 +1,107 @@
+.driver-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f6f8;
+  padding: 24px 16px;
+}
+
+.driver-login-page__card {
+  width: 100%;
+  max-width: 380px;
+  border: 1px solid #e6e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 28px 24px;
+}
+
+.driver-login-page__header {
+  margin-bottom: 20px;
+}
+
+.driver-login-page__title {
+  margin: 0 0 4px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.driver-login-page__subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6a6f79;
+}
+
+.driver-login-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.driver-login-page__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.driver-login-page__forgot-password-link {
+  border: none;
+  background: transparent;
+  color: #2f6fed;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0;
+}
+
+.driver-login-page__forgot-password-link:hover {
+  text-decoration: underline;
+}
+
+.driver-login-page__submit-error {
+  margin: -4px 0 0;
+  font-size: 0.82rem;
+  color: #c53030;
+  background: #fbeaea;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.driver-login-page__submit-button {
+  border: none;
+  border-radius: 10px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 14px;
+}
+
+.driver-login-page__submit-button:hover:not(:disabled) {
+  background: #333333;
+}
+
+.driver-login-page__submit-button:disabled {
+  background: #9a9fa8;
+  cursor: not-allowed;
+}
+
+.driver-login-page__apply-notice {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6a6f79;
+}
+
+.driver-login-page__apply-link {
+  border: none;
+  background: transparent;
+  color: #1a9e5c;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0;
+}
+
+.driver-login-page__apply-link:hover {
+  text-decoration: underline;
+}

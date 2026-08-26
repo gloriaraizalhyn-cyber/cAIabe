@@ -1,0 +1,75 @@
+.heading-to-terminal-panel {
+  border: 1px solid #e6e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 24px;
+}
+
+.heading-to-terminal-panel__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+}
+
+.heading-to-terminal-panel__status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e0a82e;
+}
+
+.heading-to-terminal-panel__message {
+  margin: 0 0 16px;
+  font-size: 0.88rem;
+  color: #6a6f79;
+}
+
+.heading-to-terminal-panel__sharing-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1a9e5c;
+  margin-bottom: 16px;
+}
+
+.heading-to-terminal-panel__sharing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1a9e5c;
+}
+
+.heading-to-terminal-panel__map {
+  position: relative;
+  height: 240px;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.heading-to-terminal-panel__visibility-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  background: #f2f4f7;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #4a4f59;
+}
+
+.heading-to-terminal-panel__destination {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-align: center;
+}
