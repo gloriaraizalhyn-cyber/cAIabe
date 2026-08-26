@@ -9,7 +9,9 @@ import { validateDriverRegistrationForm } from "../utils/validateDriverRegistrat
 import "./DriverRegistrationPage.css";
 
 const INITIAL_FORM_VALUES = {
-  fullName: "",
+  firstName: "",
+  middleName: "",
+  lastName: "",
   mobileNumber: "",
   emailAddress: "",
   password: "",
