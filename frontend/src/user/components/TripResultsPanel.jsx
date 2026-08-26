@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import RouteOptionCard from "./RouteOptionCard.jsx";
-import { ROUTE_OPTIONS_FIXTURE } from "../../shared/constants/tripSearchFixtures.js";
 import "./TripResultsPanel.css";
 
 const SORT_METRIC_TO_FIELD = {
@@ -10,14 +9,14 @@ const SORT_METRIC_TO_FIELD = {
   distance: "distanceKm",
 };
 
-function TripResultsPanel({ origin, destination, onEditTrip, onTakeRoute, onSaveRoute }) {
+function TripResultsPanel({ origin, destination, routes, onEditTrip, onTakeRoute, onSaveRoute }) {
   const [sortMetric, setSortMetric] = useState("time");
   const [expandedRouteId, setExpandedRouteId] = useState(null);
 
   const sortedRoutes = useMemo(() => {
     const sortField = SORT_METRIC_TO_FIELD[sortMetric];
-    return [...ROUTE_OPTIONS_FIXTURE].sort((a, b) => a[sortField] - b[sortField]);
-  }, [sortMetric]);
+    return [...routes].sort((a, b) => a[sortField] - b[sortField]);
+  }, [routes, sortMetric]);
 
   const [bestPickRoute, ...otherRoutes] = sortedRoutes;
 

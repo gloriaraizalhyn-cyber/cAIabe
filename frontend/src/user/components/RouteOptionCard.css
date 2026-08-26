@@ -195,6 +195,22 @@
   margin-bottom: 14px;
 }
 
+.route-option-card__walk-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.route-option-card__walk-summary p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.82rem;
+  color: #4a4f59;
+}
+
 .route-option-card__leg {
   display: flex;
   align-items: center;

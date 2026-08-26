@@ -9,6 +9,8 @@ import "./TripSearchCard.css";
 function TripSearchCard({
   origin,
   destination,
+  originPlace,
+  destinationPlace,
   onOriginChange,
   onDestinationChange,
   onSelectOriginPlace,
@@ -16,7 +18,9 @@ function TripSearchCard({
   onApplySavedRoute,
   onFindRoutes,
 }) {
-  const canFindRoutes = origin.trim().length > 0 && destination.trim().length > 0;
+  // Requires an actual selected place (with coordinates) rather than just
+  // typed text — route search needs real lat/lng to call the backend with.
+  const canFindRoutes = Boolean(originPlace) && Boolean(destinationPlace);
 
   return (
     <section className="trip-search-card">

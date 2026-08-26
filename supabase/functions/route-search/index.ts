@@ -11,6 +11,14 @@ import { getServiceClient } from "../_shared/client.ts";
 const GOOGLE_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY")!;
 const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY"); // optional
 
+// A route only counts as serving this trip if its actual path (not just its
+// terminus) comes within this distance of both the origin and destination —
+// see match_route_for_trip in supabase/sql/route_matching_functions.sql.
+const MAX_WALK_METERS = 400;
+// Rough walking pace, used only to fold walk-to-board/walk-from-alight time
+// into the total duration estimate (~5 km/h).
+const WALKING_METERS_PER_MINUTE = 83;
+
 // Fare discount rates by passenger type. Student/PWD/Senior Citizen are
 // legally mandated 20% discounts in the Philippines (RA 11314, RA 10754,
 // RA 9994 respectively). Pregnant Woman is intentionally 0% — Philippine
@@ -67,35 +75,40 @@ Deno.serve(async (req: Request) => {
     if (routesErr) return json({ error: routesErr.message }, 500);
     if (!routes?.length) return json({ error: "no routes configured" }, 404);
 
-    // For each route, ask Google Distance Matrix for origin->terminus and
-    // terminus->destination as a simple proxy for "does this route work".
-    // (A real GTFS-based system would match stops along the route instead —
-    // out of scope here, this is a workable approximation.)
-    //
-    // Terminus coordinates come from the get_route_terminus_coords RPC
-    // rather than selecting `terminus` directly — PostgREST returns raw
-    // PostGIS geography as WKB hex, not {lat,lng}, so the RPC (which does
-    // the st_y/st_x extraction in SQL) is what makes this usable here.
+    // For each route, check whether its actual path (not just its terminus)
+    // passes within walking distance of BOTH the origin and destination —
+    // see match_route_for_trip in supabase/sql/route_matching_functions.sql.
+    // Routes that don't actually serve this trip are filtered out entirely
+    // rather than scored, since they were never valid candidates.
     const scored = await Promise.all(
       routes.map(async (route: any) => {
-        const { data: terminusRows, error: terminusErr } = await supabase.rpc(
-          "get_route_terminus_coords",
-          { p_route_id: route.id },
+        const { data: matchRows, error: matchErr } = await supabase.rpc(
+          "match_route_for_trip",
+          {
+            p_route_id: route.id,
+            p_origin_lat: origin.lat,
+            p_origin_lng: origin.lng,
+            p_destination_lat: destination.lat,
+            p_destination_lng: destination.lng,
+            p_max_walk_meters: MAX_WALK_METERS,
+          },
         );
-        if (terminusErr || !terminusRows?.[0]) return null;
-        const terminusCoords = { lat: terminusRows[0].lat, lng: terminusRows[0].lng };
+        if (matchErr || !matchRows?.[0]) return null; // route doesn't serve this trip
+        const match = matchRows[0];
 
-        const [legToTerminus, legFromTerminus] = await Promise.all([
-          distanceMatrix(origin, terminusCoords),
-          distanceMatrix(terminusCoords, destination),
-        ]);
+        // Real driving distance/duration for just the ride segment, between
+        // where the passenger would actually board and alight.
+        const rideLeg = await distanceMatrix(
+          { lat: match.board_lat, lng: match.board_lng },
+          { lat: match.alight_lat, lng: match.alight_lng },
+        );
+        if (!rideLeg) return null;
 
-        if (!legToTerminus || !legFromTerminus) return null;
-
-        const totalDistanceKm =
-          (legToTerminus.distanceMeters + legFromTerminus.distanceMeters) / 1000;
-        const totalDurationMin =
-          (legToTerminus.durationSeconds + legFromTerminus.durationSeconds) / 60;
+        const totalDistanceKm = rideLeg.distanceMeters / 1000;
+        const walkMinutes =
+          (match.origin_walk_meters + match.destination_walk_meters) /
+          WALKING_METERS_PER_MINUTE;
+        const totalDurationMin = rideLeg.durationSeconds / 60 + walkMinutes;
 
         const fareRef = route.fare_reference?.[0];
         const fareBeforeDiscount = fareRef
@@ -112,6 +125,8 @@ Deno.serve(async (req: Request) => {
           color: route.color ?? "blue",
           distance_km: round(totalDistanceKm),
           duration_min: round(totalDurationMin),
+          walk_to_board_meters: round(match.origin_walk_meters),
+          walk_from_alight_meters: round(match.destination_walk_meters),
           fare_before_discount:
             fareBeforeDiscount !== null ? round(fareBeforeDiscount) : null,
           fare: fareAfterDiscount !== null ? round(fareAfterDiscount) : null,
@@ -123,7 +138,10 @@ Deno.serve(async (req: Request) => {
 
     const candidates = scored.filter((c): c is NonNullable<typeof c> => c !== null);
     if (!candidates.length) {
-      return json({ error: "could not compute any candidate routes" }, 502);
+      return json(
+        { error: "no configured route passes within walking distance of both points" },
+        404,
+      );
     }
 
     // Simple weighted score — lower is better. Normalize each metric against

@@ -124,11 +124,24 @@ function RouteOptionCard({
             </div>
           )}
 
-          <div className="route-option-card__legs">
-            {route.legs.map((leg) => (
-              <RouteLeg key={leg.id} leg={leg} />
-            ))}
-          </div>
+          {route.legs.length > 0 ? (
+            <div className="route-option-card__legs">
+              {route.legs.map((leg) => (
+                <RouteLeg key={leg.id} leg={leg} />
+              ))}
+            </div>
+          ) : (
+            <div className="route-option-card__walk-summary">
+              <p>
+                <Footprints size={14} strokeWidth={2.25} />
+                Walk {route.walkToBoardMeters} m to board
+              </p>
+              <p>
+                <Footprints size={14} strokeWidth={2.25} />
+                Walk {route.walkFromAlightMeters} m from your stop
+              </p>
+            </div>
+          )}
 
           <div className="route-option-card__timing">
             <span>
@@ -147,10 +160,12 @@ function RouteOptionCard({
             </span>
           </div>
 
-          <p className="route-option-card__availability">
-            <span className="route-option-card__availability-dot" />
-            {route.availabilityNote}
-          </p>
+          {route.availabilityNote && (
+            <p className="route-option-card__availability">
+              <span className="route-option-card__availability-dot" />
+              {route.availabilityNote}
+            </p>
+          )}
 
           <div className="route-option-card__actions">
             <button type="button" className="route-option-card__take-button" onClick={() => onTakeRoute(route)}>
