@@ -9,18 +9,16 @@ import "./TripSearchCard.css";
 function TripSearchCard({
   origin,
   destination,
-  originPlace,
-  destinationPlace,
   onOriginChange,
   onDestinationChange,
   onSelectOriginPlace,
   onSelectDestinationPlace,
   onApplySavedRoute,
   onFindRoutes,
+  isSearching,
+  searchError,
 }) {
-  // Requires an actual selected place (with coordinates) rather than just
-  // typed text — route search needs real lat/lng to call the backend with.
-  const canFindRoutes = Boolean(originPlace) && Boolean(destinationPlace);
+  const canFindRoutes = origin.trim().length > 0 && destination.trim().length > 0 && !isSearching;
 
   return (
     <section className="trip-search-card">
@@ -69,13 +67,15 @@ function TripSearchCard({
         <p>{AI_SEARCH_TIP_FIXTURE}</p>
       </div>
 
+      {searchError && <p className="trip-search-card__error">{searchError}</p>}
+
       <button
         type="button"
         className="trip-search-card__find-button"
         disabled={!canFindRoutes}
         onClick={onFindRoutes}
       >
-        Find routes
+        {isSearching ? "Finding routes…" : "Find routes"}
       </button>
     </section>
   );

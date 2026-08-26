@@ -36,34 +36,42 @@ function TripResultsPanel({ origin, destination, routes, onEditTrip, onTakeRoute
         {origin} <span>&rarr;</span> {destination}
       </h1>
 
-      <div className="trip-results-panel__list">
-        <RouteOptionCard
-          route={bestPickRoute}
-          isBestPick
-          isExpanded={expandedRouteId === bestPickRoute.id}
-          onToggleExpanded={() => handleToggleExpanded(bestPickRoute.id)}
-          onTakeRoute={onTakeRoute}
-          onSaveRoute={onSaveRoute}
-          sortMetric={sortMetric}
-          onChangeSortMetric={setSortMetric}
-        />
-
-        <p className="trip-results-panel__divider">
-          <span>OTHER OPTIONS</span>
+      {!bestPickRoute ? (
+        <p className="trip-results-panel__empty">
+          No routes found for this trip. Try a different origin or destination.
         </p>
-
-        {otherRoutes.map((route) => (
+      ) : (
+        <div className="trip-results-panel__list">
           <RouteOptionCard
-            key={route.id}
-            route={route}
-            isBestPick={false}
-            isExpanded={expandedRouteId === route.id}
-            onToggleExpanded={() => handleToggleExpanded(route.id)}
+            route={bestPickRoute}
+            isBestPick
+            isExpanded={expandedRouteId === bestPickRoute.id}
+            onToggleExpanded={() => handleToggleExpanded(bestPickRoute.id)}
             onTakeRoute={onTakeRoute}
             onSaveRoute={onSaveRoute}
+            sortMetric={sortMetric}
+            onChangeSortMetric={setSortMetric}
           />
-        ))}
-      </div>
+
+          {otherRoutes.length > 0 && (
+            <p className="trip-results-panel__divider">
+              <span>OTHER OPTIONS</span>
+            </p>
+          )}
+
+          {otherRoutes.map((route) => (
+            <RouteOptionCard
+              key={route.id}
+              route={route}
+              isBestPick={false}
+              isExpanded={expandedRouteId === route.id}
+              onToggleExpanded={() => handleToggleExpanded(route.id)}
+              onTakeRoute={onTakeRoute}
+              onSaveRoute={onSaveRoute}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

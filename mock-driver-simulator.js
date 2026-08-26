@@ -40,7 +40,7 @@ async function login() {
   return { accessToken: data.access_token, userId: data.user.id };
 }
 
-async function callFunction(name, accessToken, body) {
+async function callFunction(name, accessToken, body, { quiet } = {}) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
     method: "POST",
     headers: {
@@ -51,7 +51,7 @@ async function callFunction(name, accessToken, body) {
     body: JSON.stringify(body),
   });
   const data = await res.json();
-  if (!res.ok) console.error(`❌ ${name} failed:`, data);
+  if (!res.ok && !quiet) console.error(`❌ ${name} failed:`, data);
   return data;
 }
 
@@ -136,13 +136,18 @@ async function getRoadPath(origin, destination) {
 
   // Sample down to MAX_STEPS evenly spaced points so the simulation doesn't
   // take forever on a long route.
-  if (fullPath.length <= MAX_STEPS) return fullPath;
+  if (fullPath.length <= MAX_STEPS) return [...fullPath, destination];
   const step = fullPath.length / MAX_STEPS;
   const sampled = [];
   for (let i = 0; i < MAX_STEPS; i++) {
     sampled.push(fullPath[Math.floor(i * step)]);
   }
-  sampled.push(fullPath[fullPath.length - 1]); // always include the real endpoint
+  // Google's road-snapped endpoint can sit 100m+ from the terminus point
+  // stored in the database (it's not always exactly on a road), which made
+  // driver-location-update's is_near_terminus check miss every time and the
+  // driver got stuck "driving" forever. Push the exact terminus coordinate
+  // as the guaranteed last step so end-of-route always fires.
+  sampled.push(destination);
   return sampled;
 }
 
@@ -166,12 +171,30 @@ async function main() {
   console.log(`   → found (${terminus.lat}, ${terminus.lng})`);
 
   console.log("🚏 Joining queue...");
-  await callFunction("driver-queue-join", accessToken, {
-    terminal_id: terminal.id,
-  });
+  const joinResult = await callFunction(
+    "driver-queue-join",
+    accessToken,
+    { terminal_id: terminal.id },
+    { quiet: true }
+  );
+  if (joinResult.error === "driver already has an active queue entry") {
+    console.log("   → already queued from a previous run — continuing.");
+  } else if (joinResult.error) {
+    console.error(`❌ driver-queue-join failed:`, joinResult);
+  }
 
   console.log("🙋 Responding 'lining_up'...");
-  await callFunction("driver-queue-respond", accessToken, { response: "lining_up" });
+  const respondResult = await callFunction(
+    "driver-queue-respond",
+    accessToken,
+    { response: "lining_up" },
+    { quiet: true }
+  );
+  if (respondResult.error === "no active queue entry awaiting a response") {
+    console.log("   → already past this step (likely already driving) — continuing.");
+  } else if (respondResult.error) {
+    console.error(`❌ driver-queue-respond failed:`, respondResult);
+  }
 
   console.log("⏭  Triggering queue-advance to promote to 'driving'...");
   await fetch(`${SUPABASE_URL}/functions/v1/queue-advance`, {

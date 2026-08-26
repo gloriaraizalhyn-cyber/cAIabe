@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import TextField from "../components/TextField.jsx";
 import CheckboxField from "../components/CheckboxField.jsx";
 import { validateDriverLoginForm } from "../utils/validateDriverLoginForm.js";
+import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./DriverLoginPage.css";
 
 const INITIAL_FORM_VALUES = {
@@ -11,17 +12,12 @@ const INITIAL_FORM_VALUES = {
   rememberMe: false,
 };
 
-// No backend/auth yet, so a fixed demo password stands in for a real check —
-// this is only here so the incorrect-password and success states are both
-// reachable from the frontend.
-const DEMO_VALID_PASSWORD = "password123";
-const SIMULATED_NETWORK_DELAY_MS = 900;
-
 function DriverLoginPage() {
   const navigate = useNavigate();
   const [formValues, setFormValues] = useState(INITIAL_FORM_VALUES);
   const [formErrors, setFormErrors] = useState({});
   const [submitStatus, setSubmitStatus] = useState("idle");
+  const [submitErrorMessage, setSubmitErrorMessage] = useState(null);
 
   const handleFieldChange = (fieldName, value) => {
     setFormValues((previousValues) => ({ ...previousValues, [fieldName]: value }));
@@ -35,7 +31,7 @@ function DriverLoginPage() {
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const errors = validateDriverLoginForm(formValues);
     if (Object.keys(errors).length > 0) {
@@ -43,14 +39,27 @@ function DriverLoginPage() {
       return;
     }
     setFormErrors({});
-    setSubmitStatus("submitting");
-    setTimeout(() => {
-      if (formValues.password === DEMO_VALID_PASSWORD) {
-        navigate("/driver/dashboard");
-        return;
-      }
+
+    const identifier = formValues.emailOrMobileNumber.trim();
+    if (!identifier.includes("@")) {
+      setSubmitErrorMessage("Please log in with your email — mobile number login isn't available yet.");
       setSubmitStatus("error");
-    }, SIMULATED_NETWORK_DELAY_MS);
+      return;
+    }
+
+    setSubmitStatus("submitting");
+    const { error } = await supabase.auth.signInWithPassword({
+      email: identifier,
+      password: formValues.password,
+    });
+
+    if (error) {
+      setSubmitErrorMessage(error.message);
+      setSubmitStatus("error");
+      return;
+    }
+
+    navigate("/driver/dashboard");
   };
 
   const handleForgotPassword = () => {};
@@ -108,7 +117,7 @@ function DriverLoginPage() {
 
           {submitStatus === "error" && (
             <p className="driver-login-page__submit-error">
-              Incorrect email/mobile number or password.
+              {submitErrorMessage ?? "Incorrect email/mobile number or password."}
             </p>
           )}
 

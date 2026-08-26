@@ -36,6 +36,17 @@
   padding: 12px 14px;
 }
 
+.driver-registration-page__submit-error {
+  margin: 16px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c0392b;
+}
+
+.driver-registration-page__submit-button:disabled {
+  opacity: 0.6;
+}
+
 .driver-registration-page__actions {
   display: flex;
   flex-direction: column;

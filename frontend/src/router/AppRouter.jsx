@@ -9,6 +9,7 @@ import DriverLoginPage from "../driver/pages/DriverLoginPage.jsx";
 import DriverDashboardPage from "../driver/pages/DriverDashboardPage.jsx";
 import NextToGoPage from "../driver/pages/NextToGoPage.jsx";
 import DrivingPage from "../driver/pages/DrivingPage.jsx";
+import LiveTrackerPage from "../demo/pages/LiveTrackerPage.jsx";
 
 // User-end routes above; driver-end routes below under their own "/driver/*"
 // prefix so the two flows stay clearly separated.
@@ -26,6 +27,8 @@ function AppRouter() {
       <Route path="/driver/dashboard" element={<DriverDashboardPage />} />
       <Route path="/driver/next-to-go" element={<NextToGoPage />} />
       <Route path="/driver/driving" element={<DrivingPage />} />
+
+      <Route path="/live-tracker" element={<LiveTrackerPage />} />
     </Routes>
   );
 }

@@ -1,3 +1,12 @@
+.next-to-go-card__queue-position {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #9a9fa8;
+  text-transform: uppercase;
+}
+
 .next-to-go-card__heading {
   margin: 0 0 10px;
   font-size: 1.15rem;
