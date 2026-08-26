@@ -1,0 +1,145 @@
+.nearest-jeep-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.nearest-jeep-card__label {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #9a9fa8;
+}
+
+.nearest-jeep-card__availability-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  padding: 5px 11px;
+  border: 1px solid transparent;
+}
+
+.nearest-jeep-card__availability-badge--seats {
+  color: #2f6fed;
+  border-color: #2f6fed;
+  background: #eef4ff;
+}
+
+.nearest-jeep-card__availability-badge--full {
+  color: #e0552f;
+  border-color: #e0552f;
+  background: #fdf0ec;
+}
+
+.nearest-jeep-card__eta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+
+.nearest-jeep-card__eta-value {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+.nearest-jeep-card__eta-unit {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6a6f79;
+}
+
+.nearest-jeep-card__ai-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+
+.nearest-jeep-card__ai-note--wait {
+  background: #e9f7ee;
+}
+
+.nearest-jeep-card__ai-note--go {
+  background: #fbeaea;
+}
+
+.nearest-jeep-card__ai-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+
+.nearest-jeep-card__ai-note--wait .nearest-jeep-card__ai-badge {
+  background: #1a9e5c;
+}
+
+.nearest-jeep-card__ai-note--go .nearest-jeep-card__ai-badge {
+  background: #c53030;
+}
+
+.nearest-jeep-card__ai-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.nearest-jeep-card__ai-note--wait p {
+  color: #3d5a48;
+}
+
+.nearest-jeep-card__ai-note--go p {
+  color: #7a2b2b;
+}
+
+.nearest-jeep-card__ai-note--go p strong {
+  color: #c53030;
+}
+
+.nearest-jeep-card__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.nearest-jeep-card__wait-button {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 14px;
+}
+
+.nearest-jeep-card__wait-button:hover {
+  background: #333333;
+}
+
+.nearest-jeep-card__other-options-button {
+  flex: 1;
+  border: 1px solid #d8dade;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 14px;
+}
+
+.nearest-jeep-card__other-options-button:hover {
+  border-color: #1a1a1a;
+}

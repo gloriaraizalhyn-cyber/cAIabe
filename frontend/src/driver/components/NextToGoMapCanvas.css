@@ -1,0 +1,100 @@
+.next-to-go-map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background-color: #ece7dd;
+  background-image: linear-gradient(#ddd7c9 1px, transparent 1px),
+    linear-gradient(90deg, #ddd7c9 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.next-to-go-map__road {
+  position: absolute;
+  left: 46%;
+  top: -10%;
+  width: 8%;
+  height: 120%;
+  background: #f4f0e6;
+  transform: skewX(-6deg);
+}
+
+.next-to-go-map__top-bar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.next-to-go-map__next-to-go-badge {
+  flex-shrink: 0;
+  background: #7c3aed;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.next-to-go-map__terminal-name {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.next-to-go-map__passenger-marker,
+.next-to-go-map__you-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.next-to-go-map__passenger-dot {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #e0a82e;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  margin: 0 auto;
+}
+
+.next-to-go-map__passenger-label {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.next-to-go-map__you-marker {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #2f6fed;
+  color: #ffffff;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}

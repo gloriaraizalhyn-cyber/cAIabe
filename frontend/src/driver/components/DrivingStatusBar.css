@@ -1,0 +1,52 @@
+.driving-status-bar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.driving-status-bar__route {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #4a4f59;
+}
+
+.driving-status-bar__route-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.driving-status-bar__capacity-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  padding: 5px 11px;
+  border: 1px solid transparent;
+}
+
+.driving-status-bar__capacity-badge--seats-open {
+  color: #2f6fed;
+  border-color: #2f6fed;
+  background: #eef4ff;
+}
+
+.driving-status-bar__capacity-badge--full {
+  color: #e0552f;
+  border-color: #e0552f;
+  background: #fdf0ec;
+}

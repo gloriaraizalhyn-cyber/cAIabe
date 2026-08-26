@@ -1,0 +1,69 @@
+.select-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.select-field__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.select-field__required-mark {
+  color: #c53030;
+  margin-left: 3px;
+}
+
+.select-field__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.select-field__select {
+  width: 100%;
+  border: 1px solid #d8dade;
+  border-radius: 8px;
+  padding: 10px 34px 10px 12px;
+  font-size: 0.92rem;
+  color: #1a1a1a;
+  background: #ffffff;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236a6f79' stroke-width='1.6' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.select-field__select:focus {
+  outline: none;
+  border-color: #1a1a1a;
+}
+
+.select-field__select--error {
+  border-color: #c53030;
+}
+
+.select-field__select:disabled {
+  background-color: #f2f4f7;
+  color: #9a9fa8;
+  cursor: not-allowed;
+}
+
+.select-field__clear-button {
+  position: absolute;
+  right: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #6a6f79;
+  padding: 4px;
+}
+
+.select-field__error {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #c53030;
+}

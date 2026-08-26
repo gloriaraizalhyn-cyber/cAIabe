@@ -1,0 +1,86 @@
+.outside-terminal-queue-alert__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 16px;
+}
+
+.outside-terminal-queue-alert {
+  width: 100%;
+  max-width: 340px;
+  background: #241f14;
+  border: 1px solid #4a3d24;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.outside-terminal-queue-alert__kicker {
+  margin: 0 0 8px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #e0a82e;
+}
+
+.outside-terminal-queue-alert__heading {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #ffffff;
+}
+
+.outside-terminal-queue-alert__body {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #b9b2a0;
+}
+
+.outside-terminal-queue-alert__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.outside-terminal-queue-alert__button {
+  flex: 1;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 12px;
+  border: 1px solid transparent;
+}
+
+.outside-terminal-queue-alert__button--primary {
+  background: #e0a82e;
+  color: #1a1a1a;
+}
+
+.outside-terminal-queue-alert__button--primary:hover {
+  background: #c99521;
+}
+
+.outside-terminal-queue-alert__button--secondary {
+  background: transparent;
+  border-color: #5a4a2a;
+  color: #ffffff;
+}
+
+.outside-terminal-queue-alert__button--secondary:hover {
+  border-color: #e0a82e;
+}
+
+.outside-terminal-queue-alert__button--danger {
+  background: transparent;
+  border-color: #8a3a3a;
+  color: #e0605a;
+}
+
+.outside-terminal-queue-alert__button--danger:hover {
+  background: rgba(224, 96, 90, 0.1);
+}
