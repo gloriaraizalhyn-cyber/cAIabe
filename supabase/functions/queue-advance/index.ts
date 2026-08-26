@@ -17,6 +17,7 @@
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
+import { sendPushToToken } from "../_shared/fcm.ts";
 
 const NOTIFY_AHEAD_POSITIONS = 2; // "next-2" per the PRD default
 const RESPONSE_TIMEOUT_SECONDS = 90;
@@ -77,7 +78,9 @@ async function advanceRoute(supabase: any, routeId: string) {
     .eq("status", "driving")
     .maybeSingle();
 
-  if (!driving) {
+  let isDriving = Boolean(driving);
+
+  if (!isDriving) {
     const { data: nextUp } = await supabase
       .from("queue_entries")
       .select("id, driver_id")
@@ -98,10 +101,19 @@ async function advanceRoute(supabase: any, routeId: string) {
         event: "driver_departed",
         payload: { queue_entry_id: nextUp.id },
       });
+
+      isDriving = true;
     }
   }
 
-  // 3. Notify the driver sitting in "next-2" position among waiting entries.
+  // 3. Notify every "waiting" driver within NOTIFY_AHEAD_POSITIONS turns of
+  // being up. "Turns ahead" of a given waiting entry counts the
+  // currently-driving unit (if any), every already-confirmed "next_to_go"
+  // driver, and earlier entries in the waiting line itself — NOT just a
+  // fixed 2nd-in-line index. That distinction matters for the very first
+  // driver to join an otherwise empty queue: with a fixed index they'd have
+  // nobody ahead of them and would never be notified at all; counted this
+  // way they have 0 turns ahead and are notified immediately.
   const { data: waitingQueue } = await supabase
     .from("queue_entries")
     .select("id, driver_id, notified_at")
@@ -109,22 +121,40 @@ async function advanceRoute(supabase: any, routeId: string) {
     .eq("status", "waiting")
     .order("arrival_at", { ascending: true });
 
-  const target = (waitingQueue ?? [])[NOTIFY_AHEAD_POSITIONS - 1];
-  if (target && !target.notified_at) {
+  const { data: nextToGoEntries } = await supabase
+    .from("queue_entries")
+    .select("id")
+    .eq("route_id", routeId)
+    .eq("status", "next_to_go");
+
+  const turnsAheadBase = (isDriving ? 1 : 0) + (nextToGoEntries?.length ?? 0);
+
+  for (const [index, entry] of (waitingQueue ?? []).entries()) {
+    if (entry.notified_at) continue;
+    const turnsRemaining = turnsAheadBase + index + 1;
+    if (turnsRemaining > NOTIFY_AHEAD_POSITIONS) break; // list is arrival-ordered, so nobody after this is closer
+
     await supabase
       .from("queue_entries")
       .update({ notified_at: new Date().toISOString() })
-      .eq("id", target.id);
+      .eq("id", entry.id);
 
-    await sendPushToDriver(supabase, target.driver_id);
+    // Realtime companion to the FCM push below — lets the frontend show the
+    // "lining up / skip me" prompt immediately instead of waiting on its
+    // fallback poll.
+    await supabase.channel(`route:${routeId}:queue`).send({
+      type: "broadcast",
+      event: "driver_notified",
+      payload: { queue_entry_id: entry.id, driver_id: entry.driver_id },
+    });
+
+    await sendPushToDriver(supabase, entry.driver_id);
   }
 
   return { checked: true };
 }
 
 async function sendPushToDriver(supabase: any, driverId: string) {
-  // Look up the driver's FCM token (assumes a `fcm_token` column added to
-  // `drivers`, or a separate `driver_devices` table — add per your schema).
   const { data: driver } = await supabase
     .from("drivers")
     .select("fcm_token")
@@ -133,23 +163,17 @@ async function sendPushToDriver(supabase: any, driverId: string) {
 
   if (!driver?.fcm_token) return;
 
-  const FCM_SERVER_KEY = Deno.env.get("FCM_SERVER_KEY");
-  if (!FCM_SERVER_KEY) return; // no-op until FCM is wired up
-
-  await fetch("https://fcm.googleapis.com/fcm/send", {
-    method: "POST",
-    headers: {
-      Authorization: `key=${FCM_SERVER_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      to: driver.fcm_token,
-      notification: {
-        title: "Your turn is coming up",
-        body: "Head back to your vehicle — you're next-2 in the queue.",
-      },
-    }),
-  });
+  try {
+    await sendPushToToken(driver.fcm_token, {
+      title: "Your turn is coming up",
+      body: "Head back to your vehicle — you're next-2 in the queue.",
+    });
+  } catch (err) {
+    // A push failure shouldn't fail the whole queue-advance run — the
+    // driver_notified broadcast already got sent, and the frontend's own
+    // poll is a fallback for exactly this kind of miss.
+    console.error("sendPushToDriver failed:", err);
+  }
 }
 
 function json(body: unknown, status = 200) {

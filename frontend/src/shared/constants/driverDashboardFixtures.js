@@ -4,8 +4,6 @@
 // wiring — see useDriverSession.js and DriverDashboardPage/NextToGoPage/
 // DrivingPage. What's left here has no backend equivalent by design.
 
-export const SLOT_HELD_AUTO_DISMISS_MS = 4000;
-
 // The nearest passenger_waiting_state pickup once the driver is en route.
 // There's no per-driver pickup-assignment concept server-side (passengers
 // just show up as fuzzed pins broadcast per route), so this stays a fixture.

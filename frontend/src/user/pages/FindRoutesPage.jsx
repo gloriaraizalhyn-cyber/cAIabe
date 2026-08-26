@@ -84,6 +84,7 @@ function FindRoutesPage() {
     navigate("/waiting", {
       state: {
         routeId: route.id,
+        route,
         passengerType,
         tripSearch: { origin, destination, originPlace, destinationPlace },
       },
@@ -97,6 +98,7 @@ function FindRoutesPage() {
         origin={originPlace}
         destination={destinationPlace}
         routes={viewMode === "results" ? routes : []}
+        showDirections={Boolean(originPlace && destinationPlace)}
       />
 
       <div className="find-routes-page__overlay">

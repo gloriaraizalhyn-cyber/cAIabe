@@ -12,7 +12,7 @@ import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
 
 const GOOGLE_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY")!;
-const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY"); // optional
+const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY"); // optional
 
 // How far a passenger will walk to board/alight a route, and how far
 // they'll walk between two routes to transfer. Jeepney travel time along a
@@ -487,8 +487,8 @@ async function distanceMatrix(
 async function explainTopPick(pick: any): Promise<string> {
   const transferNote = pick.transfer_count > 0 ? `, with ${pick.transfer_count} transfer(s)` : "";
 
-  if (!OPENAI_KEY) {
-    // Fallback so the function still works without an OpenAI key configured
+  if (!GEMINI_KEY) {
+    // Fallback so the function still works without a Gemini key configured
     const discountNote =
       pick.discount_rate > 0
         ? ` (${pick.discount_type.replace("_", " ")} discount applied)`
@@ -497,30 +497,29 @@ async function explainTopPick(pick: any): Promise<string> {
   }
 
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_KEY}`,
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{
+              text:
+                "Write ONE short, plain sentence recommending a jeepney trip to a passenger, given its stats. No markdown, no exclamation points.",
+            }],
+          },
+          contents: [{
+            parts: [{
+              text: `Trip: ${pick.route_name}, duration: ${pick.duration_min} min, fare: ₱${pick.fare}, distance: ${pick.distance_km} km, transfers: ${pick.transfer_count}.`,
+            }],
+          }],
+          generationConfig: { maxOutputTokens: 60, temperature: 0.4 },
+        }),
       },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Write ONE short, plain sentence recommending a jeepney trip to a passenger, given its stats. No markdown, no exclamation points.",
-          },
-          {
-            role: "user",
-            content: `Trip: ${pick.route_name}, duration: ${pick.duration_min} min, fare: ₱${pick.fare}, distance: ${pick.distance_km} km, transfers: ${pick.transfer_count}.`,
-          },
-        ],
-        max_tokens: 60,
-      }),
-    });
+    );
     const data = await res.json();
-    return data?.choices?.[0]?.message?.content?.trim() ??
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ??
       `${pick.route_name} is the recommended trip.`;
   } catch {
     return `${pick.route_name} is the recommended trip.`;

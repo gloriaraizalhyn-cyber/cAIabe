@@ -4,9 +4,10 @@ import ShiftSummaryCard from "../components/ShiftSummaryCard.jsx";
 import LocationPermissionModal from "../components/LocationPermissionModal.jsx";
 import HeadingToTerminalPanel from "../components/HeadingToTerminalPanel.jsx";
 import ArrivedAtTerminalPanel from "../components/ArrivedAtTerminalPanel.jsx";
-import OutsideTerminalQueueAlert from "../components/OutsideTerminalQueueAlert.jsx";
+import QueueTurnAlert from "../components/QueueTurnAlert.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
-import { fetchOwnQueuePosition } from "../utils/queue.js";
+import { useFcmRegistration } from "../hooks/useFcmRegistration.js";
+import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { haversineDistanceMeters } from "../../shared/utils/geo.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./DriverDashboardPage.css";
@@ -17,19 +18,19 @@ function DriverDashboardPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { driver, loading, error, session } = useDriverSession();
+  useFcmRegistration(driver);
 
   const [shiftStage, setShiftStage] = useState(location.state?.shiftStage ?? "not_started");
-  const [queuePosition, setQueuePosition] = useState(null);
-  const [isQueueExitAlertVisible, setIsQueueExitAlertVisible] = useState(false);
-  const [hasLeftTemporarily, setHasLeftTemporarily] = useState(false);
+  const [ownQueueEntry, setOwnQueueEntry] = useState(null);
+  const [isRespondingToQueue, setIsRespondingToQueue] = useState(false);
   const [driverPosition, setDriverPosition] = useState(null);
 
   const watchIdRef = useRef(null);
 
-  const refreshQueuePosition = useCallback(async () => {
+  const refreshQueueEntry = useCallback(async () => {
     if (!driver?.route?.id || !session?.user?.id) return;
-    const position = await fetchOwnQueuePosition(driver.route.id, session.user.id);
-    if (position !== null) setQueuePosition(position);
+    const entry = await fetchOwnQueueEntry(driver.route.id, session.user.id);
+    setOwnQueueEntry(entry);
   }, [driver?.route?.id, session?.user?.id]);
 
   const joinQueue = useCallback(async () => {
@@ -39,14 +40,16 @@ function DriverDashboardPage() {
     });
     // Whether this call created a fresh entry or 409'd because one already
     // exists, the driver's real position comes from re-reading the queue.
-    await refreshQueuePosition();
-  }, [driver?.terminal?.id, refreshQueuePosition]);
+    await refreshQueueEntry();
+  }, [driver?.terminal?.id, refreshQueueEntry]);
 
-  // Real geofence: watches actual GPS while heading to the terminal (to
-  // detect arrival) and while arrived (to detect wandering back out) —
-  // replaces the old fixed-delay timers entirely.
+  // Real geofence, used ONLY to detect arrival at the terminal so the driver
+  // can be auto-joined to the queue. Per the PRD, queue position must NOT
+  // depend on tracked physical presence once a driver is waiting — so unlike
+  // before, this stops watching the instant they arrive rather than also
+  // policing whether they wander off afterward.
   useEffect(() => {
-    if (shiftStage !== "heading_to_terminal" && shiftStage !== "arrived") return undefined;
+    if (shiftStage !== "heading_to_terminal") return undefined;
     if (!navigator.geolocation) return undefined;
 
     const terminalPosition = driver?.terminal?.position;
@@ -58,15 +61,9 @@ function DriverDashboardPage() {
 
         if (!terminalPosition) return;
         const distance = haversineDistanceMeters(here, terminalPosition);
-        const isInside = distance <= TERMINAL_ARRIVAL_RADIUS_METERS;
-
-        if (shiftStage === "heading_to_terminal" && isInside) {
+        if (distance <= TERMINAL_ARRIVAL_RADIUS_METERS) {
           setShiftStage("arrived");
           joinQueue();
-        } else if (shiftStage === "arrived" && !isInside) {
-          setIsQueueExitAlertVisible(true);
-        } else if (shiftStage === "arrived" && isInside) {
-          setIsQueueExitAlertVisible(false);
         }
       },
       () => {},
@@ -76,28 +73,30 @@ function DriverDashboardPage() {
     return () => navigator.geolocation.clearWatch(id);
   }, [shiftStage, driver?.terminal?.position, joinQueue]);
 
-  // Live queue position: the same broadcast channel driver-queue-respond
-  // and queue-advance already publish to, plus a fallback poll in case a
-  // broadcast is missed.
+  // Live queue standing: the same broadcast channel driver-queue-respond and
+  // queue-advance already publish to (including the next-2 "driver_notified"
+  // event), plus a fallback poll in case a broadcast is missed.
   useEffect(() => {
     if (shiftStage !== "arrived" || !driver?.route?.id) return undefined;
 
+    refreshQueueEntry();
+
     const channel = supabase
       .channel(`route:${driver.route.id}:queue`)
-      .on("broadcast", { event: "queue_updated" }, refreshQueuePosition)
-      .on("broadcast", { event: "driver_departed" }, refreshQueuePosition)
+      .on("broadcast", { event: "driver_notified" }, refreshQueueEntry)
+      .on("broadcast", { event: "queue_updated" }, refreshQueueEntry)
+      .on("broadcast", { event: "driver_departed" }, refreshQueueEntry)
       .subscribe();
 
-    const pollId = setInterval(refreshQueuePosition, 15000);
+    const pollId = setInterval(refreshQueueEntry, 15000);
 
     return () => {
       supabase.removeChannel(channel);
       clearInterval(pollId);
     };
-  }, [shiftStage, driver?.route?.id, refreshQueuePosition]);
+  }, [shiftStage, driver?.route?.id, refreshQueueEntry]);
 
   const handleStartShift = () => {
-    setHasLeftTemporarily(false);
     setShiftStage("awaiting_location_permission");
   };
 
@@ -131,29 +130,30 @@ function DriverDashboardPage() {
   };
 
   const handleViewQueue = () => {
-    if (hasLeftTemporarily) {
-      setHasLeftTemporarily(false);
-      return;
-    }
     navigate("/driver/next-to-go");
   };
 
-  const handleDismissQueueExitAlert = () => {
-    setIsQueueExitAlertVisible(false);
+  // Next-2 turn alert responses (driver-queue-respond) — see QueueTurnAlert.
+  const handleLiningUp = async () => {
+    setIsRespondingToQueue(true);
+    await supabase.functions.invoke("driver-queue-respond", { body: { response: "lining_up" } });
+    setIsRespondingToQueue(false);
+    navigate("/driver/next-to-go");
   };
 
-  const handleLeaveTemporarily = () => {
-    // No `queue_entries.status` value represents "temporarily left" — this
-    // is local UI only, matching today's behavior.
-    setIsQueueExitAlertVisible(false);
-    setHasLeftTemporarily(true);
+  const handleLeaveTemporarily = async () => {
+    setIsRespondingToQueue(true);
+    await supabase.functions.invoke("driver-queue-respond", { body: { response: "skip_temp" } });
+    await refreshQueueEntry();
+    setIsRespondingToQueue(false);
   };
 
   const handleEndShiftForTheDay = async () => {
-    setIsQueueExitAlertVisible(false);
-    setHasLeftTemporarily(false);
+    setIsRespondingToQueue(true);
     if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
     await supabase.functions.invoke("driver-queue-respond", { body: { response: "skip_done" } });
+    setIsRespondingToQueue(false);
+    setOwnQueueEntry(null);
     setShiftStage("not_started");
   };
 
@@ -194,6 +194,8 @@ function DriverDashboardPage() {
   const assignedRouteLabel = driver.route ? `${driver.route.name} — ${driver.route.color ?? "blue"}` : "—";
   const assignedTerminalName = driver.terminal?.name ?? "—";
   const showShiftSummaryCard = shiftStage === "not_started" || shiftStage === "awaiting_location_permission";
+  const showQueueTurnAlert =
+    shiftStage === "arrived" && Boolean(ownQueueEntry?.notifiedAt) && !ownQueueEntry?.respondedAt;
 
   return (
     <main className="driver-dashboard-page">
@@ -220,9 +222,8 @@ function DriverDashboardPage() {
 
         {shiftStage === "arrived" && (
           <ArrivedAtTerminalPanel
-            queuePosition={queuePosition ?? "…"}
+            queuePosition={ownQueueEntry?.position ?? "…"}
             assignedRouteLabel={assignedRouteLabel}
-            hasLeftTemporarily={hasLeftTemporarily}
             onViewQueue={handleViewQueue}
           />
         )}
@@ -235,10 +236,11 @@ function DriverDashboardPage() {
         />
       )}
 
-      {shiftStage === "arrived" && isQueueExitAlertVisible && (
-        <OutsideTerminalQueueAlert
-          queuePosition={queuePosition ?? "…"}
-          onDismiss={handleDismissQueueExitAlert}
+      {showQueueTurnAlert && (
+        <QueueTurnAlert
+          queuePosition={ownQueueEntry?.position ?? null}
+          isSubmitting={isRespondingToQueue}
+          onLiningUp={handleLiningUp}
           onLeaveTemporarily={handleLeaveTemporarily}
           onEndShiftForTheDay={handleEndShiftForTheDay}
         />

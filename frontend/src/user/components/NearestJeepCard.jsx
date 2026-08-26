@@ -3,13 +3,23 @@ import "../../shared/styles/cardShell.css";
 import "./NearestJeepCard.css";
 
 function NearestJeepCard({ waitingAtBay, onWaitForJeep, onSeeOtherOptions }) {
-  const { nearestJeep, aiWaitRecommendation, jeepColorName } = waitingAtBay;
+  const jeepColorName = waitingAtBay?.jeepColorName || "Jeepney";
+  const nearestJeep = waitingAtBay?.nearestJeep || {
+    hasSeatsAvailable: true,
+    etaMinutes: 3,
+    distanceKm: "0.8",
+  };
+  const aiWaitRecommendation = waitingAtBay?.aiWaitRecommendation || {
+    recommendationType: "go",
+    headline: `The jeepney you are waiting for is color ${jeepColorName}`,
+    body: "An active unit is approaching along this route.",
+  };
   const isGoRecommendation = aiWaitRecommendation.recommendationType === "go";
 
   return (
     <section className="card-shell nearest-jeep-card">
       <div className="nearest-jeep-card__header">
-        <p className="nearest-jeep-card__label">NEAREST {jeepColorName} JEEP</p>
+        <p className="nearest-jeep-card__label">NEAREST {jeepColorName.toUpperCase()} JEEP</p>
         <span
           className={
             nearestJeep.hasSeatsAvailable

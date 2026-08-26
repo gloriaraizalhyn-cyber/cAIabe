@@ -3,19 +3,19 @@ import "./WalkToBayCard.css";
 
 const VOWEL_SOUND_PATTERN = /^[aeiou]/i;
 
-function WalkToBayCard({ stepNumber, totalSteps, waitingAtBay, onArrivedAtBay }) {
-  const jeepColorArticle = VOWEL_SOUND_PATTERN.test(waitingAtBay.jeepColorName) ? "an" : "a";
+function WalkToBayCard({ stepNumber = 1, totalSteps = 2, waitingAtBay, onArrivedAtBay }) {
+  const jeepColor = waitingAtBay?.jeepColorName || "Red";
+  const routeName = waitingAtBay?.jeepneyLineCode || "Selected Route";
+  const bayName = waitingAtBay?.bayName || "Terminal Bay";
 
   return (
     <section className="card-shell walk-to-bay-card">
       <p className="walk-to-bay-card__step">
         STEP {stepNumber} OF {totalSteps}
       </p>
-      <h1 className="walk-to-bay-card__title">Walk to the {waitingAtBay.bayName}</h1>
+      <h1 className="walk-to-bay-card__title">Walk to the {bayName}</h1>
       <p className="walk-to-bay-card__body">
-        Then wait for {jeepColorArticle} <strong>{waitingAtBay.jeepColorName}</strong> jeep. Tap
-        below once you're standing at the bay — drivers on {waitingAtBay.jeepneyLineCode} will
-        see you waiting.
+        The jeepney you are waiting for is color <strong style={{ textTransform: "capitalize" }}>{jeepColor}</strong> ({routeName}). Walk to the {bayName} and tap below once you arrive — drivers on this route will see you waiting in real time.
       </p>
       <button type="button" className="walk-to-bay-card__arrived-button" onClick={onArrivedAtBay}>
         I'm here!

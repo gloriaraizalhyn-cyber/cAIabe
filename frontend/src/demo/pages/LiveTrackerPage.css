@@ -60,40 +60,108 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
-.live-tracker-page__info {
+.live-tracker-page__fleet-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 20px 24px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.live-tracker-page__info-header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin: 16px 20px 24px;
-  padding: 14px 18px;
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.live-tracker-page__route-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
 }
 
 .live-tracker-page__route-name {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 800;
-  color: #1a1a1a;
+  color: #111827;
+}
+
+.live-tracker-page__unit-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.live-tracker-page__summary-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-tracker-page__badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.live-tracker-page__badge--available {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.live-tracker-page__badge--full {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.live-tracker-page__unit-list {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.live-tracker-page__unit-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.live-tracker-page__unit-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #374151;
 }
 
 .live-tracker-page__capacity {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #1a9e5c;
-  background: #e9f7ee;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
   border-radius: 999px;
-  padding: 4px 10px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+}
+
+.live-tracker-page__capacity--available {
+  color: #16a34a;
+  background: #dcfce7;
 }
 
 .live-tracker-page__capacity--full {
-  color: #c0392b;
-  background: #fbe9e7;
-}
-
-.live-tracker-page__updated {
-  margin-left: auto;
-  font-size: 0.78rem;
-  color: #9a9fa8;
+  color: #dc2626;
+  background: #fee2e2;
 }

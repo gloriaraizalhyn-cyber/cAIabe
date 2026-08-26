@@ -23,3 +23,16 @@ as $$
   where id = p_route_id
   limit 1;
 $$;
+
+-- Used by nearby-jeepney-eta to feed live driver positions into Google's
+-- Routes API as origins.
+create or replace function get_route_driver_positions(p_route_id uuid)
+returns table(driver_id uuid, lat double precision, lng double precision, capacity_state text)
+language sql
+stable
+as $$
+  select driver_id, st_y(position::geometry), st_x(position::geometry), capacity_state
+  from driver_live_state
+  where route_id = p_route_id
+    and position is not null;
+$$;

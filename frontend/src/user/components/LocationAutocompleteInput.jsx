@@ -1,18 +1,19 @@
-import { useEffect, useRef, useState } from "react";
-import { MapPin, LocateFixed } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MapPin, LocateFixed, Navigation, Compass, AlertCircle } from "lucide-react";
 import { useGoogleMapsLoader } from "../../shared/hooks/useGoogleMapsLoader.js";
+import {
+  PLACE_SUGGESTIONS_FIXTURE,
+  SERVICE_AREA_BOUNDS,
+  isWithinServiceBounds,
+} from "../../shared/constants/tripSearchFixtures.js";
 import "./LocationAutocompleteInput.css";
 
 const SUGGESTION_DEBOUNCE_MS = 250;
-// Bias suggestions toward the Clark/Angeles area without hard-restricting —
-// matches where the rest of the app's placeholder data is centered.
-const SUGGESTION_BIAS_CENTER = { lat: 15.1697, lng: 120.5891 };
-const SUGGESTION_BIAS_RADIUS_METERS = 20000;
 
-// A single reusable "from"/"to" field: typing queries Google Places
-// Autocomplete for real matching places, and (only when showGpsButton is
-// set) a button fills the field with the device's current location via the
-// browser Geolocation API.
+// A reusable location input field that strictly isolates suggestions to the
+// Pampanga jeepney route and terminal network. Instant matches for local
+// terminals and route stops appear as you type, complemented by bounded
+// Google Places predictions.
 function LocationAutocompleteInput({
   label,
   value,
@@ -24,7 +25,8 @@ function LocationAutocompleteInput({
   const { isLoaded } = useGoogleMapsLoader();
   const [isFocused, setIsFocused] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
+  const [googlePredictions, setGooglePredictions] = useState([]);
+  const [outOfAreaWarning, setOutOfAreaWarning] = useState(null);
 
   const autocompleteServiceRef = useRef(null);
   const placesServiceRef = useRef(null);
@@ -32,20 +34,37 @@ function LocationAutocompleteInput({
   const latestRequestIdRef = useRef(0);
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !window.google?.maps?.places) return;
     autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
-    // PlacesService needs a Map or a div to attach to, but never actually
-    // renders anything — a detached div is the standard way to use it
-    // headlessly. Using this (not Geocoder) keeps place-detail lookups on
-    // the same Places API the predictions already use.
     placesServiceRef.current = new window.google.maps.places.PlacesService(
       document.createElement("div")
     );
   }, [isLoaded]);
 
+  // Compute local Pampanga terminal & route stop matches instantly
+  const localMatches = useMemo(() => {
+    const query = value.trim().toLowerCase();
+    if (!query) return [];
+    return PLACE_SUGGESTIONS_FIXTURE.filter((place) => {
+      const matchLabel = place.label.toLowerCase().includes(query);
+      const matchSubtitle = place.subtitle?.toLowerCase().includes(query);
+      const matchCategory = place.category?.toLowerCase().includes(query);
+      return matchLabel || matchSubtitle || matchCategory;
+    }).map((place) => ({
+      id: place.id,
+      label: place.label,
+      subtitle: place.subtitle ?? "Pampanga Route Network",
+      category: place.category ?? "landmark",
+      lat: place.lat,
+      lng: place.lng,
+      isLocal: true,
+    }));
+  }, [value]);
+
+  // Query Google Places strictly bounded to the Pampanga service area
   useEffect(() => {
-    if (!isLoaded || !isFocused || value.trim().length === 0) {
-      setSuggestions([]);
+    if (!isLoaded || !isFocused || value.trim().length === 0 || !autocompleteServiceRef.current) {
+      setGooglePredictions([]);
       return undefined;
     }
 
@@ -56,19 +75,19 @@ function LocationAutocompleteInput({
         {
           input: value.trim(),
           componentRestrictions: { country: "ph" },
-          location: new window.google.maps.LatLng(
-            SUGGESTION_BIAS_CENTER.lat,
-            SUGGESTION_BIAS_CENTER.lng
+          bounds: new window.google.maps.LatLngBounds(
+            { lat: SERVICE_AREA_BOUNDS.south, lng: SERVICE_AREA_BOUNDS.west },
+            { lat: SERVICE_AREA_BOUNDS.north, lng: SERVICE_AREA_BOUNDS.east }
           ),
-          radius: SUGGESTION_BIAS_RADIUS_METERS,
+          strictBounds: true,
         },
         (predictions, status) => {
           if (requestId !== latestRequestIdRef.current) return;
           if (status !== window.google.maps.places.PlacesServiceStatus.OK || !predictions) {
-            setSuggestions([]);
+            setGooglePredictions([]);
             return;
           }
-          setSuggestions(predictions);
+          setGooglePredictions(predictions);
         }
       );
     }, SUGGESTION_DEBOUNCE_MS);
@@ -76,37 +95,86 @@ function LocationAutocompleteInput({
     return () => clearTimeout(debounceTimeoutRef.current);
   }, [value, isFocused, isLoaded]);
 
-  const handleSuggestionClick = (prediction) => {
+  // Combine suggestions: Local Pampanga terminals & stops first, then Google predictions
+  const combinedSuggestions = useMemo(() => {
+    const localLabels = new Set(localMatches.map((m) => m.label.toLowerCase()));
+    const filteredGoogle = googlePredictions
+      .filter((p) => !localLabels.has(p.description.toLowerCase()))
+      .map((p) => ({
+        id: p.place_id,
+        label: p.structured_formatting?.main_text || p.description,
+        subtitle: p.structured_formatting?.secondary_text || "Angeles City, Pampanga",
+        category: "google",
+        prediction: p,
+        isLocal: false,
+      }));
+
+    return [...localMatches, ...filteredGoogle];
+  }, [localMatches, googlePredictions]);
+
+  const handleSelectLocal = (place) => {
+    setOutOfAreaWarning(null);
     setIsFocused(false);
-    setSuggestions([]);
+    onSelectPlace({
+      id: place.id,
+      label: place.label,
+      lat: place.lat,
+      lng: place.lng,
+    });
+  };
+
+  const handleSelectGoogle = (prediction) => {
+    if (!placesServiceRef.current) return;
+    setIsFocused(false);
     placesServiceRef.current.getDetails(
-      { placeId: prediction.place_id, fields: ["geometry"] },
+      { placeId: prediction.place_id, fields: ["geometry", "name", "formatted_address"] },
       (place, status) => {
         if (status !== window.google.maps.places.PlacesServiceStatus.OK || !place?.geometry?.location) {
           return;
         }
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+
+        // Enforce boundary check: only allow locations inside Pampanga route/terminal coverage
+        if (!isWithinServiceBounds({ lat, lng })) {
+          setOutOfAreaWarning("This location is outside the active Pampanga route area.");
+          return;
+        }
+
+        setOutOfAreaWarning(null);
         onSelectPlace({
           id: prediction.place_id,
           label: prediction.description,
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
+          lat,
+          lng,
         });
       }
     );
   };
 
   const handleUseCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      return;
-    }
+    if (!navigator.geolocation) return;
     setIsLocating(true);
+    setOutOfAreaWarning(null);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        const here = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+
+        if (!isWithinServiceBounds(here)) {
+          setOutOfAreaWarning("Your current location is outside the Pampanga route coverage area.");
+          setIsLocating(false);
+          return;
+        }
+
         onSelectPlace({
           id: "current-location",
           label: "Current Location",
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
+          lat: here.lat,
+          lng: here.lng,
         });
         setIsLocating(false);
       },
@@ -125,9 +193,12 @@ function LocationAutocompleteInput({
           className="location-input__text"
           value={value}
           placeholder={placeholder}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            setOutOfAreaWarning(null);
+            onChange(event.target.value);
+          }}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setTimeout(() => setIsFocused(false), 150)}
+          onBlur={() => setTimeout(() => setIsFocused(false), 200)}
         />
         {showGpsButton && (
           <button
@@ -146,17 +217,51 @@ function LocationAutocompleteInput({
         )}
       </div>
 
-      {suggestions.length > 0 && (
+      {outOfAreaWarning && (
+        <div className="location-input__warning">
+          <AlertCircle size={14} />
+          <span>{outOfAreaWarning}</span>
+        </div>
+      )}
+
+      {isFocused && combinedSuggestions.length > 0 && (
         <ul className="location-input__suggestions">
-          {suggestions.map((prediction) => (
-            <li key={prediction.place_id}>
+          {combinedSuggestions.map((item) => (
+            <li key={item.id}>
               <button
                 type="button"
                 className="location-input__suggestion"
-                onMouseDown={() => handleSuggestionClick(prediction)}
+                onMouseDown={() => {
+                  if (item.isLocal) {
+                    handleSelectLocal(item);
+                  } else {
+                    handleSelectGoogle(item.prediction);
+                  }
+                }}
               >
-                <MapPin size={14} strokeWidth={2.25} />
-                {prediction.description}
+                <div className="location-input__suggestion-icon-wrapper">
+                  {item.category === "terminal" ? (
+                    <Navigation size={15} strokeWidth={2.25} className="location-input__icon--terminal" />
+                  ) : item.category === "stop" ? (
+                    <Compass size={15} strokeWidth={2.25} className="location-input__icon--stop" />
+                  ) : (
+                    <MapPin size={15} strokeWidth={2.25} className="location-input__icon--landmark" />
+                  )}
+                </div>
+                <div className="location-input__suggestion-content">
+                  <div className="location-input__suggestion-title-row">
+                    <span className="location-input__suggestion-title">{item.label}</span>
+                    {item.category === "terminal" && (
+                      <span className="location-input__badge location-input__badge--terminal">Terminal</span>
+                    )}
+                    {item.category === "stop" && (
+                      <span className="location-input__badge location-input__badge--stop">Route Stop</span>
+                    )}
+                  </div>
+                  {item.subtitle && (
+                    <span className="location-input__suggestion-subtitle">{item.subtitle}</span>
+                  )}
+                </div>
               </button>
             </li>
           ))}
