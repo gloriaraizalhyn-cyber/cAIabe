@@ -1,34 +1,20 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MapView from "../../shared/components/MapView.jsx";
 import WalkToBayCard from "../components/WalkToBayCard.jsx";
 import NearestJeepCard from "../components/NearestJeepCard.jsx";
 import { ROUTE_OPTIONS_FIXTURE } from "../../shared/constants/tripSearchFixtures.js";
-import { useLiveDriverPosition } from "../../shared/hooks/useLiveDriverPosition.js";
+import { useLiveDriverPositions } from "../../shared/hooks/useLiveDriverPositions.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./WaitingForJeepPage.css";
 
 // The WalkToBayCard/NearestJeepCard copy below stays on ROUTE_OPTIONS_FIXTURE
 // text (bay name, nearest-jeep nickname, AI recommendation) — there's no
 // backend concept of a "bay" or per-passenger nearby-jeep feed. The MAP
-// itself is real: it shows the passenger's real location and, once
-// location.state.routeId is a real route-search id, the live GPS position a
-// driving unit on that route broadcasts (see driver-location-update /
-// mock-driver-simulator.js at the repo root).
-function getRealGeolocation() {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) {
-      resolve(null);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => resolve({ lat: position.coords.latitude, lng: position.coords.longitude }),
-      () => resolve(null),
-      { timeout: 5000 }
-    );
-  });
-}
-
+// itself is real: it shows the passenger's live GPS location and, once
+// location.state.routeId is a real route-search id, every jeepney currently
+// broadcasting on that route (see driver-location-update /
+// mock-driver-simulator.js / mock-fleet-simulator.js at the repo root).
 function WaitingForJeepPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -39,9 +25,26 @@ function WaitingForJeepPage() {
 
   const realRouteId = location.state?.routeId ?? null;
   const passengerType = location.state?.passengerType ?? "regular";
-  const passengerPosition = location.state?.tripSearch?.originPlace ?? null;
+  const searchedOriginPosition = location.state?.tripSearch?.originPlace ?? null;
 
-  const { position: driverPosition, isConnected } = useLiveDriverPosition(realRouteId);
+  const [livePassengerPosition, setLivePassengerPosition] = useState(null);
+  useEffect(() => {
+    if (!navigator.geolocation) return undefined;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        setLivePassengerPosition({ lat: position.coords.latitude, lng: position.coords.longitude });
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 5000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
+  // Falls back to the place they searched from if GPS permission is denied
+  // or unavailable, so the map still centers somewhere sensible.
+  const passengerPosition = livePassengerPosition ?? searchedOriginPosition;
+
+  const { jeepneys, isConnected } = useLiveDriverPositions(realRouteId);
 
   const [waitingPhase, setWaitingPhase] = useState("walking_to_bay");
   const waitingIdRef = useRef(null);
@@ -56,12 +59,15 @@ function WaitingForJeepPage() {
   const handleArrivedAtBay = async () => {
     setWaitingPhase("waiting_for_jeep");
 
-    if (!realRouteId) return; // no real route id (e.g. a restored/demo session) — nothing to register
-    const position = (await getRealGeolocation()) ?? passengerPosition;
-    if (!position) return;
+    if (!realRouteId || !passengerPosition) return; // no real route id (e.g. a restored/demo session) — nothing to register
 
     const { data, error } = await supabase.functions.invoke("waiting-start", {
-      body: { route_id: realRouteId, lat: position.lat, lng: position.lng, discount_type: passengerType },
+      body: {
+        route_id: realRouteId,
+        lat: passengerPosition.lat,
+        lng: passengerPosition.lng,
+        discount_type: passengerType,
+      },
     });
     if (!error && data?.waiting_id) {
       waitingIdRef.current = data.waiting_id;
@@ -81,13 +87,13 @@ function WaitingForJeepPage() {
   return (
     <main className="waiting-for-jeep-page">
       <MapView
-        origin={driverPosition}
-        destination={passengerPosition}
-        center={driverPosition ?? passengerPosition ?? undefined}
+        origin={passengerPosition}
+        jeepneys={jeepneys}
+        center={passengerPosition ?? undefined}
         zoom={15}
       />
 
-      {realRouteId && !driverPosition && (
+      {realRouteId && jeepneys.length === 0 && (
         <p className="waiting-for-jeep-page__live-status">
           {isConnected ? "Connected — waiting for a driving unit’s GPS…" : "Connecting…"}
         </p>

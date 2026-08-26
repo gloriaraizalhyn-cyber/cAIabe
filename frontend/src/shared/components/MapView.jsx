@@ -40,6 +40,8 @@ function segmentPolylineOptions(kind, accentColor) {
   return { strokeColor: accentColor, strokeWeight: 5, strokeOpacity: 0.9 };
 }
 
+// A near-white route line is invisible against the map's light basemap, so
+// it gets a thin gray outline underneath — everything else renders as-is.
 function JeepSegmentPolylines({ path, accentColor, keyPrefix }) {
   if (!isWhiteRouteColor(accentColor)) {
     return <Polyline path={path} options={segmentPolylineOptions("jeep", accentColor)} />;
@@ -109,7 +111,10 @@ function RoutePolylines({ route }) {
 // unique per itinerary (see adaptRouteSearchResult.js). pathSegments, when
 // present, is [{ kind: "walk" | "jeep", path }] and draws per-leg dashed/
 // solid styling; without it this falls back to one solid line from `path`.
-function MapView({ origin, destination, routes = [], center, zoom = 13 }) {
+// jeepneys: [{ id, lat, lng }] — every jeepney currently broadcasting
+// position on a route (see useLiveDriverPositions); unrelated to `routes`
+// and used by the waiting-for-jeep screen, not the route-search results.
+function MapView({ origin, destination, routes = [], jeepneys = [], center, zoom = 13 }) {
   const { isLoaded } = useGoogleMapsLoader();
   const mapRef = useRef(null);
 
@@ -177,6 +182,14 @@ function MapView({ origin, destination, routes = [], center, zoom = 13 }) {
         {destination && <Marker position={destination} label="B" />}
         {routes.map((route) => (
           <RoutePolylines key={route.cardKey ?? route.id} route={route} />
+        ))}
+        {jeepneys.map((jeep) => (
+          <Marker
+            key={jeep.id}
+            position={{ lat: jeep.lat, lng: jeep.lng }}
+            label={{ text: "🚐", fontSize: "18px" }}
+            title="Jeepney"
+          />
         ))}
       </GoogleMap>
     </div>
