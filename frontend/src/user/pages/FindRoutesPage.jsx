@@ -72,12 +72,7 @@ function FindRoutesPage() {
       return;
     }
 
-    setRoutes(
-      adaptRouteSearchResult(data, {
-        origin: { lat: originPlace.lat, lng: originPlace.lng },
-        destination: { lat: destinationPlace.lat, lng: destinationPlace.lng },
-      })
-    );
+    setRoutes(adaptRouteSearchResult(data));
     setViewMode("results");
   };
 

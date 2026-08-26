@@ -1,10 +1,10 @@
 import { COLOR_NAME_TO_HEX } from "../../shared/constants/driverRegistrationFixtures.js";
 
-// The real route-search edge function returns one row per line (no
-// transfers, no leg breakdown) — this reshapes that into the fields
-// RouteOptionCard/TripResultsPanel already render, rather than redesigning
-// those components. transferCount is always 0 and there's always exactly
-// one synthetic "jeep" leg, since the backend has no multi-leg concept.
+// The real route-search edge function now plans a real walk -> ride
+// [-> walk -> ride]* -> walk itinerary along the actual route polylines
+// (up to 2 transfers), so this just reshapes its `legs` array into the
+// fields RouteOptionCard/MapView already render — no more fabricating a
+// single fake "jeep" leg per candidate.
 
 function hexForColorName(name) {
   if (!name) return "#2563eb";
@@ -26,46 +26,76 @@ function colorDisplayName(color) {
   return color && !color.startsWith("#") ? capitalize(color) : null;
 }
 
-function adaptOneRoute(result, { origin, destination }) {
-  const accentColor = hexForColorName(result.color);
-  const colorName = colorDisplayName(result.color);
+function adaptLeg(leg, index, allLegs) {
+  if (leg.kind === "walk") {
+    const nextJeep = allLegs.slice(index + 1).find((l) => l.kind === "jeep");
+    const subtitle = nextJeep
+      ? `${index === 0 ? "Walk to" : "Transfer to"} ${nextJeep.route_name} jeepney`
+      : "Walk to your destination";
+    return {
+      id: `leg-${index}`,
+      kind: "walk",
+      title: "Walk",
+      subtitle,
+      duration: `${Math.round(leg.duration_min)} min`,
+    };
+  }
+
+  const accentColor = hexForColorName(leg.color);
+  const colorName = colorDisplayName(leg.color);
+  return {
+    id: `leg-${index}`,
+    kind: "jeep",
+    color: accentColor,
+    jeepColorName: colorName,
+    jeepneyLineCode: null,
+    title: `${leg.route_name} jeepney`,
+    subtitle: `₱${leg.fare.toFixed(2)}`,
+    duration: `${Math.round(leg.duration_min)} min`,
+  };
+}
+
+function legPathPoints(leg) {
+  if (leg.kind === "walk") return [leg.from, leg.to].filter(Boolean);
+  return leg.path?.length ? leg.path : [leg.from, leg.to].filter(Boolean);
+}
+
+function adaptOneRoute(result) {
+  const jeepLegs = result.legs.filter((leg) => leg.kind === "jeep");
+  const walkLegs = result.legs.filter((leg) => leg.kind === "walk");
+  const primaryLeg = jeepLegs[0];
+
+  const accentColor = hexForColorName(primaryLeg?.color);
+  const colorName = colorDisplayName(primaryLeg?.color);
   const fare = result.fare ?? result.fare_before_discount ?? 0;
   const now = new Date();
   const arrive = new Date(now.getTime() + result.duration_min * 60000);
 
+  const subtitle =
+    result.transfer_count > 0
+      ? `${result.transfer_count} transfer${result.transfer_count > 1 ? "s" : ""}`
+      : `${colorName ? `${colorName} jeep` : "Jeepney"} · Direct route`;
+
   return {
     id: result.route_id,
     accentColor,
-    jeepColors: [accentColor],
+    jeepColors: jeepLegs.map((leg) => hexForColorName(leg.color)),
     title: result.route_name,
-    subtitle: `${colorName ? `${colorName} jeep` : "Jeepney"} · Direct route`,
+    subtitle,
     fare,
     distanceKm: result.distance_km,
-    walkMinutes: 0,
-    travelMinutes: result.duration_min,
-    transferCount: 0,
+    walkMinutes: Math.round(walkLegs.reduce((sum, leg) => sum + leg.duration_min, 0)),
+    travelMinutes: Math.round(result.duration_min),
+    transferCount: result.transfer_count,
     leaveTime: formatClockTime(now),
     arriveTime: formatClockTime(arrive),
     availabilityNote: null,
     aiNote: result.explanation ?? null,
-    legs: [
-      {
-        id: "leg-1",
-        kind: "jeep",
-        color: accentColor,
-        jeepColorName: colorName,
-        jeepneyLineCode: null,
-        title: `${result.route_name} jeepney`,
-        subtitle: `Direct · ₱${fare.toFixed(2)}`,
-        duration: `${result.duration_min} min`,
-      },
-    ],
-    path: [origin, destination].filter(Boolean),
+    legs: result.legs.map((leg, index) => adaptLeg(leg, index, result.legs)),
+    path: result.legs.flatMap(legPathPoints),
   };
 }
 
-export function adaptRouteSearchResult({ recommended, alternatives }, { origin, destination }) {
-  return [recommended, ...(alternatives ?? [])]
-    .filter(Boolean)
-    .map((result) => adaptOneRoute(result, { origin, destination }));
+export function adaptRouteSearchResult({ recommended, alternatives }) {
+  return [recommended, ...(alternatives ?? [])].filter(Boolean).map(adaptOneRoute);
 }
