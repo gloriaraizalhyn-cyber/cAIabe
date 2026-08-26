@@ -18,6 +18,7 @@
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
 import { sendPushToToken } from "../_shared/fcm.ts";
+import { sendSms } from "../_shared/semaphore.ts";
 
 const NOTIFY_AHEAD_POSITIONS = 2; // "next-2" per the PRD default
 const RESPONSE_TIMEOUT_SECONDS = 90;
@@ -154,6 +155,9 @@ async function advanceRoute(supabase: any, routeId: string) {
   return { checked: true };
 }
 
+const NOTIFICATION_TITLE = "Your turn is coming up";
+const NOTIFICATION_BODY = "Head back to your vehicle — you're next-2 in the queue.";
+
 async function sendPushToDriver(supabase: any, driverId: string) {
   const { data: driver } = await supabase
     .from("drivers")
@@ -161,18 +165,42 @@ async function sendPushToDriver(supabase: any, driverId: string) {
     .eq("id", driverId)
     .maybeSingle();
 
-  if (!driver?.fcm_token) return;
+  let pushSent = false;
 
+  if (driver?.fcm_token) {
+    try {
+      await sendPushToToken(driver.fcm_token, {
+        title: NOTIFICATION_TITLE,
+        body: NOTIFICATION_BODY,
+      });
+      pushSent = true;
+    } catch (err) {
+      // A push failure shouldn't fail the whole queue-advance run — the
+      // driver_notified broadcast already got sent, and the frontend's own
+      // poll is a fallback for exactly this kind of miss. Fall through to
+      // the SMS fallback below instead of just logging and giving up.
+      console.error("sendPushToDriver (FCM) failed:", err);
+    }
+  }
+
+  // No fcm_token at all (never registered / notifications disabled) or the
+  // push itself failed — both mean the driver won't have seen the alert, so
+  // reach them by SMS instead. sendSms is a no-op until SEMAPHORE_API_KEY is
+  // configured, same as sendPushToToken is until FIREBASE_SERVICE_ACCOUNT_JSON is.
+  if (!pushSent) {
+    await sendSmsFallback(supabase, driverId);
+  }
+}
+
+async function sendSmsFallback(supabase: any, driverId: string) {
   try {
-    await sendPushToToken(driver.fcm_token, {
-      title: "Your turn is coming up",
-      body: "Head back to your vehicle — you're next-2 in the queue.",
-    });
+    const { data, error } = await supabase.auth.admin.getUserById(driverId);
+    const mobileNumber = data?.user?.user_metadata?.mobile_number;
+    if (error || !mobileNumber) return;
+
+    await sendSms(mobileNumber, `cAIabe: ${NOTIFICATION_TITLE} — ${NOTIFICATION_BODY}`);
   } catch (err) {
-    // A push failure shouldn't fail the whole queue-advance run — the
-    // driver_notified broadcast already got sent, and the frontend's own
-    // poll is a fallback for exactly this kind of miss.
-    console.error("sendPushToDriver failed:", err);
+    console.error("sendSmsFallback failed:", err);
   }
 }
 

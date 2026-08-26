@@ -36,3 +36,17 @@ as $$
   where route_id = p_route_id
     and position is not null;
 $$;
+
+-- Used by driver-fuel-check to read the calling driver's own current
+-- position — a single-row equivalent of get_route_driver_positions that
+-- doesn't require the driver to have a route_id (tricycle drivers may not).
+create or replace function get_driver_position(p_driver_id uuid)
+returns table(lat double precision, lng double precision)
+language sql
+stable
+as $$
+  select st_y(position::geometry), st_x(position::geometry)
+  from driver_live_state
+  where driver_id = p_driver_id
+    and position is not null;
+$$;
