@@ -60,6 +60,17 @@ function legPathPoints(leg) {
   return leg.path?.length ? leg.path : [leg.from, leg.to].filter(Boolean);
 }
 
+// One map polyline segment per leg, kept separate (rather than flattened
+// into one path) so MapView can draw walking legs as a dashed line and each
+// jeep leg in its own route color, instead of one solid line the whole way.
+function legToMapSegment(leg) {
+  return {
+    kind: leg.kind,
+    color: leg.kind === "jeep" ? hexForColorName(leg.color) : null,
+    points: legPathPoints(leg),
+  };
+}
+
 function adaptOneRoute(result) {
   const jeepLegs = result.legs.filter((leg) => leg.kind === "jeep");
   const walkLegs = result.legs.filter((leg) => leg.kind === "walk");
@@ -92,7 +103,7 @@ function adaptOneRoute(result) {
     availabilityNote: null,
     aiNote: result.explanation ?? null,
     legs: result.legs.map((leg, index) => adaptLeg(leg, index, result.legs)),
-    path: result.legs.flatMap(legPathPoints),
+    mapSegments: result.legs.map(legToMapSegment),
   };
 }
 

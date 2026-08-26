@@ -9,8 +9,23 @@ const mapOptions = {
   clickableIcons: false,
 };
 
+const WALK_LINE_COLOR = "#6b7280";
+// Dashed line via a repeated line-symbol icon — Google Maps Polyline has no
+// native "dashed" option, this is the documented workaround. Distinguishes
+// a walking leg from a jeep ride leg, which otherwise render identically.
+const WALK_LINE_OPTIONS = {
+  strokeOpacity: 0,
+  icons: [
+    {
+      icon: { path: "M 0,-1 0,1", strokeOpacity: 1, strokeColor: WALK_LINE_COLOR, scale: 3 },
+      offset: "0",
+      repeat: "12px",
+    },
+  ],
+};
+
 // origin/destination: { lat, lng } | null
-// routes: [{ id, accentColor, path: [{ lat, lng }] }]
+// routes: [{ id, mapSegments: [{ kind: "walk" | "jeep", color, points: [{lat,lng}] }] }]
 function MapView({ origin, destination, routes = [], center, zoom = 13 }) {
   const { isLoaded } = useGoogleMapsLoader();
 
@@ -43,17 +58,19 @@ function MapView({ origin, destination, routes = [], center, zoom = 13 }) {
       >
         {origin && <Marker position={origin} label="A" />}
         {destination && <Marker position={destination} label="B" />}
-        {routes.map((route) => (
-          <Polyline
-            key={route.id}
-            path={route.path}
-            options={{
-              strokeColor: route.accentColor,
-              strokeWeight: 5,
-              strokeOpacity: 0.9,
-            }}
-          />
-        ))}
+        {routes.flatMap((route) =>
+          (route.mapSegments ?? []).map((segment, index) => (
+            <Polyline
+              key={`${route.id}-${index}`}
+              path={segment.points}
+              options={
+                segment.kind === "walk"
+                  ? WALK_LINE_OPTIONS
+                  : { strokeColor: segment.color, strokeWeight: 5, strokeOpacity: 0.9 }
+              }
+            />
+          ))
+        )}
       </GoogleMap>
     </div>
   );
