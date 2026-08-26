@@ -1,7 +1,6 @@
-import { GoogleMap, LoadScript, Marker, Polyline } from "@react-google-maps/api";
+import { GoogleMap, Marker, Polyline } from "@react-google-maps/api";
+import { useGoogleMapsLoader, GOOGLE_MAPS_API_KEY } from "../hooks/useGoogleMapsLoader.js";
 import "./MapView.css";
-
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 const mapContainerStyle = { width: "100%", height: "100%" };
 const mapOptions = {
@@ -13,6 +12,8 @@ const mapOptions = {
 // origin/destination: { lat, lng } | null
 // routes: [{ id, accentColor, path: [{ lat, lng }] }]
 function MapView({ origin, destination, routes = [], center, zoom = 13 }) {
+  const { isLoaded } = useGoogleMapsLoader();
+
   if (!GOOGLE_MAPS_API_KEY) {
     return (
       <div className="map-view map-view--placeholder">
@@ -28,30 +29,32 @@ function MapView({ origin, destination, routes = [], center, zoom = 13 }) {
     );
   }
 
+  if (!isLoaded) {
+    return <div className="map-view" />;
+  }
+
   return (
     <div className="map-view">
-      <LoadScript googleMapsApiKey={GOOGLE_MAPS_API_KEY}>
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={center ?? origin ?? { lat: 15.186, lng: 120.56 }}
-          zoom={zoom}
-          options={mapOptions}
-        >
-          {origin && <Marker position={origin} label="A" />}
-          {destination && <Marker position={destination} label="B" />}
-          {routes.map((route) => (
-            <Polyline
-              key={route.id}
-              path={route.path}
-              options={{
-                strokeColor: route.accentColor,
-                strokeWeight: 5,
-                strokeOpacity: 0.9,
-              }}
-            />
-          ))}
-        </GoogleMap>
-      </LoadScript>
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        center={center ?? origin ?? { lat: 15.186, lng: 120.56 }}
+        zoom={zoom}
+        options={mapOptions}
+      >
+        {origin && <Marker position={origin} label="A" />}
+        {destination && <Marker position={destination} label="B" />}
+        {routes.map((route) => (
+          <Polyline
+            key={route.id}
+            path={route.path}
+            options={{
+              strokeColor: route.accentColor,
+              strokeWeight: 5,
+              strokeOpacity: 0.9,
+            }}
+          />
+        ))}
+      </GoogleMap>
     </div>
   );
 }
