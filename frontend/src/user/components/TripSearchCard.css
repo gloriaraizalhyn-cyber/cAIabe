@@ -4,35 +4,280 @@
   width: 360px;
   max-width: calc(100vw - 32px);
   padding: 24px;
+  border: 2px solid #000000;
+  border-left: 5px solid #d71920;
   border-radius: 16px;
-  background: #faf6f0;
+  background: #faf7f0;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+}
+
+.trip-search-card__drag-handle {
+  display: none;
+}
+
+/* Edge-to-edge bottom sheet on mobile: the card is pinned to the viewport
+   bottom at a fixed 92vh height, with most of that sitting off-screen below
+   the fold by default (translateY) so only a "peek" shows — dragging the
+   handle up (or tapping it) reveals the rest. See TripSearchCard.jsx for
+   the drag gesture that drives this via inline transform + the
+   --expanded class. */
+@media (max-width: 640px) {
+  .trip-search-card {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-width: none;
+    height: 92vh;
+    margin: 0;
+    padding: 0 20px 12px;
+    border-radius: 18px 18px 0 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    transform: translateY(24vh);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .trip-search-card--expanded {
+    transform: translateY(0);
+  }
+
+  .trip-search-card__drag-handle {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 14px;
+    margin: 0 -20px;
+    background: #faf7f0;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .trip-search-card__drag-handle-bar {
+    width: 40px;
+    height: 5px;
+    border-radius: 999px;
+    background: #d8dbe3;
+  }
+
+  .trip-search-card__header-row {
+    margin-right: -20px;
+    gap: 8px;
+  }
+
+  .trip-search-card__header-copy {
+    min-width: 0;
+    flex: 1 1 58%;
+  }
+
+  .trip-search-card__mascot {
+    width: clamp(92px, 34%, 128px);
+    margin-right: 0;
+  }
+
+  .trip-search-card__fields {
+    margin-bottom: 14px;
+  }
+
+  .trip-search-card__saved-routes {
+    margin-bottom: 12px;
+  }
+
+  .trip-search-card__ai-tip {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+  }
+
+  .trip-search-card__find-button {
+    padding: 13px;
+  }
+}
+
+.trip-search-card::-webkit-scrollbar {
+  display: none;
+}
+
+.trip-search-card__header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  /* Cancels the card's own right padding so the mascot (flex-shrink: 0,
+     pushed to the end by space-between) can sit flush against the card's
+     outer edge instead of stopping short at the padded content edge. This
+     is filling the padding gutter, not actually overflowing the card's
+     border box, so it doesn't trigger scrolling on the mobile sheet
+     (overflow-y: auto there forces overflow-x to auto too, which would
+     clip anything that genuinely overflowed). */
+  margin-right: 0;
+}
+
+@media (max-width: 640px) {
+  .trip-search-card__header-row {
+    margin-right: -20px;
+  }
+
+  .trip-search-card__mascot {
+    width: clamp(92px, 34%, 128px);
+    margin-right: 0;
+  }
 }
 
 .trip-search-card__title {
   margin: 0 0 6px;
-  font-size: 1.5rem;
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+  font-size: 1.9rem;
   font-weight: 800;
-  color: #1a1a1a;
+  line-height: 1.15;
+  color: #000;
 }
 
-.trip-search-card__subtitle {
-  margin: 0 0 18px;
-  font-size: 0.85rem;
-  color: #7a7f89;
-  line-height: 1.4;
+.trip-search-card__instruction {
+  max-width: 190px;
+  margin: 14px 0 0;
+  color: #6a6f79;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 380px) {
+  .trip-search-card__header-row {
+    gap: 0;
+  }
+
+  .trip-search-card__header-copy {
+    flex: 0 0 60%;
+    max-width: 60%;
+  }
+
+  .trip-search-card__mascot {
+    flex: 0 0 40%;
+    width: 40%;
+    max-width: 40%;
+  }
+
+  .trip-search-card__title {
+    font-size: 1.87rem;
+    line-height: 0.96;
+  }
+
+  .trip-search-card__instruction {
+    max-width: 170px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Offset the animation's transparent top area so the visible character
+  sits close to the header while the surrounding layout stays in flow. */
+.trip-search-card__mascot {
+  flex-shrink: 0;
+  width: 43%;
+  margin-top: -18px;
+  margin-right: -24px;
+  aspect-ratio: 583 / 905;
+}
+
+.trip-search-card__mascot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.trip-search-card__fields-header {
+  display: flex;
+  margin-top: -28px;
+  justify-content: flex-start;
+  margin-bottom: 6px;
+}
+
+.trip-search-card__current-location-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #e2e4e9;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1b3fa0;
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 5px 10px;
+}
+
+.trip-search-card__current-location-button:hover:not(:disabled) {
+  border-color: #1b3fa0;
+  background: #e8ecf9;
+}
+
+.trip-search-card__current-location-button:disabled {
+  color: #9a9fa8;
+  cursor: not-allowed;
+}
+
+.trip-search-card__current-location-icon--spinning {
+  animation: trip-search-card-spin 1s linear infinite;
+}
+
+@keyframes trip-search-card-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .trip-search-card__fields {
+  position: relative;
   background: #ffffff;
-  border-radius: 12px;
-  padding: 4px 14px;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  padding: 10px 40px 10px 16px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
+  transition: border-color 0.15s ease;
+}
+
+.trip-search-card__swap-button {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #e2e4e9;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #7a7f89;
+}
+
+.trip-search-card__swap-button:hover {
+  border-color: #1b3fa0;
+  color: #1b3fa0;
+}
+
+.trip-search-card__fields:focus-within {
+  border-color: #b7c6ec;
+}
+
+/* The From/To divider lives in LocationAutocompleteInput.css, but only
+   this parent knows when the fields group as a whole is being typed
+   into — so the focus-within state that recolors it is declared here. */
+.trip-search-card__fields:focus-within .location-input + .location-input {
+  border-top-color: #b7c6ec;
 }
 
 .trip-search-card__section-label {
-  margin: 0 0 10px;
+  margin: 0 0 6px;
+  font-family: "DM Sans", "Segoe UI", sans-serif;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -42,18 +287,15 @@
 .trip-search-card__saved-routes {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 18px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .trip-search-card__saved-route-chip {
   border: 1px solid #e2e4e9;
   background: #ffffff;
   border-radius: 999px;
-  padding: 8px 14px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #333333;
+  padding: 4px 4px 4px 14px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -63,21 +305,41 @@
   border-color: #1a9e5c;
 }
 
-.trip-search-card__saved-route-chip span {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #ffffff;
-  background: #9aa1ac;
+.trip-search-card__saved-route-label {
+  border: none;
+  background: transparent;
+  padding: 4px 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #333333;
+}
+
+.trip-search-card__saved-route-bookmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #e2e4e9;
+  background: #f5f6f7;
+  color: #7a7f89;
   border-radius: 999px;
-  padding: 1px 6px;
+  padding: 0;
+}
+
+.trip-search-card__saved-route-bookmark--active {
+  border-color: #c3cfec;
+  background: #e8ecf9;
+  color: #1b3fa0;
 }
 
 .trip-search-card__ai-tip {
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  background: #e9f7ee;
-  border-radius: 10px;
+  background: #fbe9e7;
+  border: 1px solid #e42313;
+  border-radius: 8px;
   padding: 12px 14px;
   margin-bottom: 20px;
 }
@@ -87,7 +349,7 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  background: #1a9e5c;
+  background: #e42313;
   color: #ffffff;
   font-size: 0.65rem;
   font-weight: 700;
@@ -99,7 +361,7 @@
   margin: 0;
   font-size: 0.82rem;
   line-height: 1.4;
-  color: #3d5a48;
+  color: #7a2118;
 }
 
 .trip-search-card__error {
@@ -112,8 +374,8 @@
 .trip-search-card__find-button {
   width: 100%;
   border: none;
-  border-radius: 10px;
-  background: #e0552f;
+  border-radius: 8px;
+  background: #1b3fa0;
   color: #ffffff;
   font-size: 1.05rem;
   font-weight: 700;
@@ -121,10 +383,10 @@
 }
 
 .trip-search-card__find-button:hover:not(:disabled) {
-  background: #c8471f;
+  background: #142f7e;
 }
 
 .trip-search-card__find-button:disabled {
-  background: #e8b8a7;
+  background: #aab6d9;
   cursor: not-allowed;
 }

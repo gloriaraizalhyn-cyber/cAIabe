@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { MapPin, LocateFixed } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useGoogleMapsLoader } from "../../shared/hooks/useGoogleMapsLoader.js";
 import "./LocationAutocompleteInput.css";
 
@@ -10,20 +10,18 @@ const SUGGESTION_BIAS_CENTER = { lat: 15.1697, lng: 120.5891 };
 const SUGGESTION_BIAS_RADIUS_METERS = 20000;
 
 // A single reusable "from"/"to" field: typing queries Google Places
-// Autocomplete for real matching places, and (only when showGpsButton is
-// set) a button fills the field with the device's current location via the
-// browser Geolocation API.
+// Autocomplete for real matching places. The "use current location" action
+// lives one level up (TripSearchCard) since it needs to sit as its own
+// labeled button beside the swap control, not inside either field.
 function LocationAutocompleteInput({
   label,
   value,
   placeholder,
-  showGpsButton = false,
   onChange,
   onSelectPlace,
 }) {
   const { isLoaded } = useGoogleMapsLoader();
   const [isFocused, setIsFocused] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
 
   const autocompleteServiceRef = useRef(null);
@@ -95,30 +93,12 @@ function LocationAutocompleteInput({
     );
   };
 
-  const handleUseCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      return;
-    }
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        onSelectPlace({
-          id: "current-location",
-          label: "Current Location",
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-        setIsLocating(false);
-      },
-      () => {
-        setIsLocating(false);
-      }
-    );
-  };
-
   return (
     <div className="location-input">
-      <label className="location-input__label">{label}</label>
+      <div className="location-input__header">
+        <label className="location-input__label">{label}</label>
+      </div>
+
       <div className="location-input__field">
         <input
           type="text"
@@ -129,21 +109,6 @@ function LocationAutocompleteInput({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 150)}
         />
-        {showGpsButton && (
-          <button
-            type="button"
-            className="location-input__gps-button"
-            onClick={handleUseCurrentLocation}
-            disabled={isLocating}
-            aria-label="Use current location"
-          >
-            {isLocating ? (
-              <LocateFixed size={18} strokeWidth={2.25} className="location-input__gps-icon--spinning" />
-            ) : (
-              <MapPin size={18} strokeWidth={2.25} />
-            )}
-          </button>
-        )}
       </div>
 
       {suggestions.length > 0 && (

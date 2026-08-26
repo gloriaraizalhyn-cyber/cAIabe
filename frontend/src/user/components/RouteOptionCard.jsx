@@ -5,6 +5,17 @@ function formatFare(fare) {
   return `₱${fare.toFixed(2)}`;
 }
 
+function isWhiteJeepColor(color) {
+  if (!color?.startsWith("#")) return false;
+  const hex = color.slice(1);
+  const value = hex.length === 3
+    ? hex.split("").map((part) => part + part).join("")
+    : hex;
+  if (value.length !== 6) return false;
+  const channels = [0, 2, 4].map((index) => parseInt(value.slice(index, index + 2), 16));
+  return Math.min(...channels) >= 190 && Math.max(...channels) - Math.min(...channels) <= 35;
+}
+
 function RouteLeg({ leg }) {
   return (
     <div className="route-option-card__leg">
@@ -39,6 +50,15 @@ function RouteOptionCard({
   sortMetric,
   onChangeSortMetric,
 }) {
+  const hasWhiteJeep = route.jeepColors.some(isWhiteJeepColor);
+
+  const handleCardKeyDown = (event) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onToggleExpanded();
+  };
+
   return (
     <article
       className={
@@ -47,18 +67,23 @@ function RouteOptionCard({
           : "route-option-card"
       }
       style={{ "--route-accent": route.accentColor }}
+      role="button"
+      tabIndex={0}
+      aria-expanded={isExpanded}
+      onClick={onToggleExpanded}
+      onKeyDown={handleCardKeyDown}
     >
       {isBestPick && (
         <div className="route-option-card__best-pick-header">
           <span className="route-option-card__best-pick-label">CAIABEST PICK</span>
-          <div className="route-option-card__sort-filters">
+          <div className="route-option-card__sort-filters" onClick={(event) => event.stopPropagation()}>
             {SORT_METRIC_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 className={
                   sortMetric === option.value
-                    ? "route-option-card__sort-filter route-option-card__sort-filter--active"
+                    ? `route-option-card__sort-filter route-option-card__sort-filter--active${hasWhiteJeep ? " route-option-card__sort-filter--white" : ""}`
                     : "route-option-card__sort-filter"
                 }
                 onClick={() => onChangeSortMetric(option.value)}
@@ -74,7 +99,11 @@ function RouteOptionCard({
         <div className="route-option-card__identity">
           <span className="route-option-card__jeep-dots">
             {route.jeepColors.map((color, index) => (
-              <span key={index} className="route-option-card__jeep-dot" style={{ background: color }} />
+              <span
+                key={index}
+                className={`route-option-card__jeep-dot${isWhiteJeepColor(color) ? " route-option-card__jeep-dot--white" : ""}`}
+                style={{ background: color }}
+              />
             ))}
           </span>
           <span className="route-option-card__identity-text">
@@ -90,26 +119,19 @@ function RouteOptionCard({
 
       <div className="route-option-card__stats">
         <span className="route-option-card__stat">
-          <Footprints size={14} strokeWidth={2.25} />
-          {route.walkMinutes} min walk
-        </span>
-        <span className="route-option-card__stat">
           <Clock size={14} strokeWidth={2.25} />
           {route.travelMinutes} mins
         </span>
         <span className="route-option-card__stat">
           <ArrowRightLeft size={14} strokeWidth={2.25} />
-          {route.transferCount > 0 ? `${route.transferCount} TRANSFER` : "NO TRANSFER"}
+          {route.transferCount > 0 ? `${route.transferCount} transfer` : "No transfer"}
         </span>
-        <button
-          type="button"
+        <span
           className="route-option-card__toggle"
-          onClick={onToggleExpanded}
-          aria-label={isExpanded ? "Collapse route details" : "Expand route details"}
-          aria-expanded={isExpanded}
+          aria-hidden="true"
         >
           {isExpanded ? <Minus size={16} strokeWidth={2.25} /> : <Plus size={16} strokeWidth={2.25} />}
-        </button>
+        </span>
       </div>
 
       {isExpanded && (
@@ -168,10 +190,24 @@ function RouteOptionCard({
           )}
 
           <div className="route-option-card__actions">
-            <button type="button" className="route-option-card__take-button" onClick={() => onTakeRoute(route)}>
+            <button
+              type="button"
+              className="route-option-card__take-button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onTakeRoute(route);
+              }}
+            >
               Take this route
             </button>
-            <button type="button" className="route-option-card__save-button" onClick={() => onSaveRoute(route)}>
+            <button
+              type="button"
+              className="route-option-card__save-button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onSaveRoute(route);
+              }}
+            >
               Save
             </button>
           </div>

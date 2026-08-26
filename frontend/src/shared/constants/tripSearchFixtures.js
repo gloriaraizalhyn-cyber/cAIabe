@@ -26,11 +26,11 @@ export const SAVED_ROUTES_FIXTURE = [
     destination: "JENRA Grand Mall",
   },
   {
-    id: "saved-2",
-    label: "SM Clark - CDC",
-    jeepneyLineCode: "12L",
-    origin: "SM Clark",
-    destination: "Clark Freeport Zone",
+    id: "saved-love",
+    label: "Love 💗",
+    jeepneyLineCode: "04L",
+    origin: "National University Clark",
+    destination: "JENRA Grand Mall",
   },
 ];
 

@@ -12,6 +12,21 @@ function findPlaceByLabel(label) {
   return PLACE_SUGGESTIONS_FIXTURE.find((place) => place.label === label) ?? null;
 }
 
+// supabase-js's FunctionsHttpError.message is just a generic "non-2xx
+// status code" wrapper — the actual { error: "..." } body our edge
+// functions send back is only reachable via the raw Response on `.context`.
+async function extractFunctionErrorMessage(error) {
+  if (error?.context && typeof error.context.json === "function") {
+    try {
+      const body = await error.context.json();
+      if (body?.error) return body.error;
+    } catch {
+      // response wasn't JSON — fall through to the generic message
+    }
+  }
+  return error?.message ?? null;
+}
+
 function FindRoutesPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,6 +42,7 @@ function FindRoutesPage() {
   const [originPlace, setOriginPlace] = useState(restoredTripSearch?.originPlace ?? null);
   const [destinationPlace, setDestinationPlace] = useState(restoredTripSearch?.destinationPlace ?? null);
   const [routes, setRoutes] = useState([]);
+  const [focusedRoute, setFocusedRoute] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
 
@@ -48,7 +64,8 @@ function FindRoutesPage() {
       // Stay on the search screen so the real reason is visible — switching
       // to the results view here would bury it behind a generic "no routes
       // found" empty state.
-      setSearchError(error?.message ?? data.error ?? "Route search failed. Please try again.");
+      const message = error ? await extractFunctionErrorMessage(error) : data.error;
+      setSearchError(message ?? "Route search failed. Please try again.");
       setRoutes([]);
       return;
     }
@@ -75,6 +92,13 @@ function FindRoutesPage() {
   const handleSelectDestinationPlace = (place) => {
     setDestination(place.label);
     setDestinationPlace(place);
+  };
+
+  const handleSwapPlaces = () => {
+    setOrigin(destination);
+    setDestination(origin);
+    setOriginPlace(destinationPlace);
+    setDestinationPlace(originPlace);
   };
 
   const handleApplySavedRoute = (savedRoute) => {
@@ -112,7 +136,9 @@ function FindRoutesPage() {
       <MapView
         origin={originPlace}
         destination={destinationPlace}
-        routes={viewMode === "results" ? routes : []}
+        routes={
+          viewMode === "results" ? (focusedRoute ? [focusedRoute] : routes) : []
+        }
       />
 
       <div className="find-routes-page__overlay">
@@ -124,6 +150,7 @@ function FindRoutesPage() {
             onDestinationChange={setDestination}
             onSelectOriginPlace={handleSelectOriginPlace}
             onSelectDestinationPlace={handleSelectDestinationPlace}
+            onSwapPlaces={handleSwapPlaces}
             onApplySavedRoute={handleApplySavedRoute}
             onFindRoutes={handleFindRoutes}
             isSearching={isSearching}
@@ -137,6 +164,7 @@ function FindRoutesPage() {
             onEditTrip={handleEditTrip}
             onTakeRoute={handleTakeRoute}
             onSaveRoute={handleSaveRoute}
+            onFocusRoute={setFocusedRoute}
           />
         )}
       </div>
