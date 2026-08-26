@@ -26,7 +26,8 @@ const WALK_LINE_OPTIONS = {
 
 // origin/destination: { lat, lng } | null
 // routes: [{ id, mapSegments: [{ kind: "walk" | "jeep", color, points: [{lat,lng}] }] }]
-function MapView({ origin, destination, routes = [], center, zoom = 13 }) {
+// jeepneys: [{ id, lat, lng }] — every jeepney currently broadcasting position on a route
+function MapView({ origin, destination, routes = [], jeepneys = [], center, zoom = 13 }) {
   const { isLoaded } = useGoogleMapsLoader();
 
   if (!GOOGLE_MAPS_API_KEY) {
@@ -58,6 +59,14 @@ function MapView({ origin, destination, routes = [], center, zoom = 13 }) {
       >
         {origin && <Marker position={origin} label="A" />}
         {destination && <Marker position={destination} label="B" />}
+        {jeepneys.map((jeep) => (
+          <Marker
+            key={jeep.id}
+            position={{ lat: jeep.lat, lng: jeep.lng }}
+            label={{ text: "🚐", fontSize: "18px" }}
+            title="Jeepney"
+          />
+        ))}
         {routes.flatMap((route) =>
           (route.mapSegments ?? []).map((segment, index) => (
             <Polyline

@@ -318,15 +318,17 @@ Deno.serve(async (req: Request) => {
         const fareAfterDiscount = hasFareData ? fareBeforeDiscount * (1 - discountRate) : null;
 
         return {
-                route_id: route.id,
-                route_name: route.name,
-                color: route.color ?? "blue",
-                distance_km: round(totalDistanceKm),
-                duration_min: round(totalDurationMin),
-                eta: calculateETA(
-                legToTerminus.durationSeconds + legFromTerminus.durationSeconds,),
-                fare: totalFare !== null ? round(totalFare) : null,
-              };
+          candidate,
+          routes: routes as RouteRow[],
+          walkResults: walkResults as { distanceMeters: number; durationSeconds: number }[],
+          rideDistancesKm,
+          rideDurationsMin,
+          rideFares,
+          duration_min: totalDurationMin,
+          distance_km: totalDistanceKm,
+          fare_before_discount: hasFareData ? fareBeforeDiscount : null,
+          fare: fareAfterDiscount,
+        };
       }),
     );
 
@@ -456,25 +458,6 @@ function json(body: unknown, status = 200) {
 
 function round(n: number) {
   return Math.round(n * 100) / 100;
-}
-
-function calculateETA(durationSeconds: number): string {
-  const now = new Date();
-  const eta = new Date(now.getTime() + durationSeconds * 1000);
-
-  return eta.toISOString();
-}
-
-// Parses a PostGIS geography point returned by PostgREST (WKB hex or GeoJSON
-// depending on config). Adjust if your PostgREST is set to return GeoJSON —
-// in that case just use terminus.coordinates directly instead.
-function parsePoint(raw: any): LatLng | null {
-  if (!raw) return null;
-  if (typeof raw === "object" && raw.coordinates) {
-    const [lng, lat] = raw.coordinates;
-    return { lat, lng };
-  }
-  return null;
 }
 
 async function distanceMatrix(
