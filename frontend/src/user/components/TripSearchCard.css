@@ -102,6 +102,13 @@
   color: #3d5a48;
 }
 
+.trip-search-card__error {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #c8471f;
+}
+
 .trip-search-card__find-button {
   width: 100%;
   border: none;

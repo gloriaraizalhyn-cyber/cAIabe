@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import RouteOptionCard from "./RouteOptionCard.jsx";
-import { ROUTE_OPTIONS_FIXTURE } from "../../shared/constants/tripSearchFixtures.js";
 import "./TripResultsPanel.css";
 
 const SORT_METRIC_TO_FIELD = {
@@ -10,14 +9,14 @@ const SORT_METRIC_TO_FIELD = {
   distance: "distanceKm",
 };
 
-function TripResultsPanel({ origin, destination, onEditTrip, onTakeRoute, onSaveRoute }) {
+function TripResultsPanel({ origin, destination, routes, onEditTrip, onTakeRoute, onSaveRoute }) {
   const [sortMetric, setSortMetric] = useState("time");
   const [expandedRouteId, setExpandedRouteId] = useState(null);
 
   const sortedRoutes = useMemo(() => {
     const sortField = SORT_METRIC_TO_FIELD[sortMetric];
-    return [...ROUTE_OPTIONS_FIXTURE].sort((a, b) => a[sortField] - b[sortField]);
-  }, [sortMetric]);
+    return [...routes].sort((a, b) => a[sortField] - b[sortField]);
+  }, [routes, sortMetric]);
 
   const [bestPickRoute, ...otherRoutes] = sortedRoutes;
 
@@ -37,34 +36,42 @@ function TripResultsPanel({ origin, destination, onEditTrip, onTakeRoute, onSave
         {origin} <span>&rarr;</span> {destination}
       </h1>
 
-      <div className="trip-results-panel__list">
-        <RouteOptionCard
-          route={bestPickRoute}
-          isBestPick
-          isExpanded={expandedRouteId === bestPickRoute.id}
-          onToggleExpanded={() => handleToggleExpanded(bestPickRoute.id)}
-          onTakeRoute={onTakeRoute}
-          onSaveRoute={onSaveRoute}
-          sortMetric={sortMetric}
-          onChangeSortMetric={setSortMetric}
-        />
-
-        <p className="trip-results-panel__divider">
-          <span>OTHER OPTIONS</span>
+      {!bestPickRoute ? (
+        <p className="trip-results-panel__empty">
+          No routes found for this trip. Try a different origin or destination.
         </p>
-
-        {otherRoutes.map((route) => (
+      ) : (
+        <div className="trip-results-panel__list">
           <RouteOptionCard
-            key={route.id}
-            route={route}
-            isBestPick={false}
-            isExpanded={expandedRouteId === route.id}
-            onToggleExpanded={() => handleToggleExpanded(route.id)}
+            route={bestPickRoute}
+            isBestPick
+            isExpanded={expandedRouteId === bestPickRoute.id}
+            onToggleExpanded={() => handleToggleExpanded(bestPickRoute.id)}
             onTakeRoute={onTakeRoute}
             onSaveRoute={onSaveRoute}
+            sortMetric={sortMetric}
+            onChangeSortMetric={setSortMetric}
           />
-        ))}
-      </div>
+
+          {otherRoutes.length > 0 && (
+            <p className="trip-results-panel__divider">
+              <span>OTHER OPTIONS</span>
+            </p>
+          )}
+
+          {otherRoutes.map((route) => (
+            <RouteOptionCard
+              key={route.id}
+              route={route}
+              isBestPick={false}
+              isExpanded={expandedRouteId === route.id}
+              onToggleExpanded={() => handleToggleExpanded(route.id)}
+              onTakeRoute={onTakeRoute}
+              onSaveRoute={onSaveRoute}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

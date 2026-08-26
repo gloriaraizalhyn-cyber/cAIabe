@@ -1,16 +1,14 @@
 import FormSection from "./FormSection.jsx";
 import SelectField from "./SelectField.jsx";
-import { ROUTES_WITH_TERMINALS_FIXTURE } from "../../shared/constants/driverRegistrationFixtures.js";
 
-const ROUTE_OPTIONS = ROUTES_WITH_TERMINALS_FIXTURE.map((route) => ({
-  value: route.id,
-  label: `${route.name} — ${route.color}`,
-}));
-
-function RouteTerminalAssignmentSection({ values, errors, onChange, onRouteChange }) {
-  const selectedRoute = ROUTES_WITH_TERMINALS_FIXTURE.find(
-    (route) => route.id === values.assignedRouteId
-  );
+// `routes` comes from a real query (drivers/pages/DriverRegistrationPage.jsx
+// fetches routes + terminal_routes + terminals from Supabase) — no fixture.
+function RouteTerminalAssignmentSection({ values, errors, onChange, onRouteChange, routes }) {
+  const routeOptions = routes.map((route) => ({
+    value: route.id,
+    label: `${route.name} — ${route.color}`,
+  }));
+  const selectedRoute = routes.find((route) => route.id === values.assignedRouteId);
   const terminalOptions =
     selectedRoute?.terminals.map((terminal) => ({ value: terminal.id, label: terminal.name })) ?? [];
 
@@ -26,7 +24,7 @@ function RouteTerminalAssignmentSection({ values, errors, onChange, onRouteChang
         value={values.assignedRouteId}
         onChange={onRouteChange}
         onClear={() => onRouteChange("")}
-        options={ROUTE_OPTIONS}
+        options={routeOptions}
         placeholder="Select assigned route"
         error={errors.assignedRouteId}
       />

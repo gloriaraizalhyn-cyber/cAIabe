@@ -27,3 +27,9 @@
   font-size: 0.85rem;
   color: #6a6f79;
 }
+
+.driver-dashboard-page__loading {
+  font-size: 0.9rem;
+  color: #6a6f79;
+  text-align: center;
+}
