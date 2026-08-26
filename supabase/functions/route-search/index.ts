@@ -11,6 +11,19 @@ import { getServiceClient } from "../_shared/client.ts";
 const GOOGLE_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY")!;
 const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY"); // optional
 
+// Fare discount rates by passenger type. Student/PWD/Senior Citizen are
+// legally mandated 20% discounts in the Philippines (RA 11314, RA 10754,
+// RA 9994 respectively). Pregnant Woman is intentionally 0% — Philippine
+// law entitles pregnant passengers to priority seating, not a fare
+// discount — change this if your implementation wants otherwise.
+const DISCOUNT_RATES: Record<string, number> = {
+  regular: 0,
+  student: 0.20,
+  pwd: 0.20,
+  senior_citizen: 0.20,
+  pregnant_woman: 0,
+};
+
 interface LatLng {
   lat: number;
   lng: number;
@@ -21,14 +34,26 @@ Deno.serve(async (req: Request) => {
   if (preflight) return preflight;
 
   try {
-    const { origin, destination } = await req.json() as {
+    const { origin, destination, discount_type } = await req.json() as {
       origin: LatLng;
       destination: LatLng;
+      discount_type?: string;
     };
 
     if (!origin || !destination) {
       return json({ error: "origin and destination are required" }, 400);
     }
+
+    const discountType = (discount_type ?? "regular").toLowerCase();
+    if (!(discountType in DISCOUNT_RATES)) {
+      return json(
+        {
+          error: `invalid discount_type. Must be one of: ${Object.keys(DISCOUNT_RATES).join(", ")}`,
+        },
+        400,
+      );
+    }
+    const discountRate = DISCOUNT_RATES[discountType];
 
     const supabase = getServiceClient();
 
@@ -37,7 +62,7 @@ Deno.serve(async (req: Request) => {
     // bounding box around origin/destination first.
     const { data: routes, error: routesErr } = await supabase
       .from("routes")
-      .select("id, name, color, terminus, fare_reference(base_fare, per_km_rate)");
+      .select("id, name, color, fare_reference(base_fare, per_km_rate)");
 
     if (routesErr) return json({ error: routesErr.message }, 500);
     if (!routes?.length) return json({ error: "no routes configured" }, 404);
@@ -46,10 +71,19 @@ Deno.serve(async (req: Request) => {
     // terminus->destination as a simple proxy for "does this route work".
     // (A real GTFS-based system would match stops along the route instead —
     // out of scope here, this is a workable approximation.)
+    //
+    // Terminus coordinates come from the get_route_terminus_coords RPC
+    // rather than selecting `terminus` directly — PostgREST returns raw
+    // PostGIS geography as WKB hex, not {lat,lng}, so the RPC (which does
+    // the st_y/st_x extraction in SQL) is what makes this usable here.
     const scored = await Promise.all(
       routes.map(async (route: any) => {
-        const terminusCoords = parsePoint(route.terminus);
-        if (!terminusCoords) return null;
+        const { data: terminusRows, error: terminusErr } = await supabase.rpc(
+          "get_route_terminus_coords",
+          { p_route_id: route.id },
+        );
+        if (terminusErr || !terminusRows?.[0]) return null;
+        const terminusCoords = { lat: terminusRows[0].lat, lng: terminusRows[0].lng };
 
         const [legToTerminus, legFromTerminus] = await Promise.all([
           distanceMatrix(origin, terminusCoords),
@@ -64,20 +98,26 @@ Deno.serve(async (req: Request) => {
           (legToTerminus.durationSeconds + legFromTerminus.durationSeconds) / 60;
 
         const fareRef = route.fare_reference?.[0];
-        const totalFare = fareRef
+        const fareBeforeDiscount = fareRef
           ? fareRef.base_fare + fareRef.per_km_rate * totalDistanceKm
           : null;
+        const fareAfterDiscount =
+          fareBeforeDiscount !== null
+            ? fareBeforeDiscount * (1 - discountRate)
+            : null;
 
         return {
-                route_id: route.id,
-                route_name: route.name,
-                color: route.color ?? "blue",
-                distance_km: round(totalDistanceKm),
-                duration_min: round(totalDurationMin),
-                eta: calculateETA(
-                legToTerminus.durationSeconds + legFromTerminus.durationSeconds,),
-                fare: totalFare !== null ? round(totalFare) : null,
-              };
+          route_id: route.id,
+          route_name: route.name,
+          color: route.color ?? "blue",
+          distance_km: round(totalDistanceKm),
+          duration_min: round(totalDurationMin),
+          fare_before_discount:
+            fareBeforeDiscount !== null ? round(fareBeforeDiscount) : null,
+          fare: fareAfterDiscount !== null ? round(fareAfterDiscount) : null,
+          discount_type: discountType,
+          discount_rate: discountRate,
+        };
       }),
     );
 
@@ -129,25 +169,6 @@ function round(n: number) {
   return Math.round(n * 100) / 100;
 }
 
-function calculateETA(durationSeconds: number): string {
-  const now = new Date();
-  const eta = new Date(now.getTime() + durationSeconds * 1000);
-
-  return eta.toISOString();
-}
-
-// Parses a PostGIS geography point returned by PostgREST (WKB hex or GeoJSON
-// depending on config). Adjust if your PostgREST is set to return GeoJSON —
-// in that case just use terminus.coordinates directly instead.
-function parsePoint(raw: any): LatLng | null {
-  if (!raw) return null;
-  if (typeof raw === "object" && raw.coordinates) {
-    const [lng, lat] = raw.coordinates;
-    return { lat, lng };
-  }
-  return null;
-}
-
 async function distanceMatrix(
   from: LatLng,
   to: LatLng,
@@ -173,7 +194,11 @@ async function distanceMatrix(
 async function explainTopPick(pick: any): Promise<string> {
   if (!OPENAI_KEY) {
     // Fallback so the function still works without an OpenAI key configured
-    return `${pick.route_name} is fastest overall at ~${pick.duration_min} min for ~₱${pick.fare}.`;
+    const discountNote =
+      pick.discount_rate > 0
+        ? ` (${pick.discount_type.replace("_", " ")} discount applied)`
+        : "";
+    return `${pick.route_name} is fastest overall at ~${pick.duration_min} min for ~₱${pick.fare}${discountNote}.`;
   }
 
   try {
