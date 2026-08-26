@@ -69,13 +69,15 @@ Deno.serve(async (req: Request) => {
           : null;
 
         return {
-          route_id: route.id,
-          route_name: route.name,
-          color: route.color ?? "blue",
-          distance_km: round(totalDistanceKm),
-          duration_min: round(totalDurationMin),
-          fare: totalFare !== null ? round(totalFare) : null,
-        };
+                route_id: route.id,
+                route_name: route.name,
+                color: route.color ?? "blue",
+                distance_km: round(totalDistanceKm),
+                duration_min: round(totalDurationMin),
+                eta: calculateETA(
+                legToTerminus.durationSeconds + legFromTerminus.durationSeconds,),
+                fare: totalFare !== null ? round(totalFare) : null,
+              };
       }),
     );
 
@@ -125,6 +127,13 @@ function json(body: unknown, status = 200) {
 
 function round(n: number) {
   return Math.round(n * 100) / 100;
+}
+
+function calculateETA(durationSeconds: number): string {
+  const now = new Date();
+  const eta = new Date(now.getTime() + durationSeconds * 1000);
+
+  return eta.toISOString();
 }
 
 // Parses a PostGIS geography point returned by PostgREST (WKB hex or GeoJSON
