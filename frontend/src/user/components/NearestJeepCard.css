@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .nearest-jeep-card__label {
@@ -38,7 +38,7 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin: 0 0 18px;
+  margin: 0 0 14px;
 }
 
 .nearest-jeep-card__eta-value {
@@ -59,8 +59,8 @@
   gap: 10px;
   align-items: flex-start;
   border-radius: 10px;
-  padding: 12px 14px;
-  margin-bottom: 18px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
 }
 
 .nearest-jeep-card__ai-note--wait {
@@ -109,37 +109,94 @@
   color: #c53030;
 }
 
+.nearest-jeep-card__departure-status {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #6a6f79;
+}
+
 .nearest-jeep-card__actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .nearest-jeep-card__wait-button {
   flex: 1;
   border: none;
   border-radius: 10px;
-  background: #1a1a1a;
+  background: #1b3fa0;
   color: #ffffff;
   font-size: 0.92rem;
   font-weight: 700;
-  padding: 14px;
+  padding: 12px;
 }
 
-.nearest-jeep-card__wait-button:hover {
-  background: #333333;
+.nearest-jeep-card__wait-button:hover:not(:disabled) {
+  background: #142f7e;
+}
+
+.nearest-jeep-card__wait-button:disabled {
+  background: #aab6d9;
+  cursor: not-allowed;
 }
 
 .nearest-jeep-card__other-options-button {
   flex: 1;
-  border: 1px solid #d8dade;
+  border: 1px solid #e0a82e;
   border-radius: 10px;
-  background: #ffffff;
+  background: #fff8df;
   color: #1a1a1a;
   font-size: 0.92rem;
   font-weight: 700;
-  padding: 14px;
+  padding: 12px;
 }
 
 .nearest-jeep-card__other-options-button:hover {
-  border-color: #1a1a1a;
+  border-color: #c58d16;
+  background: #fff2bd;
+}
+
+@media (max-width: 640px) {
+  .nearest-jeep-card {
+    padding: 0 16px 10px;
+  }
+
+  .nearest-jeep-card__header {
+    margin-bottom: 8px;
+  }
+
+  .nearest-jeep-card__eta {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .nearest-jeep-card__eta-value {
+    font-size: 2.05rem;
+  }
+
+  .nearest-jeep-card__eta-unit {
+    font-size: 0.82rem;
+  }
+
+  .nearest-jeep-card__ai-note {
+    gap: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+
+  .nearest-jeep-card__ai-note p {
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .nearest-jeep-card__actions {
+    gap: 8px;
+  }
+
+  .nearest-jeep-card__wait-button,
+  .nearest-jeep-card__other-options-button {
+    padding: 10px;
+    font-size: 0.84rem;
+  }
 }

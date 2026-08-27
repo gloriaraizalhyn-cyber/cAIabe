@@ -1,7 +1,7 @@
 .journey-timeline {
   list-style: none;
   margin: 0;
-  padding: 24px 20px;
+  padding: 16px;
 }
 
 .journey-timeline__item {
@@ -35,7 +35,7 @@
 .journey-timeline__text {
   display: flex;
   flex-direction: column;
-  padding-bottom: 26px;
+  padding-bottom: 20px;
 }
 
 .journey-timeline__name {

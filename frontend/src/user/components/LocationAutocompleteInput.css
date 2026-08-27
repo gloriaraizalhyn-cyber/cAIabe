@@ -1,14 +1,14 @@
 .location-input {
   position: relative;
-  padding: 10px 0;
+  padding: 6px 0;
 }
 
 .location-input:first-child {
-  padding-top: 4px;
+  padding-top: 1px;
 }
 
 .location-input:last-child {
-  padding-bottom: 4px;
+  padding-bottom: 1px;
 }
 
 .location-input + .location-input {
@@ -20,7 +20,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .location-input__label {
@@ -43,7 +43,7 @@
   border: none;
   outline: none;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 400;
   color: #1a1a1a;
   padding: 2px 0;
   background: transparent;

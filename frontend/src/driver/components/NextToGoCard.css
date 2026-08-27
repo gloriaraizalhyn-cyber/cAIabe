@@ -9,6 +9,7 @@
 
 .next-to-go-card__heading {
   margin: 0 0 10px;
+  font-family: "DM Sans", sans-serif;
   font-size: 1.15rem;
   font-weight: 800;
   color: #1a1a1a;
@@ -34,7 +35,7 @@
   flex: 1;
   border: none;
   border-radius: 10px;
-  background: #1a1a1a;
+  background: #1b3fa0;
   color: #ffffff;
   font-size: 0.9rem;
   font-weight: 700;
@@ -42,20 +43,21 @@
 }
 
 .next-to-go-card__wait-button:hover {
-  background: #333333;
+  background: #142f7e;
 }
 
 .next-to-go-card__go-button {
   flex: 1;
-  border: none;
+  border: 1px solid #e0a82e;
   border-radius: 10px;
-  background: #1a9e5c;
-  color: #ffffff;
+  background: #fff8df;
+  color: #1a1a1a;
   font-size: 0.9rem;
   font-weight: 700;
   padding: 14px;
 }
 
 .next-to-go-card__go-button:hover {
-  background: #157a48;
+  border-color: #c58d16;
+  background: #fff2bd;
 }

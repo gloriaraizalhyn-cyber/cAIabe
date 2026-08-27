@@ -1,0 +1,35 @@
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #ffffff;
+  padding: 24px;
+}
+
+/* The source animation is a 640x360 canvas with the wheel graphic centered
+   in a 290x290 square (at 320,180) — this crops the rendered frame down to
+   just that square instead of showing the wheel adrift in empty canvas. */
+.loading-screen__crop {
+  width: 100px;
+  height: 100px;
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-screen__animation {
+  position: absolute;
+  top: -12.07px;
+  left: -60.34px;
+  width: 220.69px;
+  height: 124.14px;
+}
+
+.loading-screen__message {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #6a6f79;
+}

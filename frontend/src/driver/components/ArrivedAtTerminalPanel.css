@@ -1,8 +1,9 @@
 .arrived-at-terminal-panel {
-  border: 1px solid #e6e7eb;
-  border-radius: 12px;
-  background: #ffffff;
-  padding: 24px;
+  border: none;
+  border-left: 5px solid #d71920;
+  border-radius: 16px;
+  background: #faf6f0;
+  padding: 20px;
 }
 
 .arrived-at-terminal-panel__status {
@@ -30,13 +31,15 @@
 
 .arrived-at-terminal-panel__field {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 16px;
   padding: 12px 0;
   border-bottom: 1px solid #edeef1;
 }
 
 .arrived-at-terminal-panel__field-label {
+  flex-shrink: 0;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -47,6 +50,7 @@
   font-size: 0.95rem;
   font-weight: 700;
   color: #1a1a1a;
+  text-align: right;
 }
 
 .arrived-at-terminal-panel__queue-position {
@@ -56,7 +60,7 @@
 }
 
 .arrived-at-terminal-panel__waiting-status {
-  margin: 18px 0 20px;
+  margin: 14px 0 16px;
   font-size: 0.85rem;
   font-weight: 700;
   color: #6a6f79;
@@ -66,13 +70,13 @@
   width: 100%;
   border: none;
   border-radius: 10px;
-  background: #1a1a1a;
+  background: #1b3fa0;
   color: #ffffff;
   font-size: 0.95rem;
   font-weight: 700;
-  padding: 14px;
+  padding: 12px;
 }
 
 .arrived-at-terminal-panel__view-queue-button:hover {
-  background: #333333;
+  background: #142f7e;
 }

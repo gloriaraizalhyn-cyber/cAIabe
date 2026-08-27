@@ -5,6 +5,7 @@ import DrivingMapCanvas from "../components/DrivingMapCanvas.jsx";
 import NextPickupCard from "../components/NextPickupCard.jsx";
 import TripCompleteModal from "../components/TripCompleteModal.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
+import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import { fetchOwnQueuePosition } from "../utils/queue.js";
 import { COLOR_NAME_TO_HEX } from "../../shared/constants/driverRegistrationFixtures.js";
 import { NEXT_WAITING_PICKUP_FIXTURE } from "../../shared/constants/driverDashboardFixtures.js";
@@ -72,11 +73,7 @@ function DrivingPage() {
   };
 
   if (loading || !driver) {
-    return (
-      <main className="driving-page">
-        <p>Loading…</p>
-      </main>
-    );
+    return <LoadingScreen message="Starting engine…" />;
   }
 
   const routeColorName = driver.route?.color ?? "blue";

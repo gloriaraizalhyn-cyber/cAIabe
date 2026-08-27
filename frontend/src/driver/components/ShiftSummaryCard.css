@@ -1,8 +1,9 @@
 .shift-summary-card {
-  border: 1px solid #e6e7eb;
-  border-radius: 12px;
-  background: #ffffff;
-  padding: 24px;
+  border: none;
+  border-left: 5px solid #d71920;
+  border-radius: 16px;
+  background: #faf6f0;
+  padding: 20px;
 }
 
 .shift-summary-card__field {
@@ -30,7 +31,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 18px 0 20px;
+  margin: 14px 0 16px;
   font-size: 0.88rem;
   font-weight: 700;
   color: #6a6f79;
@@ -47,13 +48,13 @@
   width: 100%;
   border: none;
   border-radius: 10px;
-  background: #1a1a1a;
+  background: #1b3fa0;
   color: #ffffff;
   font-size: 0.95rem;
   font-weight: 700;
-  padding: 14px;
+  padding: 12px;
 }
 
 .shift-summary-card__start-button:hover {
-  background: #333333;
+  background: #142f7e;
 }

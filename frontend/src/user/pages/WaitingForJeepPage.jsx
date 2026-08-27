@@ -5,6 +5,7 @@ import WalkToBayCard from "../components/WalkToBayCard.jsx";
 import NearestJeepCard from "../components/NearestJeepCard.jsx";
 import { ROUTE_OPTIONS_FIXTURE } from "../../shared/constants/tripSearchFixtures.js";
 import { useLiveDriverPositions } from "../../shared/hooks/useLiveDriverPositions.js";
+import { useMovementDetector } from "../../shared/hooks/useMovementDetector.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./WaitingForJeepPage.css";
 
@@ -56,6 +57,23 @@ function WaitingForJeepPage() {
     await supabase.functions.invoke("waiting-clear", { body: { waiting_id: waitingId } });
   };
 
+  // Committing to a jeep ("Wait for this jeep") doesn't mean you're on board
+  // yet — it just starts watching your own GPS for the sustained, vehicle
+  // speed movement that means the jeep actually pulled away with you on it.
+  // Detection only runs once committed (see the `null` gate below), so
+  // walking to/around the bay beforehand can't false-trigger it.
+  const [isWatchingForDeparture, setIsWatchingForDeparture] = useState(false);
+  const hasStartedMoving = useMovementDetector(isWatchingForDeparture ? passengerPosition : null);
+
+  useEffect(() => {
+    if (!hasStartedMoving) return;
+    (async () => {
+      await clearWaitingState();
+      navigate("/on-route", { state: { routeId: selectedRoute.id } });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasStartedMoving]);
+
   const handleArrivedAtBay = async () => {
     setWaitingPhase("waiting_for_jeep");
 
@@ -79,9 +97,8 @@ function WaitingForJeepPage() {
     navigate("/routes", { state: { tripSearch: location.state?.tripSearch } });
   };
 
-  const handleWaitForJeep = async () => {
-    await clearWaitingState();
-    navigate("/on-route", { state: { routeId: selectedRoute.id } });
+  const handleWaitForJeep = () => {
+    setIsWatchingForDeparture(true);
   };
 
   return (
@@ -111,6 +128,7 @@ function WaitingForJeepPage() {
           waitingAtBay={selectedRoute.waitingAtBay}
           onWaitForJeep={handleWaitForJeep}
           onSeeOtherOptions={handleSeeOtherOptions}
+          isWatchingForDeparture={isWatchingForDeparture}
         />
       )}
     </main>

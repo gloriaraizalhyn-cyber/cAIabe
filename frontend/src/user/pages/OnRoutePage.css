@@ -11,6 +11,9 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  border: 2px solid #000000;
+  border-left: 5px solid #d71920;
+  border-top: 5px solid #1b3fa0;
   background: #faf6f0;
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
 }

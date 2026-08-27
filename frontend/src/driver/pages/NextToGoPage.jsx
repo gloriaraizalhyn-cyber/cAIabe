@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import NextToGoMapCanvas from "../components/NextToGoMapCanvas.jsx";
 import NextToGoCard from "../components/NextToGoCard.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
+import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import { fetchOwnQueuePosition } from "../utils/queue.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./NextToGoPage.css";
@@ -63,11 +64,7 @@ function NextToGoPage() {
   };
 
   if (loading || !driver) {
-    return (
-      <main className="next-to-go-page">
-        <p>Loading…</p>
-      </main>
-    );
+    return <LoadingScreen message="Scoping out the queue…" />;
   }
 
   return (

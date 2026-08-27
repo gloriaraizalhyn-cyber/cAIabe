@@ -1,0 +1,109 @@
+.driver-queue-list-page {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 24px 16px 60px;
+}
+
+.driver-queue-list-page__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 440px;
+  margin: 0 auto 18px;
+}
+
+.driver-queue-list-page__back-button {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #d8dade;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+.driver-queue-list-page__back-button:hover {
+  border-color: #1a1a1a;
+}
+
+.driver-queue-list-page__title {
+  margin: 0;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.driver-queue-list-page__subtitle {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: #6a6f79;
+}
+
+.driver-queue-list-page__loading {
+  font-size: 0.9rem;
+  color: #6a6f79;
+  text-align: center;
+}
+
+.driver-queue-list-page__list {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.driver-queue-list-page__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #edeef1;
+  border-radius: 12px;
+  background: #faf6f0;
+}
+
+.driver-queue-list-page__item--own {
+  border: 1px solid #1b3fa0;
+  background: #eef2fb;
+}
+
+.driver-queue-list-page__position {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.driver-queue-list-page__item--own .driver-queue-list-page__position {
+  background: #1b3fa0;
+}
+
+.driver-queue-list-page__name {
+  flex: 1;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.driver-queue-list-page__status {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #9a9fa8;
+  text-transform: uppercase;
+}

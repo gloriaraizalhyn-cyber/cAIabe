@@ -8,6 +8,7 @@ import DriverRegistrationPage from "../driver/pages/DriverRegistrationPage.jsx";
 import DriverLoginPage from "../driver/pages/DriverLoginPage.jsx";
 import DriverDashboardPage from "../driver/pages/DriverDashboardPage.jsx";
 import NextToGoPage from "../driver/pages/NextToGoPage.jsx";
+import DriverQueueListPage from "../driver/pages/DriverQueueListPage.jsx";
 import DrivingPage from "../driver/pages/DrivingPage.jsx";
 import LiveTrackerPage from "../demo/pages/LiveTrackerPage.jsx";
 
@@ -26,6 +27,7 @@ function AppRouter() {
       <Route path="/driver/register" element={<DriverRegistrationPage />} />
       <Route path="/driver/dashboard" element={<DriverDashboardPage />} />
       <Route path="/driver/next-to-go" element={<NextToGoPage />} />
+      <Route path="/driver/queue" element={<DriverQueueListPage />} />
       <Route path="/driver/driving" element={<DrivingPage />} />
 
       <Route path="/live-tracker" element={<LiveTrackerPage />} />

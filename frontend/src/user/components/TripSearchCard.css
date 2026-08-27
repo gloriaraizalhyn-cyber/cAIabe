@@ -6,6 +6,7 @@
   padding: 24px;
   border: 2px solid #000000;
   border-left: 5px solid #d71920;
+  border-top: 5px solid #1b3fa0;
   border-radius: 16px;
   background: #faf7f0;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
@@ -37,7 +38,7 @@
     overflow-y: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    transform: translateY(24vh);
+    transform: translateY(32vh);
     transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
   }
 
@@ -237,7 +238,7 @@
   background: #ffffff;
   border: 1.5px solid transparent;
   border-radius: 8px;
-  padding: 10px 40px 10px 16px;
+  padding: 10px 40px 5px 16px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
   transition: border-color 0.15s ease;
@@ -377,9 +378,9 @@
   border-radius: 8px;
   background: #1b3fa0;
   color: #ffffff;
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   font-weight: 700;
-  padding: 16px;
+  padding: 12px;
 }
 
 .trip-search-card__find-button:hover:not(:disabled) {
