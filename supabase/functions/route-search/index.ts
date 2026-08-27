@@ -35,12 +35,12 @@ Deno.serve(async (req: Request) => {
     // Pull all routes + their fare reference. For a school-project scale
     // dataset this is fine to fetch in full; if this grows, filter by a
     // bounding box around origin/destination first.
-    const { data: routes, error: routesErr } = await supabase
-      .from("routes")
-      .select("id, name, color, terminus, fare_reference(base_fare, per_km_rate)");
+   const { data: routes, error: routesErr } = await supabase
+  .from("routes")
+  .select("id, name, color, terminus, fare_reference(base_fare, per_km_rate)");
 
-    if (routesErr) return json({ error: routesErr.message }, 500);
-    if (!routes?.length) return json({ error: "no routes configured" }, 404);
+if (routesErr) return json({ error: routesErr.message }, 500);
+if (!routes?.length) return json({ error: "no routes configured" }, 404);
 
     // For each route, ask Google Distance Matrix for origin->terminus and
     // terminus->destination as a simple proxy for "does this route work".
@@ -68,16 +68,37 @@ Deno.serve(async (req: Request) => {
           ? fareRef.base_fare + fareRef.per_km_rate * totalDistanceKm
           : null;
 
-        return {
-                route_id: route.id,
-                route_name: route.name,
-                color: route.color ?? "blue",
-                distance_km: round(totalDistanceKm),
-                duration_min: round(totalDurationMin),
-                eta: calculateETA(
-                legToTerminus.durationSeconds + legFromTerminus.durationSeconds,),
-                fare: totalFare !== null ? round(totalFare) : null,
-              };
+        const liveDriver = await getNearestDriverETA(
+  supabase,
+  route.id,
+  origin,
+);
+
+return {
+  route_id: route.id,
+  route_name: route.name,
+  color: route.color ?? "blue",
+
+  // Route trip information
+  distance_km: round(totalDistanceKm),
+  duration_min: round(totalDurationMin),
+
+  // Passenger trip ETA
+  eta: calculateETA(
+    legToTerminus.durationSeconds + legFromTerminus.durationSeconds,
+  ),
+
+  // Nearest live jeepney information
+  driver_id: liveDriver?.driver_id ?? null,
+  driver_distance_meters: liveDriver
+    ? round(liveDriver.distance_meters)
+    : null,
+  driver_eta_minutes: liveDriver
+    ? round(liveDriver.eta_minutes)
+    : null,
+
+  fare: totalFare !== null ? round(totalFare) : null,
+};
       }),
     );
 
@@ -141,10 +162,36 @@ function calculateETA(durationSeconds: number): string {
 // in that case just use terminus.coordinates directly instead.
 function parsePoint(raw: any): LatLng | null {
   if (!raw) return null;
+
+  // GeoJSON format
   if (typeof raw === "object" && raw.coordinates) {
     const [lng, lat] = raw.coordinates;
     return { lat, lng };
   }
+
+  // PostGIS WKB hex format
+  if (typeof raw === "string") {
+    const hex = raw;
+
+    // POINT with SRID:
+    // 01 = little endian
+    // 01010000 = Point geometry
+    // 20E61000 = SRID 4326
+    // followed by 8-byte longitude and 8-byte latitude
+    if (hex.length >= 50 && hex.startsWith("0101000020E6100000")) {
+      const buffer = new Uint8Array(
+        hex.match(/.{2}/g)!.map((byte) => parseInt(byte, 16))
+      );
+
+      const view = new DataView(buffer.buffer);
+
+      const lng = view.getFloat64(9, true);
+      const lat = view.getFloat64(17, true);
+
+      return { lat, lng };
+    }
+  }
+
   return null;
 }
 
@@ -206,3 +253,26 @@ async function explainTopPick(pick: any): Promise<string> {
     return `${pick.route_name} is the recommended route.`;
   }
 }
+
+async function getNearestDriverETA(
+  supabase: any,
+  routeId: string,
+  passenger: LatLng,
+): Promise<{
+  driver_id: string;
+  distance_meters: number;
+  eta_minutes: number;
+} | null> {
+  const { data, error } = await supabase.rpc("get_nearest_driver_eta", {
+    p_route_id: routeId,
+    p_lat: passenger.lat,
+    p_lng: passenger.lng,
+  });
+
+  if (error || !data?.length) {
+    return null;
+  }
+
+  return data[0];
+}
+
