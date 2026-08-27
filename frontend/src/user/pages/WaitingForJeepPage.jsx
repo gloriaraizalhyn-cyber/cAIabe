@@ -83,6 +83,11 @@ function WaitingForJeepPage() {
   // the call ever fails).
   const [preciseEta, setPreciseEta] = useState(null);
 
+  // AI wait/go call from the same nearby-jeepney-eta poll (Gemini-backed
+  // server-side, with a deterministic fallback baked into the function
+  // itself) — null until the first response lands, same as preciseEta.
+  const [aiRecommendation, setAiRecommendation] = useState(null);
+
   useEffect(() => {
     if (waitingPhase !== "waiting_for_jeep" || !realRouteId || !passengerPosition) {
       return undefined;
@@ -102,6 +107,14 @@ function WaitingForJeepPage() {
         etaMinutes: Math.max(1, Math.round(nearest.duration_seconds / 60)),
         hasSeatsAvailable: nearest.capacity_state !== "full",
       });
+
+      if (data.recommendation) {
+        setAiRecommendation({
+          recommendationType: data.recommendation.recommendation,
+          headline: data.recommendation.headline,
+          body: data.recommendation.body,
+        });
+      }
     };
 
     fetchEta();
@@ -216,7 +229,10 @@ function WaitingForJeepPage() {
       distanceKm: finalDistanceKm.toFixed(1),
       hasSeatsAvailable: finalHasSeatsAvailable,
     },
-    aiWaitRecommendation: {
+    // Server-side (Gemini-backed) recommendation from the nearby-jeepney-eta
+    // poll takes precedence once it lands; this local guess only covers the
+    // walking-to-bay phase and the brief window before the first response.
+    aiWaitRecommendation: aiRecommendation ?? {
       recommendationType: finalHasSeatsAvailable ? "go" : "wait",
       headline: finalHasSeatsAvailable
         ? `The jeepney you are waiting for is color ${jeepColorName}`

@@ -5,8 +5,10 @@
 // Plans a realistic walk -> ride [-> walk -> ride]* -> walk itinerary along
 // the real route polylines (routes.path), considering up to 2 transfers
 // between routes that pass close enough to each other to walk between.
-// Scoring (time/fare/distance) is computed here in code, NOT by OpenAI.
-// OpenAI is only used to phrase the one-line explanation for the top pick.
+// Scoring (time/fare/distance/traffic) is computed here in code, NOT by
+// Gemini. Gemini is only used to phrase the one-line explanation for the
+// top pick — traffic itself is a real Google Routes API signal folded into
+// each ride leg's duration before scoring, not something the model estimates.
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
@@ -273,6 +275,17 @@ Deno.serve(async (req: Request) => {
       return walkCache.get(key)!;
     };
 
+    // Same dedup strategy for the traffic congestion multiplier on ride
+    // legs — many candidates share the same route entry/exit points.
+    const trafficCache = new Map<string, Promise<number>>();
+    const getTrafficMultiplier = (from: LatLng, to: LatLng) => {
+      const key = walkKey(from, to);
+      if (!trafficCache.has(key)) {
+        trafficCache.set(key, trafficMultiplier(from, to));
+      }
+      return trafficCache.get(key)!;
+    };
+
     const scored = await Promise.all(
       candidates.map(async (candidate) => {
         const routes = candidate.routeIds.map((id) => routesById.get(id));
@@ -294,11 +307,14 @@ Deno.serve(async (req: Request) => {
         const rideDistancesKm: number[] = [];
         const rideDurationsMin: number[] = [];
         const rideFares: number[] = [];
+        const rideTrafficMultipliers: number[] = await Promise.all(
+          candidate.rides.map((ride) => getTrafficMultiplier(ride.entry.point, ride.exit.point)),
+        );
 
         candidate.rides.forEach((ride, i) => {
           const distanceMeters = Math.abs(ride.exit.fraction - ride.entry.fraction) * ride.entry.routeLengthMeters;
           const distanceKm = distanceMeters / 1000;
-          const durationMin = (distanceKm / AVG_JEEPNEY_SPEED_KMH) * 60;
+          const durationMin = (distanceKm / AVG_JEEPNEY_SPEED_KMH) * 60 * rideTrafficMultipliers[i];
           rideDistancesKm[i] = distanceKm;
           rideDurationsMin[i] = durationMin;
           totalDurationMin += durationMin;
@@ -324,6 +340,7 @@ Deno.serve(async (req: Request) => {
           rideDistancesKm,
           rideDurationsMin,
           rideFares,
+          rideTrafficMultipliers,
           duration_min: totalDurationMin,
           distance_km: totalDistanceKm,
           fare_before_discount: hasFareData ? fareBeforeDiscount : null,
@@ -382,6 +399,7 @@ async function buildResult(
     rideDistancesKm: number[];
     rideDurationsMin: number[];
     rideFares: number[];
+    rideTrafficMultipliers: number[];
     duration_min: number;
     distance_km: number;
     fare_before_discount: number | null;
@@ -390,7 +408,8 @@ async function buildResult(
   discountType: string,
   discountRate: number,
 ) {
-  const { candidate, routes, walkResults, rideDistancesKm, rideDurationsMin, rideFares } = scoredCandidate;
+  const { candidate, routes, walkResults, rideDistancesKm, rideDurationsMin, rideFares, rideTrafficMultipliers } =
+    scoredCandidate;
 
   const ridePaths = await Promise.all(
     candidate.rides.map(async (ride) => {
@@ -430,9 +449,15 @@ async function buildResult(
         distance_km: round(rideDistancesKm[i]),
         duration_min: round(rideDurationsMin[i]),
         fare: round(rideFares[i]),
+        traffic_multiplier: round(rideTrafficMultipliers[i]),
       });
     }
   });
+
+  const avgTrafficMultiplier =
+    rideTrafficMultipliers.length
+      ? rideTrafficMultipliers.reduce((sum, m) => sum + m, 0) / rideTrafficMultipliers.length
+      : 1;
 
   return {
     route_id: routes[0].id,
@@ -443,6 +468,7 @@ async function buildResult(
     duration_min: round(scoredCandidate.duration_min),
     fare_before_discount: scoredCandidate.fare_before_discount !== null ? round(scoredCandidate.fare_before_discount) : null,
     fare: scoredCandidate.fare !== null ? round(scoredCandidate.fare) : null,
+    traffic_multiplier: round(avgTrafficMultiplier),
     discount_type: discountType,
     discount_rate: discountRate,
     legs,
@@ -484,8 +510,15 @@ async function distanceMatrix(
   };
 }
 
+function trafficDescriptor(multiplier: number): string {
+  if (multiplier < 1.15) return "light traffic";
+  if (multiplier < 1.4) return "moderate traffic";
+  return "heavy traffic";
+}
+
 async function explainTopPick(pick: any): Promise<string> {
   const transferNote = pick.transfer_count > 0 ? `, with ${pick.transfer_count} transfer(s)` : "";
+  const traffic = trafficDescriptor(pick.traffic_multiplier ?? 1);
 
   if (!GEMINI_KEY) {
     // Fallback so the function still works without a Gemini key configured
@@ -493,12 +526,12 @@ async function explainTopPick(pick: any): Promise<string> {
       pick.discount_rate > 0
         ? ` (${pick.discount_type.replace("_", " ")} discount applied)`
         : "";
-    return `${pick.route_name} is fastest overall at ~${pick.duration_min} min for ~₱${pick.fare}${transferNote}${discountNote}.`;
+    return `${pick.route_name} is fastest overall at ~${pick.duration_min} min for ~₱${pick.fare} amid ${traffic}${transferNote}${discountNote}.`;
   }
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${GEMINI_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -506,12 +539,12 @@ async function explainTopPick(pick: any): Promise<string> {
           systemInstruction: {
             parts: [{
               text:
-                "Write ONE short, plain sentence recommending a jeepney trip to a passenger, given its stats. No markdown, no exclamation points.",
+                "Write ONE short, plain sentence recommending a jeepney trip to a passenger, given its stats. Mention the traffic condition naturally if it's not light. No markdown, no exclamation points.",
             }],
           },
           contents: [{
             parts: [{
-              text: `Trip: ${pick.route_name}, duration: ${pick.duration_min} min, fare: ₱${pick.fare}, distance: ${pick.distance_km} km, transfers: ${pick.transfer_count}.`,
+              text: `Trip: ${pick.route_name}, duration: ${pick.duration_min} min, fare: ₱${pick.fare}, distance: ${pick.distance_km} km, transfers: ${pick.transfer_count}, current traffic: ${traffic}.`,
             }],
           }],
           generationConfig: { maxOutputTokens: 60, temperature: 0.4 },
@@ -519,9 +552,53 @@ async function explainTopPick(pick: any): Promise<string> {
       },
     );
     const data = await res.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ??
-      `${pick.route_name} is the recommended trip.`;
-  } catch {
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!text) {
+      console.error(`explainTopPick: no text in Gemini response (status ${res.status}):`, JSON.stringify(data));
+      return `${pick.route_name} is the recommended trip.`;
+    }
+    return text;
+  } catch (err) {
+    console.error("explainTopPick: Gemini call threw:", err);
     return `${pick.route_name} is the recommended trip.`;
+  }
+}
+
+// Congestion multiplier for a driving corridor between two points: current
+// traffic-aware duration divided by the traffic-free duration. Used only as
+// a ratio applied to our own distance/speed-based jeepney estimate — NOT as
+// Google's literal driving path, since jeepneys don't follow a
+// car-optimized route (see file header). Soft-fails to 1.0 (no adjustment)
+// since traffic is an enhancement, unlike the walk-leg calls a candidate
+// needs to be valid at all.
+async function trafficMultiplier(from: LatLng, to: LatLng): Promise<number> {
+  try {
+    const res = await fetch("https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_KEY,
+        "X-Goog-FieldMask": "originIndex,destinationIndex,duration,staticDuration,condition",
+      },
+      body: JSON.stringify({
+        origins: [{ waypoint: { location: { latLng: { latitude: from.lat, longitude: from.lng } } } }],
+        destinations: [{ waypoint: { location: { latLng: { latitude: to.lat, longitude: to.lng } } } }],
+        travelMode: "DRIVE",
+        routingPreference: "TRAFFIC_AWARE",
+      }),
+    });
+    if (!res.ok) return 1;
+
+    const data = await res.json();
+    const cell = Array.isArray(data) ? data.find((c: any) => c.condition === "ROUTE_EXISTS") : null;
+    if (!cell) return 1;
+
+    const trafficSeconds = parseInt(String(cell.duration).replace("s", ""), 10);
+    const staticSeconds = parseInt(String(cell.staticDuration).replace("s", ""), 10);
+    if (!trafficSeconds || !staticSeconds) return 1;
+
+    return Math.min(2.5, Math.max(1, trafficSeconds / staticSeconds));
+  } catch {
+    return 1;
   }
 }

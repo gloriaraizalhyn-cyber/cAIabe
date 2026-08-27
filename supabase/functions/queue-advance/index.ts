@@ -18,7 +18,7 @@
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
 import { sendPushToToken } from "../_shared/fcm.ts";
-import { sendSms } from "../_shared/semaphore.ts";
+import { sendSms } from "../_shared/textbee.ts";
 
 const NOTIFY_AHEAD_POSITIONS = 2; // "next-2" per the PRD default
 const RESPONSE_TIMEOUT_SECONDS = 90;
@@ -185,7 +185,7 @@ async function sendPushToDriver(supabase: any, driverId: string) {
 
   // No fcm_token at all (never registered / notifications disabled) or the
   // push itself failed — both mean the driver won't have seen the alert, so
-  // reach them by SMS instead. sendSms is a no-op until SEMAPHORE_API_KEY is
+  // reach them by SMS instead. sendSms is a no-op until TEXTBEE_API_KEY is
   // configured, same as sendPushToToken is until FIREBASE_SERVICE_ACCOUNT_JSON is.
   if (!pushSent) {
     await sendSmsFallback(supabase, driverId);
@@ -198,7 +198,7 @@ async function sendSmsFallback(supabase: any, driverId: string) {
     const mobileNumber = data?.user?.user_metadata?.mobile_number;
     if (error || !mobileNumber) return;
 
-    await sendSms(mobileNumber, `cAIabe: ${NOTIFICATION_TITLE} — ${NOTIFICATION_BODY}`);
+    await sendSms(supabase, driverId, mobileNumber, `cAIabe: ${NOTIFICATION_TITLE} — ${NOTIFICATION_BODY}`);
   } catch (err) {
     console.error("sendSmsFallback failed:", err);
   }

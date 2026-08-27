@@ -14,6 +14,7 @@ import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
 
 const GOOGLE_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY")!;
+const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY"); // optional
 
 interface LatLng {
   lat: number;
@@ -63,7 +64,9 @@ Deno.serve(async (req: Request) => {
       .filter((e): e is NonNullable<typeof e> => e !== null)
       .sort((a, b) => a.duration_seconds - b.duration_seconds);
 
-    return json({ etas });
+    const recommendation = await getWaitOrGoRecommendation(etas);
+
+    return json({ etas, recommendation });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }
@@ -91,6 +94,7 @@ async function computeRouteMatrix(
         { waypoint: { location: { latLng: { latitude: destination.lat, longitude: destination.lng } } } },
       ],
       travelMode: "DRIVE",
+      routingPreference: "TRAFFIC_AWARE",
     }),
   });
 
@@ -109,6 +113,114 @@ async function computeRouteMatrix(
       distanceMeters: cell.distanceMeters,
       durationSeconds: parseInt(String(cell.duration).replace("s", ""), 10),
     }));
+}
+
+interface DriverEta {
+  driver_id: string;
+  capacity_state: string;
+  distance_meters: number;
+  duration_seconds: number;
+}
+
+interface WaitOrGoRecommendation {
+  recommendation: "go" | "wait";
+  headline: string;
+  body: string;
+}
+
+// Deterministic rule used both as the response when GEMINI_API_KEY isn't
+// configured, and as the safety fallback if the Gemini call ever errors or
+// returns something unusable — mirrors the logic that used to live
+// client-side in WaitingForJeepPage.jsx.
+function fallbackRecommendation(etas: DriverEta[]): WaitOrGoRecommendation {
+  const nearest = etas[0];
+  const hasSeats = nearest.capacity_state !== "full";
+  const etaMinutes = Math.max(1, Math.round(nearest.duration_seconds / 60));
+  const distanceKm = (nearest.distance_meters / 1000).toFixed(1);
+
+  if (hasSeats) {
+    return {
+      recommendation: "go",
+      headline: "A jeepney with open seats is approaching",
+      body: `It's about ${etaMinutes} min away (${distanceKm} km). Head to the bay to board.`,
+    };
+  }
+  return {
+    recommendation: "wait",
+    headline: "The closest jeepney is full",
+    body: "Please stand by at the bay — the next available unit is on its way.",
+  };
+}
+
+async function getWaitOrGoRecommendation(etas: DriverEta[]): Promise<WaitOrGoRecommendation | null> {
+  if (!etas.length) return null;
+  if (!GEMINI_KEY) return fallbackRecommendation(etas);
+
+  const context = etas.slice(0, 3).map((e, i) => ({
+    rank: i + 1,
+    eta_minutes: Math.max(1, Math.round(e.duration_seconds / 60)),
+    distance_km: Math.round((e.distance_meters / 1000) * 10) / 10,
+    seats_available: e.capacity_state !== "full",
+  }));
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{
+              text:
+                "You help a passenger waiting at a jeepney bay decide whether to board the nearest jeepney now or wait for a better one. " +
+                "You are given the live jeepneys on this route closest to the passenger, ranked by ETA. " +
+                "Recommend 'go' whenever the nearest jeepney (rank 1) has seats available — there is no reason to wait. " +
+                "If rank 1 is full, recommend 'wait' — and if another ranked jeepney has seats available reasonably soon, mention it by its ETA in the body. " +
+                "If none of the listed jeepneys have seats, still recommend 'wait' and be honest that there isn't a better option yet. " +
+                "Reply with strict JSON only, matching the schema. headline <= 70 characters, body <= 160 characters, plain text, no markdown, no exclamation points.",
+            }],
+          },
+          contents: [{
+            parts: [{ text: `Live jeepneys on this route, nearest first: ${JSON.stringify(context)}` }],
+          }],
+          generationConfig: {
+            maxOutputTokens: 200,
+            temperature: 0.3,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                recommendation: { type: "STRING", enum: ["go", "wait"] },
+                headline: { type: "STRING" },
+                body: { type: "STRING" },
+              },
+              required: ["recommendation", "headline", "body"],
+            },
+          },
+        }),
+      },
+    );
+
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+      console.error(`getWaitOrGoRecommendation: no text in Gemini response (status ${res.status}):`, JSON.stringify(data));
+      return fallbackRecommendation(etas);
+    }
+
+    const parsed = JSON.parse(text);
+    if (parsed?.recommendation !== "go" && parsed?.recommendation !== "wait") {
+      return fallbackRecommendation(etas);
+    }
+    if (typeof parsed.headline !== "string" || typeof parsed.body !== "string") {
+      return fallbackRecommendation(etas);
+    }
+    return parsed as WaitOrGoRecommendation;
+  } catch (err) {
+    console.error("getWaitOrGoRecommendation: Gemini call threw:", err);
+    return fallbackRecommendation(etas);
+  }
 }
 
 function json(body: unknown, status = 200) {
