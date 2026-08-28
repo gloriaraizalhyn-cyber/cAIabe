@@ -9,7 +9,7 @@ import "./TripSearchCard.css";
 // viewport) in its default "peek" state on mobile — the rest is what
 // dragging the handle up reveals. Only meaningful below the mobile
 // breakpoint; on desktop the card isn't fixed/full-height so this is inert.
-const SHEET_PEEK_RATIO = 0.24;
+const SHEET_PEEK_RATIO = 0.71;
 
 function TripSearchCard({
   origin,

@@ -38,7 +38,7 @@
     overflow-y: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    transform: translateY(32vh);
+    transform: translateY(71vh);
     transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
   }
 
