@@ -10,6 +10,7 @@ const mapOptions = {
   disableDefaultUI: true,
   zoomControl: true,
   clickableIcons: false,
+  gestureHandling: "greedy",
 };
 
 // Polyline has no native dashed strokeStyle — a short dash symbol repeated
