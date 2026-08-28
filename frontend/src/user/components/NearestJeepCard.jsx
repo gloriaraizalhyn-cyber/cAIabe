@@ -1,8 +1,10 @@
 import { Sparkles } from "lucide-react";
+import useBottomSheetDrag from "../../shared/hooks/useBottomSheetDrag.js";
 import "../../shared/styles/cardShell.css";
 import "./NearestJeepCard.css";
 
-function NearestJeepCard({ waitingAtBay, onWaitForJeep, onSeeOtherOptions }) {
+function NearestJeepCard({ waitingAtBay, onWaitForJeep, onSeeOtherOptions, isWatchingForDeparture = false }) {
+  const { isExpanded, liveDragY, handlePointerDown, handlePointerMove, handlePointerUp } = useBottomSheetDrag();
   const jeepColorName = waitingAtBay?.jeepColorName || "Jeepney";
   const nearestJeep = waitingAtBay?.nearestJeep || {
     hasSeatsAvailable: true,
@@ -17,7 +19,19 @@ function NearestJeepCard({ waitingAtBay, onWaitForJeep, onSeeOtherOptions }) {
   const isGoRecommendation = aiWaitRecommendation.recommendationType === "go";
 
   return (
-    <section className="card-shell nearest-jeep-card">
+    <section
+      className={`card-shell card-shell--compact nearest-jeep-card${isExpanded ? " card-shell--expanded" : ""}`}
+      style={liveDragY !== null ? { transform: `translateY(${liveDragY}px)`, transition: "none" } : undefined}
+    >
+      <div
+        className="card-shell__drag-handle"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
+        <span className="card-shell__drag-handle-bar" />
+      </div>
       <div className="nearest-jeep-card__header">
         <p className="nearest-jeep-card__label">NEAREST {jeepColorName.toUpperCase()} JEEP</p>
         <span
@@ -56,9 +70,20 @@ function NearestJeepCard({ waitingAtBay, onWaitForJeep, onSeeOtherOptions }) {
         </p>
       </div>
 
+      {isWatchingForDeparture && (
+        <p className="nearest-jeep-card__departure-status">
+          Watching your location — you'll be marked on board automatically once the jeep starts moving.
+        </p>
+      )}
+
       <div className="nearest-jeep-card__actions">
-        <button type="button" className="nearest-jeep-card__wait-button" onClick={onWaitForJeep}>
-          Wait for this jeep
+        <button
+          type="button"
+          className="nearest-jeep-card__wait-button"
+          onClick={onWaitForJeep}
+          disabled={isWatchingForDeparture}
+        >
+          {isWatchingForDeparture ? "Waiting for departure…" : "Wait for this jeep"}
         </button>
         <button type="button" className="nearest-jeep-card__other-options-button" onClick={onSeeOtherOptions}>
           Go, other options

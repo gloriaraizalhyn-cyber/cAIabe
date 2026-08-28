@@ -16,9 +16,15 @@ function hasInvalidFileType(file) {
 export function validateDriverRegistrationForm(formValues) {
   const errors = {};
 
-  if (!formValues.fullName.trim()) {
-    errors.fullName = "Full name is required.";
+  if (!formValues.firstName.trim()) {
+    errors.firstName = "First name is required.";
   }
+
+  if (!formValues.lastName.trim()) {
+    errors.lastName = "Last name is required.";
+  }
+
+  // Middle name is optional — no required/format check.
 
   const normalizedMobileNumber = formValues.mobileNumber.replace(/[\s-]/g, "");
   if (!normalizedMobileNumber) {

@@ -1,19 +1,35 @@
 .location-input {
   position: relative;
-  padding: 10px 0;
+  padding: 6px 0;
+}
+
+.location-input:first-child {
+  padding-top: 1px;
+}
+
+.location-input:last-child {
+  padding-bottom: 1px;
 }
 
 .location-input + .location-input {
   border-top: 1px solid #edeef1;
+  transition: border-top-color 0.15s ease;
+}
+
+.location-input__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
 }
 
 .location-input__label {
   display: block;
+  font-family: "DM Sans", "Segoe UI", sans-serif;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: #9a9fa8;
-  margin-bottom: 4px;
 }
 
 .location-input__field {
@@ -27,7 +43,7 @@
   border: none;
   outline: none;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 400;
   color: #1a1a1a;
   padding: 2px 0;
   background: transparent;

@@ -1,9 +1,24 @@
+import useBottomSheetDrag from "../../shared/hooks/useBottomSheetDrag.js";
 import "../../shared/styles/cardShell.css";
 import "./NextToGoCard.css";
 
 function NextToGoCard({ waitingCount, queuePosition, onWaitForMore }) {
+  const { isExpanded, liveDragY, handlePointerDown, handlePointerMove, handlePointerUp } = useBottomSheetDrag();
+
   return (
-    <section className="card-shell next-to-go-card">
+    <section
+      className={`card-shell card-shell--compact next-to-go-card${isExpanded ? " card-shell--expanded" : ""}`}
+      style={liveDragY !== null ? { transform: `translateY(${liveDragY}px)`, transition: "none" } : undefined}
+    >
+      <div
+        className="card-shell__drag-handle"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
+        <span className="card-shell__drag-handle-bar" />
+      </div>
       {queuePosition != null && (
         <p className="next-to-go-card__queue-position">Queue position #{queuePosition}</p>
       )}

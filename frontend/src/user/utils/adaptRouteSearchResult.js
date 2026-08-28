@@ -60,15 +60,17 @@ function legPathPoints(leg) {
   return leg.path?.length ? leg.path : [leg.from, leg.to].filter(Boolean);
 }
 
-// One map polyline segment per leg, kept separate (rather than flattened
-// into one path) so MapView can draw walking legs as a dashed line and each
-// jeep leg in its own route color, instead of one solid line the whole way.
-function legToMapSegment(leg) {
-  return {
-    kind: leg.kind,
-    color: leg.kind === "jeep" ? hexForColorName(leg.color) : null,
-    points: legPathPoints(leg),
-  };
+// `route_id` is only the FIRST route in the itinerary (needed as-is
+// downstream — it's the real boarding route's id, used for live GPS
+// subscriptions and waiting-state registration on the next page), so two
+// different itineraries that happen to start with the same route collide
+// on it. This gives list rendering (React keys, expand/collapse state, map
+// polylines) something that's actually unique per itinerary instead.
+function buildItineraryKey(result) {
+  return result.legs
+    .filter((leg) => leg.kind === "jeep")
+    .map((leg) => leg.route_id)
+    .join(">");
 }
 
 function adaptOneRoute(result) {
@@ -89,6 +91,7 @@ function adaptOneRoute(result) {
 
   return {
     id: result.route_id,
+    cardKey: buildItineraryKey(result),
     accentColor,
     jeepColors: jeepLegs.map((leg) => hexForColorName(leg.color)),
     title: result.route_name,
@@ -103,7 +106,10 @@ function adaptOneRoute(result) {
     availabilityNote: null,
     aiNote: result.explanation ?? null,
     legs: result.legs.map((leg, index) => adaptLeg(leg, index, result.legs)),
-    mapSegments: result.legs.map(legToMapSegment),
+    path: result.legs.flatMap(legPathPoints),
+    // One entry per leg, so the map can draw walk legs as dashed and ride
+    // legs as solid instead of one uniform line — see MapView.jsx.
+    pathSegments: result.legs.map((leg) => ({ kind: leg.kind, path: legPathPoints(leg) })),
   };
 }
 

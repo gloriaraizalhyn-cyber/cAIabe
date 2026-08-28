@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Menu, X } from "lucide-react";
+import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import ShiftSummaryCard from "../components/ShiftSummaryCard.jsx";
+import DriverProfileCard from "../components/DriverProfileCard.jsx";
+import DriverGreeting from "../components/DriverGreeting.jsx";
 import LocationPermissionModal from "../components/LocationPermissionModal.jsx";
 import HeadingToTerminalPanel from "../components/HeadingToTerminalPanel.jsx";
 import ArrivedAtTerminalPanel from "../components/ArrivedAtTerminalPanel.jsx";
@@ -27,6 +31,7 @@ function DriverDashboardPage() {
   const [ownQueueEntry, setOwnQueueEntry] = useState(null);
   const [isRespondingToQueue, setIsRespondingToQueue] = useState(false);
   const [driverPosition, setDriverPosition] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const watchIdRef = useRef(null);
 
@@ -133,7 +138,7 @@ function DriverDashboardPage() {
   };
 
   const handleViewQueue = () => {
-    navigate("/driver/next-to-go");
+    navigate(ownQueueEntry?.position === 1 ? "/driver/next-to-go" : "/driver/queue");
   };
 
   // Next-2 turn alert responses (driver-queue-respond) — see QueueTurnAlert.
@@ -160,12 +165,59 @@ function DriverDashboardPage() {
     setShiftStage("not_started");
   };
 
+  const handleProfile = () => {
+    setIsMenuOpen(false);
+    document.querySelector(".driver-profile-card")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleReportProblem = () => {
+    setIsMenuOpen(false);
+    window.location.href = "mailto:support@caiabe.app?subject=Driver dashboard problem";
+  };
+
+  const handleLogOut = async () => {
+    setIsMenuOpen(false);
+    await supabase.auth.signOut();
+    navigate("/driver/login");
+  };
+
+  const renderDashboardHeader = () => (
+    <>
+      <header className="driver-dashboard-page__nav-header">
+        <div className="driver-dashboard-page__brand">
+          <img
+            src="/images/caiabe-squared.jpg"
+            alt=""
+            className="driver-dashboard-page__brand-logo"
+          />
+          <span className="driver-dashboard-page__brand-text">
+          C<span className="driver-dashboard-page__brand-ai">AI</span>ABE
+          </span>
+        </div>
+        <div className="driver-dashboard-page__menu-wrap">
+          <button
+            type="button"
+            className="driver-dashboard-page__menu-button"
+            aria-label={isMenuOpen ? "Close dashboard menu" : "Open dashboard menu"}
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen((open) => !open)}
+          >
+            {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          {isMenuOpen && (
+            <div className="driver-dashboard-page__menu" role="menu">
+              <button type="button" role="menuitem" onClick={handleProfile}>Profile</button>
+              <button type="button" role="menuitem" onClick={handleReportProblem}>Report a problem</button>
+              <button type="button" role="menuitem" onClick={handleLogOut}>Log out</button>
+            </div>
+          )}
+        </div>
+      </header>
+    </>
+  );
+
   if (loading) {
-    return (
-      <main className="driver-dashboard-page">
-        <p className="driver-dashboard-page__loading">Loading your dashboard…</p>
-      </main>
-    );
+    return <LoadingScreen message="Waking up dispatch…" />;
   }
 
   if (error || !driver) {
@@ -179,11 +231,13 @@ function DriverDashboardPage() {
   }
 
   if (driver.verificationStatus !== "approved") {
+    const driverName = session?.user?.user_metadata?.full_name?.trim() || "Driver";
     return (
       <main className="driver-dashboard-page">
         <div className="driver-dashboard-page__panel">
+          {renderDashboardHeader()}
           <header className="driver-dashboard-page__header">
-            <h1 className="driver-dashboard-page__title">CAIABE Driver Dashboard</h1>
+            <DriverGreeting name={driverName} />
           </header>
           <p className="driver-dashboard-page__loading">
             Your application is still {driver.verificationStatus}. You'll get access to the
@@ -196,6 +250,7 @@ function DriverDashboardPage() {
 
   const assignedRouteLabel = driver.route ? `${driver.route.name} — ${driver.route.color ?? "blue"}` : "—";
   const assignedTerminalName = driver.terminal?.name ?? "—";
+  const driverName = session?.user?.user_metadata?.full_name?.trim() || "Driver";
   const showShiftSummaryCard = shiftStage === "not_started" || shiftStage === "awaiting_location_permission";
   const showQueueTurnAlert =
     shiftStage === "arrived" && Boolean(ownQueueEntry?.notifiedAt) && !ownQueueEntry?.respondedAt;
@@ -203,9 +258,20 @@ function DriverDashboardPage() {
   return (
     <main className="driver-dashboard-page">
       <div className="driver-dashboard-page__panel">
+        {renderDashboardHeader()}
         <header className="driver-dashboard-page__header">
-          <h1 className="driver-dashboard-page__title">CAIABE Driver Dashboard</h1>
+          <DriverGreeting name={driverName} />
         </header>
+
+        <DriverProfileCard
+          fullName={driverName}
+          mobileNumber={session?.user?.user_metadata?.mobile_number}
+          emailAddress={session?.user?.email}
+          plateNumber={session?.user?.user_metadata?.plate_number}
+          vehicleRegistrationNumber={session?.user?.user_metadata?.vehicle_registration_number}
+          jeepColor={driver.jeepColor}
+          shiftStarted={!showShiftSummaryCard}
+        />
 
         {showShiftSummaryCard && (
           <ShiftSummaryCard

@@ -3,6 +3,9 @@
   border: 2px solid #e6e7eb;
   border-radius: 14px;
   padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
 }
 
 .route-option-card--best-pick {
@@ -44,6 +47,12 @@
   color: #ffffff;
 }
 
+.route-option-card__sort-filter--white {
+  border-color: #c5c9d0;
+  background: #eef0f3;
+  color: #4a4f59;
+}
+
 .route-option-card__summary {
   display: flex;
   align-items: flex-start;
@@ -74,6 +83,12 @@
 
 .route-option-card__jeep-dot:first-child {
   margin-left: 0;
+}
+
+.route-option-card__jeep-dot--white {
+  background: #f1f2f4 !important;
+  border-color: #8a8f99;
+  box-shadow: 0 0 0 1px #8a8f99;
 }
 
 .route-option-card__identity-text {
@@ -117,6 +132,7 @@
 .route-option-card__stats {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
 }
@@ -124,6 +140,7 @@
 .route-option-card__stat {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 5px;
   font-size: 0.7rem;
   font-weight: 700;
@@ -131,6 +148,7 @@
   background: #f2f4f7;
   border-radius: 999px;
   padding: 6px 10px;
+  white-space: nowrap;
 }
 
 .route-option-card__toggle {
@@ -193,6 +211,22 @@
   flex-direction: column;
   gap: 10px;
   margin-bottom: 14px;
+}
+
+.route-option-card__walk-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.route-option-card__walk-summary p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.82rem;
+  color: #4a4f59;
 }
 
 .route-option-card__leg {

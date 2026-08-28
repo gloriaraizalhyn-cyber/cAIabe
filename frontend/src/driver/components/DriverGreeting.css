@@ -1,0 +1,62 @@
+.driver-greeting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.driver-greeting__title {
+  min-width: 0;
+  margin: 0;
+  padding-left: 12px;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.driver-greeting__phrase,
+.driver-greeting__name {
+  display: block;
+}
+
+.driver-greeting__phrase {
+  font-size: 0.72em;
+  font-weight: 400;
+}
+
+.driver-greeting__name {
+  font-size: 2.015em;
+  color: #1b3fa0;
+}
+
+.driver-greeting__animation {
+  flex: 0 0 34%;
+  width: 34%;
+  max-width: 34%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+@media (max-width: 380px) {
+  .driver-greeting {
+    gap: 6px;
+  }
+
+  .driver-greeting__title {
+    flex: 0 0 60%;
+    max-width: 60%;
+    font-size: 1.65rem;
+  }
+
+  .driver-greeting__name {
+    font-size: 1.612em;
+  }
+
+  .driver-greeting__animation {
+    flex-basis: 32%;
+    width: 32%;
+    max-width: 32%;
+  }
+}

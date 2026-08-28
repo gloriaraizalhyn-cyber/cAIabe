@@ -19,7 +19,9 @@ function fileToBase64(file) {
 }
 
 const INITIAL_FORM_VALUES = {
-  fullName: "",
+  firstName: "",
+  middleName: "",
+  lastName: "",
   mobileNumber: "",
   emailAddress: "",
   password: "",
@@ -106,7 +108,14 @@ function DriverRegistrationPage() {
       email: formValues.emailAddress,
       password: formValues.password,
       options: {
-        data: { full_name: formValues.fullName, mobile_number: formValues.mobileNumber },
+        data: {
+          full_name: [formValues.firstName, formValues.middleName, formValues.lastName]
+            .filter(Boolean)
+            .join(" "),
+          mobile_number: formValues.mobileNumber,
+          plate_number: formValues.plateNumber,
+          vehicle_registration_number: formValues.vehicleRegistrationNumber,
+        },
       },
     });
 

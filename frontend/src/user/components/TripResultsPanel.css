@@ -5,26 +5,126 @@
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 32px);
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   padding: 20px;
-  border-radius: 16px;
+  border: 2px solid #000000;
+  border-left: 5px solid #d71920;
+  border-top: 5px solid #1b3fa0;
+  border-radius: 26px;
   background: #faf6f0;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+}
+
+.trip-results-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.trip-results-panel__drag-handle {
+  display: none;
+}
+
+/* Bleeds out of the panel's own padding on the left/top (negative margin
+   equal to that padding) so it spans edge-to-edge there and sits flush
+   with the panel's rounded top corners, matching the pattern used for the
+   search card's mascot row and mobile drag handle. The right side keeps
+   the panel's normal padding instead of also bleeding, since the panel
+   scrolls (overflow-y: auto) and that padding is what keeps content clear
+   of its scrollbar — bleeding there would tuck the brand text underneath
+   it. */
+.trip-results-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  margin: -20px 0 8px -20px;
+  padding: 10px 0 6px 16px;
+  background: transparent;
+  border-radius: 26px 26px 0 0;
 }
 
 .trip-results-panel__edit-button {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 4px;
   border: none;
   background: transparent;
-  color: #6a6f79;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0 0 10px;
+  color: #1b3fa0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 8px 0;
+  white-space: nowrap;
 }
 
 .trip-results-panel__edit-button:hover {
-  color: #1a1a1a;
+  color: #1b3fa0;
+}
+
+.trip-results-panel__brand {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex-shrink: 1;
+  margin-left: auto;
+  gap: 6px;
+}
+
+.trip-results-panel__brand-logo {
+  width: 29px;
+  height: auto;
+  display: block;
+}
+
+.trip-results-panel__brand-text {
+  font-family: "Quiapo", "DM Sans", sans-serif;
+  font-size: 1.53rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #d71920;
+}
+
+.trip-results-panel__brand-ai {
+  color: #1b3fa0;
+}
+
+@media (max-width: 400px) {
+  .trip-results-panel__header {
+    gap: 8px;
+    padding: 10px 14px 6px 16px;
+  }
+
+  .trip-results-panel__brand {
+    gap: 4px;
+  }
+
+  .trip-results-panel__brand-logo {
+    width: 27px;
+  }
+
+  .trip-results-panel__brand-text {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .trip-results-panel__header {
+    gap: 6px;
+    padding-right: 10px;
+  }
+
+  .trip-results-panel__brand {
+    gap: 3px;
+  }
+
+  .trip-results-panel__brand-logo {
+    width: 25px;
+  }
+
+  .trip-results-panel__brand-text {
+    font-size: 1.3rem;
+  }
 }
 
 .trip-results-panel__count {
@@ -71,4 +171,59 @@
   flex: 1;
   height: 1px;
   background: #e2e4e9;
+}
+
+@media (max-width: 640px) {
+  .find-routes-page__overlay {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+
+  .trip-results-panel {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-width: none;
+    height: 92vh;
+    max-height: none;
+    margin: 0;
+    padding: 0 20px 12px;
+    border-radius: 26px 26px 0 0;
+    overflow-y: auto;
+    transform: translateY(46vh);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .trip-results-panel--expanded {
+    transform: translateY(0);
+  }
+
+  .trip-results-panel__drag-handle {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 14px;
+    margin: 0 -20px;
+    background: #faf6f0;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .trip-results-panel__drag-handle-bar {
+    width: 40px;
+    height: 5px;
+    border-radius: 999px;
+    background: #d8dbe3;
+  }
+
+  .trip-results-panel__header {
+    margin: 0 0 8px;
+    padding: 10px 0 6px;
+  }
 }

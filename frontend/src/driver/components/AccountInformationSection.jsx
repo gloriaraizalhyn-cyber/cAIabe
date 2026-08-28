@@ -1,6 +1,16 @@
 import FormSection from "./FormSection.jsx";
 import TextField from "./TextField.jsx";
 
+// Trims accidental leading/trailing whitespace (e.g. a stray space left
+// over from autocomplete or a fumbled keystroke) once the driver leaves
+// the field, rather than while they're still typing.
+function trimNameFieldOnBlur(fieldName, currentValue, onChange) {
+  const trimmedValue = currentValue.trim();
+  if (trimmedValue !== currentValue) {
+    onChange(fieldName, trimmedValue);
+  }
+}
+
 function AccountInformationSection({ values, errors, onChange }) {
   return (
     <FormSection
@@ -9,13 +19,33 @@ function AccountInformationSection({ values, errors, onChange }) {
       description="Used to log in and to reach you about your application."
     >
       <TextField
-        label="Full Name"
+        label="First Name"
         required
-        value={values.fullName}
-        onChange={(value) => onChange("fullName", value)}
-        placeholder="Juan Dela Cruz"
-        autoComplete="name"
-        error={errors.fullName}
+        value={values.firstName}
+        onChange={(value) => onChange("firstName", value)}
+        onBlur={() => trimNameFieldOnBlur("firstName", values.firstName, onChange)}
+        placeholder="Juan"
+        autoComplete="given-name"
+        error={errors.firstName}
+      />
+      <TextField
+        label="Last Name"
+        required
+        value={values.lastName}
+        onChange={(value) => onChange("lastName", value)}
+        onBlur={() => trimNameFieldOnBlur("lastName", values.lastName, onChange)}
+        placeholder="Dela Cruz"
+        autoComplete="family-name"
+        error={errors.lastName}
+      />
+      <TextField
+        label="Middle Name"
+        value={values.middleName}
+        onChange={(value) => onChange("middleName", value)}
+        onBlur={() => trimNameFieldOnBlur("middleName", values.middleName, onChange)}
+        placeholder="Santos (optional)"
+        autoComplete="additional-name"
+        error={errors.middleName}
       />
       <TextField
         label="Mobile Number"

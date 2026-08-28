@@ -59,6 +59,13 @@ export const SAVED_ROUTES_FIXTURE = [
     destination: "Marquee Mall",
   },
   {
+    id: "saved-love",
+    label: "Love 💗",
+    jeepneyLineCode: "04L",
+    origin: "National University Clark",
+    destination: "JENRA Grand Mall",
+  },
+  {
     id: "saved-2",
     label: "Nepo Mall → SM Telabastagan",
     jeepneyLineCode: "03L",

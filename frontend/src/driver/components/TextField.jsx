@@ -8,6 +8,7 @@ function TextField({
   type = "text",
   value,
   onChange,
+  onBlur,
   placeholder,
   error,
   autoComplete,
@@ -30,6 +31,7 @@ function TextField({
           placeholder={placeholder}
           autoComplete={autoComplete}
           onChange={(event) => onChange(event.target.value)}
+          onBlur={onBlur}
         />
         {isPasswordType && (
           <button

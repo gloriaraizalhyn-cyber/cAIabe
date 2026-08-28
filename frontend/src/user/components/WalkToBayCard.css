@@ -31,11 +31,37 @@
   border-radius: 12px;
   background: #f0b429;
   color: #1a1a1a;
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   font-weight: 800;
-  padding: 16px;
+  padding: 12px;
 }
 
 .walk-to-bay-card__arrived-button:hover {
   background: #dba01c;
+}
+
+@media (max-width: 640px) {
+  .walk-to-bay-card {
+    padding: 0 16px 10px;
+  }
+
+  .walk-to-bay-card__step {
+    margin-bottom: 4px;
+  }
+
+  .walk-to-bay-card__title {
+    margin-bottom: 6px;
+    font-size: 1.18rem;
+    line-height: 1.15;
+  }
+
+  .walk-to-bay-card__body {
+    margin-bottom: 14px;
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  .walk-to-bay-card__arrived-button {
+    padding: 10px;
+  }
 }

@@ -2,22 +2,133 @@
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  background: #f5f6f8;
+  background: #ffffff;
   padding: 24px 16px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.driver-dashboard-page::-webkit-scrollbar,
+.driver-dashboard-page__panel::-webkit-scrollbar {
+  display: none;
 }
 
 .driver-dashboard-page__panel {
   width: 100%;
   max-width: 440px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.driver-dashboard-page__nav-header {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border-radius: 14px;
+  border-bottom: 2px solid #1b3fa0;
+}
+
+.driver-dashboard-page__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Quiapo", "DM Sans", sans-serif;
+  font-size: 1.44rem;
+  font-weight: 400;
+  color: #d71920;
+}
+
+.driver-dashboard-page__brand-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.driver-dashboard-page__brand-text {
+  white-space: nowrap;
+}
+
+.driver-dashboard-page__brand-ai {
+  color: #1b3fa0;
+}
+
+@media (max-width: 380px) {
+  .driver-dashboard-page__brand {
+    gap: 5px;
+    font-size: 1.224rem;
+  }
+
+  .driver-dashboard-page__brand-logo {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.driver-dashboard-page__menu-wrap {
+  position: relative;
+}
+
+.driver-dashboard-page__menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid #000000;
+  border-top: 4px solid #1b3fa0;
+  border-left: 4px solid #d71920;
+  border-radius: 10px;
+  background: #faf6f0;
+  color: #1b3fa0;
+}
+
+.driver-dashboard-page__menu-button:hover {
+  background: #eef0f3;
+}
+
+.driver-dashboard-page__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  padding: 6px;
+  border: 2px solid #000000;
+  border-radius: 12px;
+  background: #faf6f0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+}
+
+.driver-dashboard-page__menu button {
+  border: none;
+  background: transparent;
+  color: #1a1a1a;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.driver-dashboard-page__menu button:hover {
+  background: #e8ecf9;
+  color: #1b3fa0;
 }
 
 .driver-dashboard-page__header {
-  margin-bottom: 18px;
+  margin-bottom: 8px;
 }
 
 .driver-dashboard-page__title {
   margin: 0 0 4px;
-  font-size: 1.3rem;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.55rem;
   font-weight: 800;
   color: #1a1a1a;
 }

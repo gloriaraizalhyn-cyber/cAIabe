@@ -74,8 +74,15 @@ function DriverLoginPage() {
     <main className="driver-login-page">
       <div className="driver-login-page__card">
         <header className="driver-login-page__header">
-          <h1 className="driver-login-page__title">Driver Log In</h1>
-          <p className="driver-login-page__subtitle">Log in to access your driver dashboard.</p>
+          <div className="driver-login-page__header-copy">
+            <h1 className="driver-login-page__title">Driver Log In</h1>
+            <p className="driver-login-page__subtitle">Log in to access your driver dashboard.</p>
+          </div>
+          <img
+            src="/images/caiabe-logo.png"
+            alt="CAIABE"
+            className="driver-login-page__logo"
+          />
         </header>
 
         <form className="driver-login-page__form" onSubmit={handleSubmit} noValidate>
