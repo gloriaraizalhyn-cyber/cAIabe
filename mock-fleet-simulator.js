@@ -1,21 +1,18 @@
 // mock-fleet-simulator.js
 //
-// Runs one continuously-looping mock driver PER REAL ROUTE at once (every
-// route seeded by caiabe_seed_routes.sql — the ones with an actual polyline
-// and a dispatching terminal), so the live map has a moving jeepney on
-// every line, not just the single "Florida" driver from
-// mock-driver-simulator.js (which this script leaves untouched).
+// Runs multiple continuously-looping mock drivers per route simultaneously,
+// with realistic road path densification, spaced out starting offsets, and
+// dynamic full/available capacity status toggling.
 //
-// Driver accounts are auto-provisioned (one per route, idempotent — reruns
-// reuse the same account) using the service role key, since manually
-// registering + approving 10 accounts through the UI would be tedious.
-// This is a dev/test tool only — never ship the service role key client-side.
+// Usage:
+//   node --env-file=.env mock-fleet-simulator.js
+//   node --env-file=.env mock-fleet-simulator.js --jeeps=3
+//   node --env-file=.env mock-fleet-simulator.js --jeeps=2 --route="Marisol"
 //
-// Requires Node 18+ (native fetch) and a `.env` file at the repo root with
-// SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY,
-// GOOGLE_MAPS_API_KEY (see .env — gitignored).
-//
-// Run with: node --env-file=.env mock-fleet-simulator.js
+// Flags:
+//   --jeeps=N        Number of jeepneys per route (default: 3)
+//   --delay=MS       Delay between steps in ms (default: 800)
+//   --route=NAME     Filter to a single route by name (optional)
 
 const SUPABASE_URL = requireEnv("SUPABASE_URL");
 const ANON_KEY = requireEnv("SUPABASE_ANON_KEY");
@@ -23,9 +20,18 @@ const SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
 const GOOGLE_MAPS_API_KEY = requireEnv("GOOGLE_MAPS_API_KEY");
 
 const SIM_DRIVER_PASSWORD = "MockFleet123!";
-const STEP_DELAY_MS = 1500;
-const TOGGLE_CAPACITY_EVERY_N_STEPS = 5;
-const MAX_STEPS = 20;
+const TOGGLE_CAPACITY_EVERY_N_STEPS = 12; // toggles between available/full every ~10-12s
+
+function getCliArg(name, defaultValue) {
+  const prefix = `--${name}=`;
+  const arg = process.argv.find((a) => a.startsWith(prefix));
+  if (arg) return arg.slice(prefix.length);
+  return process.env[name.toUpperCase().replace(/-/g, "_")] || defaultValue;
+}
+
+const JEEPS_PER_ROUTE = parseInt(getCliArg("jeeps", "3"), 10) || 3;
+const STEP_DELAY_MS = parseInt(getCliArg("delay", "800"), 10) || 800;
+const ROUTE_FILTER = getCliArg("route", null);
 
 function requireEnv(name) {
   const value = process.env[name];
@@ -124,16 +130,16 @@ async function upsertDriverRow({ id, routeId, jeepColor, homeTerminalId }) {
   if (!res.ok) throw new Error(`drivers upsert failed: ${res.status} ${await res.text()}`);
 }
 
-// Idempotent: reruns reuse the same account instead of creating duplicates.
-async function ensureMockDriver(route, homeTerminalId) {
-  const email = `sim.${slugify(route.name)}@caiabe.test`;
+// Idempotent: reruns reuse the same driver accounts per route index.
+async function ensureMockDriver(route, homeTerminalId, driverIndex = 1) {
+  const email = `sim.${slugify(route.name)}.${driverIndex}@caiabe.test`;
 
   let session = await signIn(email, SIM_DRIVER_PASSWORD);
   if (!session) {
     await adminCreateUser(email, SIM_DRIVER_PASSWORD);
     session = await signIn(email, SIM_DRIVER_PASSWORD);
   }
-  if (!session) throw new Error(`Could not sign in mock driver for route "${route.name}"`);
+  if (!session) throw new Error(`Could not sign in mock driver #${driverIndex} for route "${route.name}"`);
 
   await upsertDriverRow({
     id: session.userId,
@@ -145,7 +151,7 @@ async function ensureMockDriver(route, homeTerminalId) {
   return session;
 }
 
-// ---------- road path (same technique as mock-driver-simulator.js) ----------
+// ---------- road path & geometry ----------
 
 function decodePolyline(encoded) {
   const points = [];
@@ -173,6 +179,48 @@ function decodePolyline(encoded) {
   return points;
 }
 
+function haversineDistanceMeters(p1, p2) {
+  const earthRadius = 6371000;
+  const dLat = ((p2.lat - p1.lat) * Math.PI) / 180;
+  const dLng = ((p2.lng - p1.lng) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((p1.lat * Math.PI) / 180) *
+      Math.cos((p2.lat * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadius * c;
+}
+
+// Densifies road polyline segments so no two consecutive points are more than
+// `maxSegmentMeters` apart. This removes all teleportation / popping effects.
+function densifyPath(points, maxSegmentMeters = 15) {
+  if (!points || points.length === 0) return [];
+  const result = [];
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    result.push(p1);
+
+    const dist = haversineDistanceMeters(p1, p2);
+    if (dist > maxSegmentMeters) {
+      const numSubsteps = Math.ceil(dist / maxSegmentMeters);
+      for (let j = 1; j < numSubsteps; j++) {
+        const fraction = j / numSubsteps;
+        result.push({
+          lat: p1.lat + (p2.lat - p1.lat) * fraction,
+          lng: p1.lng + (p2.lng - p1.lng) * fraction,
+        });
+      }
+    }
+  }
+
+  result.push(points[points.length - 1]);
+  return result;
+}
+
 async function getRoadPath(origin, destination, label) {
   const url = new URL("https://maps.googleapis.com/maps/api/directions/json");
   url.searchParams.set("origin", `${origin.lat},${origin.lng}`);
@@ -183,26 +231,71 @@ async function getRoadPath(origin, destination, label) {
   const data = await res.json();
   if (data.status !== "OK") {
     console.warn(`[${label}] Directions API returned "${data.status}" — using a straight line.`);
-    return [origin, destination];
+    return densifyPath([origin, destination], 15);
   }
 
   const fullPath = decodePolyline(data.routes[0].overview_polyline.points);
-  if (fullPath.length <= MAX_STEPS) return [...fullPath, destination];
-
-  const step = fullPath.length / MAX_STEPS;
-  const sampled = [];
-  for (let i = 0; i < MAX_STEPS; i++) sampled.push(fullPath[Math.floor(i * step)]);
-  sampled.push(destination); // guarantee the exact terminus so end-of-route detection fires
-  return sampled;
+  const smoothPath = densifyPath(fullPath, 15);
+  smoothPath.push(destination); // guarantee exact terminus coordinate
+  return smoothPath;
 }
 
-// ---------- per-route driving loop ----------
+// ---------- driving loop for a single jeepney unit ----------
 
-async function driveRoute(route, terminal) {
+async function driveSingleJeep(route, terminal, forwardPath, backwardPath, driverIndex, totalJeeps) {
+  const session = await ensureMockDriver(route, terminal.id, driverIndex);
+  const driverLabel = `${route.name} (Unit #${driverIndex})`;
+  console.log(`  🚐 [${driverLabel}] active (${session.userId.slice(0, 8)}…)`);
+
+  const circuit = [...forwardPath, ...backwardPath];
+  const circuitLength = circuit.length;
+
+  // Evenly distribute initial positions around the full loop
+  const startOffset = Math.floor(((driverIndex - 1) / totalJeeps) * circuitLength);
+
+  // Stagger initial capacity: alternate available and full
+  let capacityState = driverIndex % 2 === 1 ? "available" : "full";
+  let step = 0;
+
+  // Add slight timing variance (750ms - 850ms) so vehicles drive naturally
+  const vehicleDelay = STEP_DELAY_MS + ((driverIndex * 67) % 100) - 50;
+
+  let currentIdx = startOffset;
+
+  while (true) {
+    const point = circuit[currentIdx];
+
+    await callFunction(
+      "driver-location-update",
+      session.accessToken,
+      {
+        lat: point.lat,
+        lng: point.lng,
+        capacity_state: capacityState,
+      },
+      { quiet: true },
+    );
+
+    step++;
+    if (step % TOGGLE_CAPACITY_EVERY_N_STEPS === 0) {
+      capacityState = capacityState === "available" ? "full" : "available";
+      await callFunction(
+        "driver-capacity-toggle",
+        session.accessToken,
+        { state: capacityState },
+        { quiet: true },
+      );
+    }
+
+    currentIdx = (currentIdx + 1) % circuitLength;
+    await sleep(vehicleDelay);
+  }
+}
+
+// ---------- per-route fleet orchestrator ----------
+
+async function driveRouteFleet(route, terminal) {
   const label = route.name;
-
-  const session = await ensureMockDriver(route, terminal.id);
-  console.log(`[${label}] driver ready (${session.userId})`);
 
   const [terminus] = await callRpc("get_route_terminus_coords", { p_route_id: route.id });
   if (!terminus) throw new Error(`[${label}] no terminus found`);
@@ -213,46 +306,31 @@ async function driveRoute(route, terminal) {
     label,
   );
   const backwardPath = [...forwardPath].reverse();
-  console.log(`[${label}] road path ready (${forwardPath.length} steps)`);
+  console.log(`📍 [${label}] Road path computed (${forwardPath.length} steps). Deploying ${JEEPS_PER_ROUTE} units...`);
 
-  let capacityState = "available";
-  let step = 0;
-
-  const driveOnce = async (path, { asDispatch }) => {
-    if (asDispatch) {
-      await callFunction("driver-queue-join", session.accessToken, { terminal_id: terminal.id }, { quiet: true });
-      await callFunction("driver-queue-respond", session.accessToken, { response: "lining_up" }, { quiet: true });
-      await fetch(`${SUPABASE_URL}/functions/v1/queue-advance`, {
-        method: "POST",
-        headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
-      });
-    }
-
-    for (const point of path) {
-      await callFunction("driver-location-update", session.accessToken, { lat: point.lat, lng: point.lng });
-      step++;
-      if (step % TOGGLE_CAPACITY_EVERY_N_STEPS === 0) {
-        capacityState = capacityState === "available" ? "full" : "available";
-        await callFunction("driver-capacity-toggle", session.accessToken, { state: capacityState });
-      }
-      await sleep(STEP_DELAY_MS);
-    }
-  };
-
-  // Loop forever: terminal -> terminus (as a real dispatched trip), then
-  // terminus -> terminal (repositioning), repeat. Ctrl+C to stop.
-  while (true) {
-    await driveOnce(forwardPath, { asDispatch: true });
-    console.log(`[${label}] reached terminus, heading back`);
-    await driveOnce(backwardPath, { asDispatch: false });
-    console.log(`[${label}] back at terminal, starting next lap`);
+  const jeepPromises = [];
+  for (let i = 1; i <= JEEPS_PER_ROUTE; i++) {
+    jeepPromises.push(
+      driveSingleJeep(route, terminal, forwardPath, backwardPath, i, JEEPS_PER_ROUTE).catch((err) => {
+        console.error(`❌ [${label} Unit #${i}] crashed:`, err);
+      }),
+    );
   }
+
+  await Promise.all(jeepPromises);
 }
 
 // ---------- main ----------
 
 async function main() {
-  console.log("Fetching routes, terminals, and terminal-route assignments...");
+  console.log("==================================================");
+  console.log("  cAIabe Multi-Jeepney Fleet Simulator (v3)       ");
+  console.log("==================================================");
+  console.log(`Jeepneys per route : ${JEEPS_PER_ROUTE}`);
+  console.log(`Step delay (ms)    : ${STEP_DELAY_MS}`);
+  if (ROUTE_FILTER) console.log(`Route filter       : "${ROUTE_FILTER}"`);
+  console.log("Fetching routes and terminals from Supabase...\n");
+
   const [routes, terminalRoutes, terminals] = await Promise.all([
     restSelect("routes?select=id,name,color"),
     restSelect("terminal_routes?select=terminal_id,route_id"),
@@ -262,17 +340,21 @@ async function main() {
   const terminalNameById = new Map(terminals.map((t) => [t.id, t.name]));
   const terminalIdByRoute = new Map(terminalRoutes.map((tr) => [tr.route_id, tr.terminal_id]));
 
-  // Only routes with a real polyline + a dispatching terminal — i.e. the
-  // caiabe_seed_routes.sql set, not the old placeholder rows (Florida,
-  // Porac, San Fernando) which have no terminal_routes entry. Florida
-  // already has its own dedicated simulator (mock-driver-simulator.js).
-  const targetRoutes = routes.filter((r) => terminalIdByRoute.has(r.id));
+  let targetRoutes = routes.filter((r) => terminalIdByRoute.has(r.id));
+  if (ROUTE_FILTER) {
+    targetRoutes = targetRoutes.filter((r) =>
+      r.name.toLowerCase().includes(ROUTE_FILTER.toLowerCase())
+    );
+  }
+
   if (!targetRoutes.length) {
-    console.error("No routes with a terminal_routes mapping found — nothing to simulate.");
+    console.error("No matching routes found — check your database or route filter.");
     process.exit(1);
   }
 
-  console.log(`Simulating ${targetRoutes.length} routes: ${targetRoutes.map((r) => r.name).join(", ")}\n`);
+  const totalUnits = targetRoutes.length * JEEPS_PER_ROUTE;
+  console.log(`🚀 Simulating ${targetRoutes.length} route(s) with ${JEEPS_PER_ROUTE} jeeps each.`);
+  console.log(`🚐 Total active fleet: ${totalUnits} moving vehicles.\n`);
 
   const terminalCoordsCache = new Map();
   async function getTerminal(routeId) {
@@ -290,15 +372,15 @@ async function main() {
     targetRoutes.map(async (route) => {
       try {
         const terminal = await getTerminal(route.id);
-        await driveRoute(route, terminal);
+        await driveRouteFleet(route, terminal);
       } catch (err) {
-        console.error(`[${route.name}] crashed:`, err);
+        console.error(`❌ [${route.name}] error:`, err);
       }
     }),
   );
 }
 
 main().catch((err) => {
-  console.error("Fleet simulator crashed:", err);
+  console.error("Fleet simulator fatal error:", err);
   process.exit(1);
 });

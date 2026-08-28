@@ -9,7 +9,7 @@ const SORT_METRIC_TO_FIELD = {
   distance: "distanceKm",
 };
 
-const SHEET_PEEK_RATIO = 0.24;
+const SHEET_PEEK_RATIO = 0.46;
 
 function shortenAddress(address) {
   return address.split(",")[0].trim();

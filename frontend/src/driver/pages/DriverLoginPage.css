@@ -23,7 +23,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding-bottom: 16px;
   margin-bottom: 16px;
+  border-bottom: 1px solid #e5e2da;
 }
 
 .driver-login-page__title {
@@ -111,7 +113,7 @@
 .driver-login-page__apply-link {
   border: none;
   background: transparent;
-  color: #1a9e5c;
+  color: #1b3fa0;
   font-size: 0.85rem;
   font-weight: 700;
   padding: 0;

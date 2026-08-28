@@ -1,9 +1,10 @@
 import "./ArrivedAtTerminalPanel.css";
 
-function ArrivedAtTerminalPanel({ queuePosition, assignedRouteLabel, hasLeftTemporarily, onViewQueue }) {
+function ArrivedAtTerminalPanel({ queuePosition, assignedRouteLabel, onViewQueue }) {
   // Position #1 means there's no one ahead — nothing left to queue for, so
   // the action becomes "go see the live map" instead of "go see the queue".
   const isNextToGo = queuePosition === 1;
+
   return (
     <section className="arrived-at-terminal-panel">
       <div className="arrived-at-terminal-panel__status">
@@ -25,7 +26,7 @@ function ArrivedAtTerminalPanel({ queuePosition, assignedRouteLabel, hasLeftTemp
       <div className="arrived-at-terminal-panel__waiting-status">Waiting for your turn</div>
 
       <button type="button" className="arrived-at-terminal-panel__view-queue-button" onClick={onViewQueue}>
-        {hasLeftTemporarily ? "Rejoin Queue" : isNextToGo ? "View Map" : "View Queue"}
+        {isNextToGo ? "View Map" : "View Queue"}
       </button>
     </section>
   );

@@ -19,9 +19,8 @@ const DRIVER_PASSWORD = "testpass123";
 
 const TERMINAL_NAME = "Terminal A"; // just the name now — no more UUID hunting
 
-const STEP_DELAY_MS = 1500;
-const TOGGLE_CAPACITY_EVERY_N_STEPS = 4;
-const MAX_STEPS = 20; // caps how many points we sample from the real route
+const STEP_DELAY_MS = 800; // 800ms per step
+const TOGGLE_CAPACITY_EVERY_N_STEPS = 12; // toggles between available/full every ~10-12s
 // ---------------------------------------------
 
 async function sleep(ms) {
@@ -116,6 +115,48 @@ function decodePolyline(encoded) {
   return points;
 }
 
+function haversineDistanceMeters(p1, p2) {
+  const earthRadius = 6371000;
+  const dLat = ((p2.lat - p1.lat) * Math.PI) / 180;
+  const dLng = ((p2.lng - p1.lng) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((p1.lat * Math.PI) / 180) *
+      Math.cos((p2.lat * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadius * c;
+}
+
+// Densifies road polyline segments so no two consecutive points are more than
+// `maxSegmentMeters` apart. This removes all teleportation / popping effects.
+function densifyPath(points, maxSegmentMeters = 15) {
+  if (!points || points.length === 0) return [];
+  const result = [];
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    result.push(p1);
+
+    const dist = haversineDistanceMeters(p1, p2);
+    if (dist > maxSegmentMeters) {
+      const numSubsteps = Math.ceil(dist / maxSegmentMeters);
+      for (let j = 1; j < numSubsteps; j++) {
+        const fraction = j / numSubsteps;
+        result.push({
+          lat: p1.lat + (p2.lat - p1.lat) * fraction,
+          lng: p1.lng + (p2.lng - p1.lng) * fraction,
+        });
+      }
+    }
+  }
+
+  result.push(points[points.length - 1]);
+  return result;
+}
+
 async function getRoadPath(origin, destination) {
   const url = new URL("https://maps.googleapis.com/maps/api/directions/json");
   url.searchParams.set("origin", `${origin.lat},${origin.lng}`);
@@ -129,26 +170,14 @@ async function getRoadPath(origin, destination) {
     console.warn(
       `⚠️  Directions API returned "${data.status}" — falling back to a straight line between the two points.`,
     );
-    return [origin, destination];
+    return densifyPath([origin, destination], 15);
   }
 
   const fullPath = decodePolyline(data.routes[0].overview_polyline.points);
-
-  // Sample down to MAX_STEPS evenly spaced points so the simulation doesn't
-  // take forever on a long route.
-  if (fullPath.length <= MAX_STEPS) return [...fullPath, destination];
-  const step = fullPath.length / MAX_STEPS;
-  const sampled = [];
-  for (let i = 0; i < MAX_STEPS; i++) {
-    sampled.push(fullPath[Math.floor(i * step)]);
-  }
-  // Google's road-snapped endpoint can sit 100m+ from the terminus point
-  // stored in the database (it's not always exactly on a road), which made
-  // driver-location-update's is_near_terminus check miss every time and the
-  // driver got stuck "driving" forever. Push the exact terminus coordinate
-  // as the guaranteed last step so end-of-route always fires.
-  sampled.push(destination);
-  return sampled;
+  // Densify the full road polyline to ~15 meter increments for continuous, smooth progression
+  const smoothPath = densifyPath(fullPath, 15);
+  smoothPath.push(destination);
+  return smoothPath;
 }
 
 async function main() {

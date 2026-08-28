@@ -19,7 +19,11 @@ Deno.serve(async (req: Request) => {
     const driverId = await getAuthedDriverId(req.headers.get("Authorization"));
     if (!driverId) return json({ error: "not authenticated" }, 401);
 
-    const { lat, lng } = await req.json() as { lat: number; lng: number };
+    const { lat, lng, capacity_state } = await req.json() as {
+      lat: number;
+      lng: number;
+      capacity_state?: "full" | "available";
+    };
     if (lat === undefined || lng === undefined) {
       return json({ error: "lat and lng are required" }, 400);
     }
@@ -34,20 +38,30 @@ Deno.serve(async (req: Request) => {
 
     if (!driver) return json({ error: "driver not found" }, 404);
 
+    const liveUpdate: Record<string, unknown> = {
+      driver_id: driverId,
+      route_id: driver.route_id,
+      position: `SRID=4326;POINT(${lng} ${lat})`,
+      last_updated: new Date().toISOString(),
+    };
+    if (capacity_state && ["full", "available"].includes(capacity_state)) {
+      liveUpdate.capacity_state = capacity_state;
+    }
+
     await supabase.from("driver_live_state").upsert(
-      {
-        driver_id: driverId,
-        route_id: driver.route_id,
-        position: `SRID=4326;POINT(${lng} ${lat})`,
-        last_updated: new Date().toISOString(),
-      },
+      liveUpdate,
       { onConflict: "driver_id" },
     );
 
     await supabase.channel(`route:${driver.route_id}:driving`).send({
       type: "broadcast",
       event: "position_updated",
-      payload: { driver_id: driverId, lat, lng },
+      payload: {
+        driver_id: driverId,
+        lat,
+        lng,
+        ...(capacity_state ? { capacity_state } : {}),
+      },
     });
 
     // Geofence check against the route's terminus (PostGIS RPC — see

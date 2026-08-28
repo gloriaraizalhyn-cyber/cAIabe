@@ -46,18 +46,16 @@
   background: #142f7e;
 }
 
-.next-to-go-card__go-button {
+.next-to-go-card__status-pill {
   flex: 1;
-  border: 1px solid #e0a82e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   border-radius: 10px;
-  background: #fff8df;
-  color: #1a1a1a;
-  font-size: 0.9rem;
+  background: #eef7f1;
+  color: #1a9e5c;
+  font-size: 0.8rem;
   font-weight: 700;
-  padding: 14px;
-}
-
-.next-to-go-card__go-button:hover {
-  border-color: #c58d16;
-  background: #fff2bd;
+  padding: 14px 10px;
 }

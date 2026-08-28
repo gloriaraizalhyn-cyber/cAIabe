@@ -7,7 +7,7 @@
   border: 2px solid #000000;
   border-left: 5px solid #d71920;
   border-top: 5px solid #1b3fa0;
-  border-radius: 16px;
+  border-radius: 26px;
   background: #faf7f0;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
 }
@@ -34,7 +34,7 @@
     height: 92vh;
     margin: 0;
     padding: 0 20px 12px;
-    border-radius: 18px 18px 0 0;
+    border-radius: 26px 26px 0 0;
     overflow-y: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -85,13 +85,8 @@
     margin-bottom: 14px;
   }
 
-  .trip-search-card__saved-routes {
+  .trip-search-card__quick-actions {
     margin-bottom: 12px;
-  }
-
-  .trip-search-card__ai-tip {
-    margin-bottom: 14px;
-    padding: 10px 12px;
   }
 
   .trip-search-card__find-button {
@@ -118,6 +113,10 @@
   margin-right: 0;
 }
 
+.trip-search-card__header-copy {
+  margin-top: 18px;
+}
+
 @media (max-width: 640px) {
   .trip-search-card__header-row {
     margin-right: -20px;
@@ -132,18 +131,37 @@
 .trip-search-card__title {
   margin: 0 0 6px;
   font-family: "DM Sans", "Segoe UI", sans-serif;
-  font-size: 1.9rem;
+  font-size: 2.15rem;
   font-weight: 800;
   line-height: 1.15;
   color: #000;
 }
 
 .trip-search-card__instruction {
-  max-width: 190px;
+  max-width: 210px;
   margin: 14px 0 0;
   color: #6a6f79;
-  font-size: 0.82rem;
-  line-height: 1.35;
+  font-size: 0.94rem;
+  line-height: 1.4;
+}
+
+/* Desktop only (mobile keeps its own spacing above/below) — tighter line
+   spacing within the title/description pair, pulled closer to each other
+   and pushed farther from the current-location button beneath them. */
+@media (min-width: 641px) {
+  .trip-search-card__title {
+    line-height: 1.02;
+    margin-bottom: 3px;
+  }
+
+  .trip-search-card__instruction {
+    margin-top: 6px;
+    line-height: 1.2;
+  }
+
+  .trip-search-card__fields-header {
+    margin-top: -10px;
+  }
 }
 
 @media (max-width: 380px) {
@@ -199,15 +217,15 @@
 .trip-search-card__current-location-button {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   border: 1px solid #e2e4e9;
   border-radius: 999px;
   background: #ffffff;
   color: #1b3fa0;
   font-family: "DM Sans", "Segoe UI", sans-serif;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 5px 10px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 9px 16px;
 }
 
 .trip-search-card__current-location-button:hover:not(:disabled) {
@@ -238,7 +256,7 @@
   background: #ffffff;
   border: 1.5px solid transparent;
   border-radius: 8px;
-  padding: 10px 40px 5px 16px;
+  padding: 10px 48px 5px 16px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
   transition: border-color 0.15s ease;
@@ -247,22 +265,22 @@
 .trip-search-card__swap-button {
   position: absolute;
   top: 50%;
-  right: 10px;
+  right: 6px;
   transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border: 1px solid #e2e4e9;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #f5dea0;
   border-radius: 999px;
-  background: #ffffff;
-  color: #7a7f89;
+  background: #fdecc0;
+  color: #c58d16;
 }
 
 .trip-search-card__swap-button:hover {
-  border-color: #1b3fa0;
-  color: #1b3fa0;
+  border-color: #c58d16;
+  background: #fbe3a5;
 }
 
 .trip-search-card__fields:focus-within {
@@ -276,23 +294,114 @@
   border-top-color: #b7c6ec;
 }
 
-.trip-search-card__section-label {
-  margin: 0 0 6px;
+.trip-search-card__quick-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.trip-search-card__quick-action-label {
   font-family: "DM Sans", "Segoe UI", sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  color: #6a6f79;
+}
+
+.trip-search-card__voice-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  border: none;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 14px 12px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.trip-search-card__voice-card:hover {
+  background: #f4f6fb;
+}
+
+.trip-search-card__voice-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: auto 0;
+}
+
+.trip-search-card__voice-icon {
+  position: relative;
+  z-index: 1;
+  color: #c58d16;
+}
+
+.trip-search-card__voice-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #ffdd66;
+  opacity: 0;
+  animation: trip-search-voice-flow 3.6s ease-out infinite;
+}
+
+.trip-search-card__voice-ring--2 {
+  animation-delay: 1.2s;
+}
+
+.trip-search-card__voice-ring--3 {
+  animation-delay: 2.4s;
+}
+
+@keyframes trip-search-voice-flow {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.trip-search-card__saved-routes-card {
+  flex: 1.35;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.trip-search-card__saved-routes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.trip-search-card__saved-routes-chevron {
+  flex-shrink: 0;
   color: #9a9fa8;
 }
 
 .trip-search-card__saved-routes {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
-  margin-bottom: 8px;
 }
 
 .trip-search-card__saved-route-chip {
+  width: 100%;
   border: 1px solid #e2e4e9;
   background: #ffffff;
   border-radius: 999px;
@@ -303,19 +412,26 @@
 }
 
 .trip-search-card__saved-route-chip:hover {
-  border-color: #1a9e5c;
+  border-color: #e0a82e;
 }
 
 .trip-search-card__saved-route-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   border: none;
   background: transparent;
   padding: 4px 0;
   font-size: 0.82rem;
   font-weight: 600;
   color: #333333;
+  text-align: left;
 }
 
 .trip-search-card__saved-route-bookmark {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -329,40 +445,9 @@
 }
 
 .trip-search-card__saved-route-bookmark--active {
-  border-color: #c3cfec;
-  background: #e8ecf9;
-  color: #1b3fa0;
-}
-
-.trip-search-card__ai-tip {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  background: #fbe9e7;
-  border: 1px solid #e42313;
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 20px;
-}
-
-.trip-search-card__ai-badge {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  background: #e42313;
-  color: #ffffff;
-  font-size: 0.65rem;
-  font-weight: 700;
-  border-radius: 5px;
-  padding: 2px 6px;
-}
-
-.trip-search-card__ai-tip p {
-  margin: 0;
-  font-size: 0.82rem;
-  line-height: 1.4;
-  color: #7a2118;
+  border-color: #f5dea0;
+  background: #fdecc0;
+  color: #c58d16;
 }
 
 .trip-search-card__error {

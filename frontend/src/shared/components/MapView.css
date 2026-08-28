@@ -45,3 +45,116 @@
   border-radius: 4px;
   font-size: 0.8rem;
 }
+
+.map-view__infowindow {
+  padding: 4px 6px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.map-view__infowindow-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.map-view__infowindow-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.map-view__infowindow-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.map-view__infowindow-badge--available {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.map-view__infowindow-badge--full {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.map-view__infowindow-status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #4b5563;
+  line-height: 1.3;
+}
+
+/* On-Route Navigation ETA Callout Badge (Google Maps Style) */
+.map-view__route-callout {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  user-select: none;
+  z-index: 100;
+}
+
+.map-view__route-callout-card {
+  background: #ffffff;
+  border: 1px solid #70757a;
+  border-radius: 6px;
+  padding: 5px 10px;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 110px;
+  text-align: left;
+}
+
+.map-view__route-callout-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.map-view__route-callout-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.map-view__route-callout-time {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #202124;
+}
+
+.map-view__route-callout-sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  color: #5f6368;
+  font-weight: 500;
+}
+
+.map-view__route-callout-tag {
+  font-weight: 700;
+}
+
+.map-view__route-callout-stem {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 7px solid #ffffff;
+  margin-top: -1px;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+}
+
+

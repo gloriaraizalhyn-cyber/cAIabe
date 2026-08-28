@@ -1,4 +1,4 @@
-.outside-terminal-queue-alert__backdrop {
+.queue-turn-alert__backdrop {
   position: fixed;
   inset: 0;
   z-index: 20;
@@ -9,7 +9,7 @@
   padding: 16px;
 }
 
-.outside-terminal-queue-alert {
+.queue-turn-alert {
   width: 100%;
   max-width: 340px;
   background: #241f14;
@@ -18,7 +18,7 @@
   padding: 20px;
 }
 
-.outside-terminal-queue-alert__kicker {
+.queue-turn-alert__kicker {
   margin: 0 0 8px;
   font-size: 0.68rem;
   font-weight: 800;
@@ -26,7 +26,7 @@
   color: #e0a82e;
 }
 
-.outside-terminal-queue-alert__heading {
+.queue-turn-alert__heading {
   margin: 0 0 4px;
   font-size: 1.05rem;
   font-weight: 800;
@@ -34,20 +34,13 @@
   color: #ffffff;
 }
 
-.outside-terminal-queue-alert__body {
-  margin: 12px 0 0;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: #b9b2a0;
-}
-
-.outside-terminal-queue-alert__actions {
+.queue-turn-alert__actions {
   display: flex;
   gap: 10px;
   margin-top: 16px;
 }
 
-.outside-terminal-queue-alert__button {
+.queue-turn-alert__button {
   flex: 1;
   border-radius: 10px;
   font-size: 0.88rem;
@@ -56,31 +49,35 @@
   border: 1px solid transparent;
 }
 
-.outside-terminal-queue-alert__button--primary {
+.queue-turn-alert__button:disabled {
+  opacity: 0.6;
+}
+
+.queue-turn-alert__button--primary {
   background: #e0a82e;
   color: #1a1a1a;
 }
 
-.outside-terminal-queue-alert__button--primary:hover {
+.queue-turn-alert__button--primary:hover {
   background: #c99521;
 }
 
-.outside-terminal-queue-alert__button--secondary {
+.queue-turn-alert__button--secondary {
   background: transparent;
   border-color: #5a4a2a;
   color: #ffffff;
 }
 
-.outside-terminal-queue-alert__button--secondary:hover {
+.queue-turn-alert__button--secondary:hover {
   border-color: #e0a82e;
 }
 
-.outside-terminal-queue-alert__button--danger {
+.queue-turn-alert__button--danger {
   background: transparent;
   border-color: #8a3a3a;
   color: #e0605a;
 }
 
-.outside-terminal-queue-alert__button--danger:hover {
+.queue-turn-alert__button--danger:hover {
   background: rgba(224, 96, 90, 0.1);
 }

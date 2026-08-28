@@ -116,6 +116,10 @@ function FindRoutesPage() {
     runSearch(originPlace, destinationPlace);
   };
 
+  const handleOpenVoiceAssistant = () => {
+    navigate("/voice-search");
+  };
+
   const handleEditTrip = () => {
     setViewMode("search");
   };
@@ -124,6 +128,7 @@ function FindRoutesPage() {
     navigate("/waiting", {
       state: {
         routeId: route.id,
+        route,
         passengerType,
         tripSearch: { origin, destination, originPlace, destinationPlace },
       },
@@ -139,6 +144,7 @@ function FindRoutesPage() {
         routes={
           viewMode === "results" ? (focusedRoute ? [focusedRoute] : routes) : []
         }
+        showDirections={Boolean(originPlace && destinationPlace)}
       />
 
       <div className="find-routes-page__overlay">
@@ -152,6 +158,7 @@ function FindRoutesPage() {
             onSelectDestinationPlace={handleSelectDestinationPlace}
             onSwapPlaces={handleSwapPlaces}
             onApplySavedRoute={handleApplySavedRoute}
+            onOpenVoiceAssistant={handleOpenVoiceAssistant}
             onFindRoutes={handleFindRoutes}
             isSearching={isSearching}
             searchError={searchError}

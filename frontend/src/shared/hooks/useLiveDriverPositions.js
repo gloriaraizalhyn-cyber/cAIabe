@@ -19,6 +19,33 @@ export function useLiveDriverPositions(routeId) {
     setIsConnected(false);
     if (!routeId) return undefined;
 
+    // Immediately fetch currently active drivers for this route from database
+    supabase
+      .from("driver_live_state")
+      .select("driver_id, route_id, position, capacity_state, last_updated")
+      .eq("route_id", routeId)
+      .then(({ data, error }) => {
+        if (!error && data) {
+          const initial = {};
+          data.forEach((row) => {
+            const match = row.position?.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/i);
+            if (match) {
+              const lng = parseFloat(match[1]);
+              const lat = parseFloat(match[2]);
+              initial[row.driver_id] = {
+                lat,
+                lng,
+                capacityState: row.capacity_state ?? "available",
+                updatedAt: new Date(row.last_updated).getTime(),
+              };
+            }
+          });
+          if (Object.keys(initial).length > 0) {
+            setPositionsByDriver((previous) => ({ ...initial, ...previous }));
+          }
+        }
+      });
+
     const channel = supabase
       .channel(`route:${routeId}:driving`)
       .on("broadcast", { event: "position_updated" }, ({ payload }) => {
@@ -28,6 +55,7 @@ export function useLiveDriverPositions(routeId) {
             ...previous[payload.driver_id],
             lat: payload.lat,
             lng: payload.lng,
+            capacityState: payload.capacity_state ?? previous[payload.driver_id]?.capacityState ?? "available",
             updatedAt: Date.now(),
           },
         }));

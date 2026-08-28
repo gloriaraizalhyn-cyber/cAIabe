@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
-import { GoogleMap, Marker, Polyline } from "@react-google-maps/api";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { GoogleMap, Marker, Polyline, InfoWindow, DirectionsRenderer, OverlayView } from "@react-google-maps/api";
 import { useGoogleMapsLoader, GOOGLE_MAPS_API_KEY } from "../hooks/useGoogleMapsLoader.js";
 import { useWalkingLegPaths } from "../hooks/useWalkingLegPaths.js";
+import { getRouteColorMeta } from "../utils/routeColorHelpers.js";
 import "./MapView.css";
 
 const mapContainerStyle = { width: "100%", height: "100%" };
@@ -105,50 +106,248 @@ function RoutePolylines({ route }) {
   );
 }
 
+// Generates a custom, high-DPI SVG marker icon that uses the jeepney route's
+// official color from caiabe_seed_routes.sql for the vehicle pin body, while
+// dynamically displaying the FULL (red) or SEATS OPEN (green) status pill.
+function createJeepneyMarkerIcon(capacityState, routeHexColor = "#CB4747", routeColorName = "Jeep") {
+  const isFull = capacityState === "full";
+  const statusColor = isFull ? "#dc2626" : "#16a34a";
+  const badgeText = isFull ? "FULL" : "SEATS OPEN";
+
+  const pinBorderColor = routeHexColor || "#CB4747";
+  const pinFillColor = "#ffffff";
+  const iconColor = pinBorderColor.toLowerCase() === "#ffffff" ? "#1f2937" : pinBorderColor;
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="74" viewBox="0 0 64 74">
+      <defs>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(0,0,0,0.35)"/>
+        </filter>
+      </defs>
+      <!-- Base pin circle in Official Route Color -->
+      <circle cx="32" cy="27" r="22" fill="${pinFillColor}" stroke="${pinBorderColor}" stroke-width="4" filter="url(#shadow)"/>
+      <!-- Jeepney vehicle silhouette in Route Color -->
+      <g transform="translate(20, 15) scale(0.7)" fill="${iconColor}">
+        <path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/>
+      </g>
+      <!-- Capacity Status pill badge (Green = Seats Open, Red = Full) -->
+      <rect x="4" y="52" width="56" height="18" rx="9" fill="${statusColor}" filter="url(#shadow)"/>
+      <text x="32" y="64.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="0.3">${badgeText}</text>
+    </svg>
+  `;
+
+  if (typeof window !== "undefined" && window.google?.maps) {
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+      scaledSize: new window.google.maps.Size(48, 56),
+      anchor: new window.google.maps.Point(24, 28),
+    };
+  }
+
+  return undefined;
+}
+
+// Interpolates vehicle GPS movements smoothly over time at 60 FPS using
+// requestAnimationFrame so vehicles glide continuously along streets instead
+// of jumping or popping between discrete coordinate updates.
+function useSmoothPositions(jeepneys) {
+  const [animatedPositions, setAnimatedPositions] = useState({});
+  const tracksRef = useRef({});
+  const animFrameRef = useRef(null);
+
+  useEffect(() => {
+    const now = performance.now();
+    const currentTracks = tracksRef.current;
+    let hasUpdates = false;
+
+    jeepneys.forEach((jeep) => {
+      const existing = currentTracks[jeep.id];
+      if (!existing) {
+        currentTracks[jeep.id] = {
+          currentLat: jeep.lat,
+          currentLng: jeep.lng,
+          targetLat: jeep.lat,
+          targetLng: jeep.lng,
+          startLat: jeep.lat,
+          startLng: jeep.lng,
+          startTime: now,
+          duration: 900,
+          capacityState: jeep.capacityState ?? "available",
+        };
+        hasUpdates = true;
+      } else {
+        const moved = existing.targetLat !== jeep.lat || existing.targetLng !== jeep.lng;
+        const capacityChanged = existing.capacityState !== jeep.capacityState;
+
+        if (moved) {
+          existing.startLat = existing.currentLat;
+          existing.startLng = existing.currentLng;
+          existing.targetLat = jeep.lat;
+          existing.targetLng = jeep.lng;
+          existing.startTime = now;
+          existing.duration = 900;
+          hasUpdates = true;
+        }
+
+        if (capacityChanged && jeep.capacityState) {
+          existing.capacityState = jeep.capacityState;
+          hasUpdates = true;
+        }
+      }
+    });
+
+    const activeIds = new Set(jeepneys.map((j) => j.id));
+    Object.keys(currentTracks).forEach((id) => {
+      if (!activeIds.has(id)) {
+        delete currentTracks[id];
+        hasUpdates = true;
+      }
+    });
+
+    if (hasUpdates) {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+
+      const step = (time) => {
+        let isStillAnimating = false;
+        const nextPositions = {};
+
+        Object.entries(tracksRef.current).forEach(([id, track]) => {
+          const elapsed = time - track.startTime;
+          const progress = Math.min(Math.max(elapsed / track.duration, 0), 1);
+
+          track.currentLat = track.startLat + (track.targetLat - track.startLat) * progress;
+          track.currentLng = track.startLng + (track.targetLng - track.startLng) * progress;
+
+          nextPositions[id] = {
+            id,
+            lat: track.currentLat,
+            lng: track.currentLng,
+            capacityState: track.capacityState,
+          };
+
+          if (progress < 1) {
+            isStillAnimating = true;
+          }
+        });
+
+        setAnimatedPositions(nextPositions);
+
+        if (isStillAnimating) {
+          animFrameRef.current = requestAnimationFrame(step);
+        } else {
+          animFrameRef.current = null;
+        }
+      };
+
+      animFrameRef.current = requestAnimationFrame(step);
+    }
+  }, [jeepneys]);
+
+  useEffect(() => {
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, []);
+
+  return Object.values(animatedPositions);
+}
+
 // origin/destination: { lat, lng } | null
 // routes: [{ id, cardKey?, accentColor, path, pathSegments? }] — cardKey,
 // when present, is preferred for keys since id alone isn't guaranteed
 // unique per itinerary (see adaptRouteSearchResult.js). pathSegments, when
 // present, is [{ kind: "walk" | "jeep", path }] and draws per-leg dashed/
 // solid styling; without it this falls back to one solid line from `path`.
-// jeepneys: [{ id, lat, lng }] — every jeepney currently broadcasting
-// position on a route (see useLiveDriverPositions); unrelated to `routes`
-// and used by the waiting-for-jeep screen, not the route-search results.
-function MapView({ origin, destination, routes = [], jeepneys = [], center, zoom = 13 }) {
+// jeepneys: [{ id, lat, lng, capacityState }] — every jeepney currently
+// broadcasting position on a route (see useLiveDriverPositions); unrelated
+// to `routes` and used by the waiting-for-jeep / driving screens, not the
+// route-search results.
+function MapView({
+  origin,
+  destination,
+  routes = [],
+  jeepneys = [],
+  center,
+  zoom = 13,
+  showDirections = false,
+}) {
   const { isLoaded } = useGoogleMapsLoader();
+  const [selectedJeepneyId, setSelectedJeepneyId] = useState(null);
+  const [directionsResult, setDirectionsResult] = useState(null);
   const mapRef = useRef(null);
 
-  const handleMapLoad = (map) => {
-    mapRef.current = map;
-  };
+  const smoothJeepneys = useSmoothPositions(jeepneys);
 
-  // The map only ever gets an initial center/zoom from props — once a
-  // destination or route paths come in, nothing was re-framing the view
-  // around them, so the map kept sitting at the origin's default zoom
-  // while the actual route (and often the destination marker) sat
-  // entirely outside the visible area. Refit whenever the points we have
-  // to show change.
+  const onMapLoad = useCallback((map) => {
+    mapRef.current = map;
+  }, []);
+
+  // Compute real-time Google Directions road polyline when origin and destination are present
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !window.google) return;
+    if (!isLoaded || !window.google?.maps || !origin || !destination) {
+      setDirectionsResult(null);
+      return;
+    }
+
+    const directionsService = new window.google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin: { lat: origin.lat, lng: origin.lng },
+        destination: { lat: destination.lat, lng: destination.lng },
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          setDirectionsResult(result);
+        } else {
+          console.warn("Directions request returned:", status);
+          setDirectionsResult(null);
+        }
+      }
+    );
+  }, [isLoaded, origin?.lat, origin?.lng, destination?.lat, destination?.lng]);
+
+  // Dynamically adjust map bounds to frame origin, destination, routes, and
+  // all live jeepneys — re-runs whenever any of the points we have to show
+  // change, since the map only ever gets an initial center/zoom from props.
+  useEffect(() => {
+    if (!mapRef.current || !window.google?.maps) return;
 
     const bounds = new window.google.maps.LatLngBounds();
-    if (origin) bounds.extend(origin);
-    if (destination) bounds.extend(destination);
+    let hasPoints = false;
+
+    if (origin) {
+      bounds.extend(origin);
+      hasPoints = true;
+    }
+    if (destination) {
+      bounds.extend(destination);
+      hasPoints = true;
+    }
+    if (smoothJeepneys.length > 0) {
+      smoothJeepneys.forEach((jeep) => {
+        bounds.extend({ lat: jeep.lat, lng: jeep.lng });
+        hasPoints = true;
+      });
+    }
     routes.forEach((route) => {
-      (route.path ?? []).forEach((point) => bounds.extend(point));
+      (route.path ?? []).forEach((point) => {
+        bounds.extend(point);
+        hasPoints = true;
+      });
     });
 
-    if (bounds.isEmpty()) return;
+    if (!hasPoints) return;
     if (bounds.getNorthEast().equals(bounds.getSouthWest())) {
       // Only one distinct point so far (e.g. just the origin picked) —
       // fitBounds on a zero-size box zooms in awkwardly far, so just
       // center on it instead and leave the zoom alone.
-      map.panTo(bounds.getCenter());
+      mapRef.current.panTo(bounds.getCenter());
       return;
     }
-    map.fitBounds(bounds, 56);
-  }, [origin, destination, routes]);
+    mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 60, left: 50 });
+  }, [origin, destination, routes, smoothJeepneys.length]);
 
   if (!GOOGLE_MAPS_API_KEY) {
     return (
@@ -169,27 +368,182 @@ function MapView({ origin, destination, routes = [], jeepneys = [], center, zoom
     return <div className="map-view" />;
   }
 
+  const selectedJeep = smoothJeepneys.find((j) => j.id === selectedJeepneyId);
+
+  // Compute on-route midpoint coordinate and ETA callout data (Google Maps navigation style)
+  let etaCalloutData = null;
+  if (directionsResult && directionsResult.routes?.[0]) {
+    const leg = directionsResult.routes[0].legs?.[0];
+    const path = directionsResult.routes[0].overview_path;
+    const midPoint = path?.[Math.floor((path.length || 1) / 2)];
+    if (midPoint && leg) {
+      const routeMeta = getRouteColorMeta(
+        routes[0]?.accentColor || routes[0]?.color,
+        routes[0]?.title || routes[0]?.name
+      );
+      etaCalloutData = {
+        position: { lat: midPoint.lat(), lng: midPoint.lng() },
+        duration: leg.duration?.text || `${routes[0]?.travelMinutes || 15} min`,
+        distance: leg.distance?.text || `${routes[0]?.distanceKm || 4.5} km`,
+        routeName: routeMeta.name ? `${routeMeta.name} Jeep` : null,
+        routeColor: routeMeta.hex,
+      };
+    }
+  } else if (routes[0]?.pathSegments?.length) {
+    const allPts = routes[0].pathSegments.flatMap((s) => s.path || []);
+    if (allPts.length > 0) {
+      const midPoint = allPts[Math.floor(allPts.length / 2)];
+      const routeMeta = getRouteColorMeta(
+        routes[0]?.accentColor || routes[0]?.color,
+        routes[0]?.title || routes[0]?.name
+      );
+      etaCalloutData = {
+        position: midPoint,
+        duration: `${routes[0].travelMinutes || 15} min`,
+        distance: `${routes[0].distanceKm || 4.2} km`,
+        routeName: `${routeMeta.name} Jeep`,
+        routeColor: routeMeta.hex,
+      };
+    }
+  } else if (origin && destination) {
+    const midPoint = {
+      lat: (origin.lat + destination.lat) / 2,
+      lng: (origin.lng + destination.lng) / 2,
+    };
+    etaCalloutData = {
+      position: midPoint,
+      duration: "15 min",
+      distance: "4.2 km",
+      routeName: null,
+      routeColor: "#2563eb",
+    };
+  }
+
   return (
     <div className="map-view">
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
-        center={center ?? origin ?? { lat: 15.186, lng: 120.56 }}
+        center={center ?? origin ?? { lat: 15.1470, lng: 120.5850 }}
         zoom={zoom}
         options={mapOptions}
-        onLoad={handleMapLoad}
+        onLoad={onMapLoad}
       >
-        {origin && <Marker position={origin} label="A" />}
-        {destination && <Marker position={destination} label="B" />}
+        {/* Render Google Maps Navigation Directions Polyline */}
+        {directionsResult && (showDirections || routes.length === 0) && (
+          <DirectionsRenderer
+            directions={directionsResult}
+            options={{
+              suppressMarkers: true,
+              polylineOptions: {
+                strokeColor: "#2563eb",
+                strokeWeight: 6,
+                strokeOpacity: 0.85,
+              },
+            }}
+          />
+        )}
+
+        {/* On-Route Navigation ETA Callout Badge (Google Maps Style) */}
+        {etaCalloutData && (
+          <OverlayView
+            position={etaCalloutData.position}
+            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            getPixelPositionOffset={(width, height) => ({
+              x: -(width / 2),
+              y: -height - 12,
+            })}
+          >
+            <div className="map-view__route-callout">
+              <div className="map-view__route-callout-card">
+                <div className="map-view__route-callout-row">
+                  <span className="map-view__route-callout-icon">🚐</span>
+                  <span className="map-view__route-callout-time">{etaCalloutData.duration}</span>
+                </div>
+                <div className="map-view__route-callout-sub">
+                  <span>{etaCalloutData.distance}</span>
+                  {etaCalloutData.routeName && (
+                    <span
+                      className="map-view__route-callout-tag"
+                      style={{ color: etaCalloutData.routeColor }}
+                    >
+                      • {etaCalloutData.routeName}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="map-view__route-callout-stem" />
+            </div>
+          </OverlayView>
+        )}
+
+        {/* Origin and Destination Markers */}
+        {origin && <Marker position={origin} label="A" title="Origin" />}
+        {destination && <Marker position={destination} label="B" title="Destination" />}
+
+        {/* Live Jeepney Fleet Markers (Strictly on selected route in Official Color) */}
+        {smoothJeepneys.map((jeep) => {
+          const isFull = jeep.capacityState === "full";
+          const routeMeta = getRouteColorMeta(
+            jeep.color || routes[0]?.accentColor || routes[0]?.color,
+            jeep.routeName || routes[0]?.title || routes[0]?.name
+          );
+          const icon = createJeepneyMarkerIcon(jeep.capacityState, routeMeta.hex, routeMeta.name);
+
+          return (
+            <Marker
+              key={jeep.id}
+              position={{ lat: jeep.lat, lng: jeep.lng }}
+              icon={icon}
+              title={`Jeepney: ${routeMeta.name} Line — ${isFull ? "FULL (No Seats)" : "SEATS AVAILABLE"}`}
+              onClick={() => setSelectedJeepneyId(jeep.id)}
+            />
+          );
+        })}
+
+        {/* Interactive Jeepney Status Popup */}
+        {selectedJeep && (
+          <InfoWindow
+            position={{ lat: selectedJeep.lat, lng: selectedJeep.lng }}
+            onCloseClick={() => setSelectedJeepneyId(null)}
+          >
+            <div className="map-view__infowindow">
+              <div className="map-view__infowindow-header">
+                <span
+                  className="map-view__infowindow-title"
+                  style={{
+                    color: getRouteColorMeta(
+                      selectedJeep.color || routes[0]?.accentColor || routes[0]?.color,
+                      routes[0]?.title || routes[0]?.name
+                    ).hex,
+                  }}
+                >
+                  {getRouteColorMeta(
+                    selectedJeep.color || routes[0]?.accentColor || routes[0]?.color,
+                    routes[0]?.title || routes[0]?.name
+                  ).name} Jeepney
+                </span>
+                <span
+                  className={
+                    selectedJeep.capacityState === "full"
+                      ? "map-view__infowindow-badge map-view__infowindow-badge--full"
+                      : "map-view__infowindow-badge map-view__infowindow-badge--available"
+                  }
+                >
+                  {selectedJeep.capacityState === "full" ? "FULL" : "SEATS OPEN"}
+                </span>
+              </div>
+              <p className="map-view__infowindow-status">
+                {selectedJeep.capacityState === "full"
+                  ? "Unit is currently full. Next vehicle is en route."
+                  : "Seats are currently available for boarding."}
+              </p>
+            </div>
+          </InfoWindow>
+        )}
+
+        {/* Route polylines — one per leg, dashed for walks / solid for rides */}
         {routes.map((route) => (
           <RoutePolylines key={route.cardKey ?? route.id} route={route} />
-        ))}
-        {jeepneys.map((jeep) => (
-          <Marker
-            key={jeep.id}
-            position={{ lat: jeep.lat, lng: jeep.lng }}
-            label={{ text: "🚐", fontSize: "18px" }}
-            title="Jeepney"
-          />
         ))}
       </GoogleMap>
     </div>

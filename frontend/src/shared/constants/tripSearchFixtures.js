@@ -1,29 +1,62 @@
-// Placeholder data for the trip-planning flow. None of this comes from the
-// backend yet — it exists so the UI (and the map layer) can be built and
-// exercised before route-search / geocoding are wired in.
+// Hard-restricts suggestions to where the seeded jeepney routes/terminals
+// actually are (the caiabe_seed_routes.sql set — Angeles City / Pampanga), padded
+// ~1.5km beyond their real bounding box (lat 15.122731–15.169716, lng
+// 120.552101–120.614618, per an ST_Extent query over terminals+routes.path).
+export const SERVICE_AREA_BOUNDS = {
+  south: 15.1077,
+  west: 120.5371,
+  north: 15.1847,
+  east: 120.6296,
+};
 
+export function isWithinServiceBounds(coords) {
+  if (!coords || typeof coords.lat !== "number" || typeof coords.lng !== "number") return false;
+  return (
+    coords.lat >= SERVICE_AREA_BOUNDS.south &&
+    coords.lat <= SERVICE_AREA_BOUNDS.north &&
+    coords.lng >= SERVICE_AREA_BOUNDS.west &&
+    coords.lng <= SERVICE_AREA_BOUNDS.east
+  );
+}
+
+// Curated Pampanga terminals, route stops, and transit landmarks along active routes.
 export const PLACE_SUGGESTIONS_FIXTURE = [
-  { id: "place-1", label: "National University Clark", lat: 15.1862, lng: 120.5602 },
-  { id: "place-2", label: "JENRA Grand Mall", lat: 15.1453, lng: 120.5931 },
-  { id: "place-3", label: "SM Clark", lat: 15.1809, lng: 120.5566 },
-  { id: "place-4", label: "Marquee Mall", lat: 15.1652, lng: 120.5931 },
-  { id: "place-5", label: "Clark Freeport Zone", lat: 15.1859, lng: 120.5364 },
-  { id: "place-6", label: "Angeles University Foundation", lat: 15.1435, lng: 120.5935 },
-  { id: "place-7", label: "Dau Bus Terminal", lat: 15.1697, lng: 120.6122 },
-  { id: "place-8", label: "Holy Angel University", lat: 15.1417, lng: 120.5934 },
-  { id: "place-9", label: "Checkpoint, Angeles City", lat: 15.1508, lng: 120.5891 },
-  { id: "place-10", label: "Balibago", lat: 15.1706, lng: 120.5787 },
-  { id: "place-11", label: "Friendship Highway", lat: 15.1780, lng: 120.5750 },
-  { id: "place-12", label: "Fields Avenue", lat: 15.1721, lng: 120.5883 },
+  // Terminals
+  { id: "term-1", label: "San Vicente Street Terminal", subtitle: "Capaya – Angeles Route Terminal", category: "terminal", lat: 15.146776, lng: 120.614065 },
+  { id: "term-2", label: "Pampang Road Terminal", subtitle: "Sapangbato & SM Telabastagan Terminal", category: "terminal", lat: 15.141774, lng: 120.587892 },
+  { id: "term-3", label: "Sunset, Nepo Terminal", subtitle: "Carmenville – Angeles Route Terminal", category: "terminal", lat: 15.135233, lng: 120.566695 },
+  { id: "term-4", label: "Petron Angeles City Terminal", subtitle: "Pampang – SM Telabastagan Terminal", category: "terminal", lat: 15.122731, lng: 120.599655 },
+  { id: "term-5", label: "Checkpoint Terminal", subtitle: "Marisol & HAU Loop Terminal", category: "terminal", lat: 15.150774, lng: 120.592149 },
+  { id: "term-6", label: "Marquee Mall Terminal", subtitle: "Pandan – Angeles Route Terminal", category: "terminal", lat: 15.162054, lng: 120.608199 },
+  { id: "term-7", label: "SMC Checkpoint Terminal", subtitle: "Balibago & Hensonville Terminal", category: "terminal", lat: 15.166711, lng: 120.584556 },
+  { id: "term-8", label: "Friendship Highway Terminal", subtitle: "Friendship Hwy – Angeles Terminal", category: "terminal", lat: 15.166620, lng: 120.583175 },
+
+  // Landmarks & Universities
+  { id: "land-1", label: "Holy Angel University", subtitle: "Sto. Rosario St, Angeles City", category: "landmark", lat: 15.1417, lng: 120.5934 },
+  { id: "land-2", label: "Angeles University Foundation", subtitle: "MacArthur Hwy, Angeles City", category: "landmark", lat: 15.1435, lng: 120.5935 },
+  { id: "land-3", label: "JENRA Grand Mall", subtitle: "Sto. Rosario St, Angeles City", category: "landmark", lat: 15.1453, lng: 120.5931 },
+  { id: "land-4", label: "Nepo Mall", subtitle: "Nepo Quad, Angeles City", category: "landmark", lat: 15.1352, lng: 120.5880 },
+  { id: "land-5", label: "Marquee Mall", subtitle: "Pulung Maragul, Angeles City", category: "landmark", lat: 15.1620, lng: 120.6082 },
+  { id: "land-6", label: "SM City Telabastagan", subtitle: "MacArthur Hwy, Telabastagan", category: "landmark", lat: 15.1227, lng: 120.5996 },
+  { id: "land-7", label: "Bayanihan Park (Astro Park)", subtitle: "Balibago, Angeles City", category: "landmark", lat: 15.1695, lng: 120.5880 },
+  { id: "land-8", label: "Balibago (Fields Ave)", subtitle: "Balibago, Angeles City", category: "landmark", lat: 15.1685, lng: 120.5895 },
+
+  // Route Stops & Neighborhoods
+  { id: "stop-1", label: "Pampang Public Market", subtitle: "Pampang, Angeles City", category: "stop", lat: 15.1418, lng: 120.5879 },
+  { id: "stop-2", label: "Sapangbato Proper", subtitle: "Sapangbato, Angeles City", category: "stop", lat: 15.1625, lng: 120.5521 },
+  { id: "stop-3", label: "Carmenville", subtitle: "Carmenville Subd, Angeles City", category: "stop", lat: 15.1335, lng: 120.5841 },
+  { id: "stop-4", label: "Capaya", subtitle: "Capaya 1 & 2, Angeles City", category: "stop", lat: 15.1468, lng: 120.6141 },
+  { id: "stop-5", label: "Pandan", subtitle: "Pandan Road, Angeles City", category: "stop", lat: 15.1580, lng: 120.6070 },
+  { id: "stop-6", label: "Hensonville", subtitle: "Hensonville, Angeles City", category: "stop", lat: 15.1550, lng: 120.5833 },
 ];
 
 export const SAVED_ROUTES_FIXTURE = [
   {
     id: "saved-1",
-    label: "School → Home",
-    jeepneyLineCode: "04L",
-    origin: "National University Clark",
-    destination: "JENRA Grand Mall",
+    label: "HAU → Marquee Mall",
+    jeepneyLineCode: "05K",
+    origin: "Holy Angel University",
+    destination: "Marquee Mall",
   },
   {
     id: "saved-love",
@@ -31,6 +64,20 @@ export const SAVED_ROUTES_FIXTURE = [
     jeepneyLineCode: "04L",
     origin: "National University Clark",
     destination: "JENRA Grand Mall",
+  },
+  {
+    id: "saved-2",
+    label: "Nepo Mall → SM Telabastagan",
+    jeepneyLineCode: "03L",
+    origin: "Nepo Mall",
+    destination: "SM City Telabastagan",
+  },
+  {
+    id: "saved-3",
+    label: "Pampang → Checkpoint",
+    jeepneyLineCode: "02L",
+    origin: "Pampang Road Terminal",
+    destination: "Checkpoint Terminal",
   },
 ];
 

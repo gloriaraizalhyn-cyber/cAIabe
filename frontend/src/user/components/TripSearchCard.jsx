@@ -1,11 +1,8 @@
 import { useRef, useState } from "react";
-import { Sparkles, Bookmark, ArrowUpDown, LocateFixed } from "lucide-react";
+import { Bookmark, ArrowUpDown, LocateFixed, Mic, ChevronRight } from "lucide-react";
 import LocationAutocompleteInput from "./LocationAutocompleteInput.jsx";
 import MascotReveal from "./MascotReveal.jsx";
-import {
-  SAVED_ROUTES_FIXTURE,
-  AI_SEARCH_TIP_FIXTURE,
-} from "../../shared/constants/tripSearchFixtures.js";
+import { SAVED_ROUTES_FIXTURE } from "../../shared/constants/tripSearchFixtures.js";
 import "./TripSearchCard.css";
 
 // How much of the sheet's total height stays off-screen (below the
@@ -23,6 +20,7 @@ function TripSearchCard({
   onSelectDestinationPlace,
   onSwapPlaces,
   onApplySavedRoute,
+  onOpenVoiceAssistant,
   onFindRoutes,
   isSearching,
   searchError,
@@ -170,45 +168,58 @@ function TripSearchCard({
           onClick={onSwapPlaces}
           aria-label="Swap origin and destination"
         >
-          <ArrowUpDown size={14} strokeWidth={2.5} />
+          <ArrowUpDown size={17} strokeWidth={2.5} />
         </button>
       </div>
 
-      <p className="trip-search-card__section-label">Saved Routes</p>
-      <div className="trip-search-card__saved-routes">
-        {SAVED_ROUTES_FIXTURE.map((savedRoute) => {
-          const isBookmarked = bookmarkedRouteIds.has(savedRoute.id);
-          return (
-            <div key={savedRoute.id} className="trip-search-card__saved-route-chip">
-              <button
-                type="button"
-                className="trip-search-card__saved-route-label"
-                onClick={() => onApplySavedRoute(savedRoute)}
-              >
-                {savedRoute.label}
-              </button>
-              <button
-                type="button"
-                className={`trip-search-card__saved-route-bookmark${
-                  isBookmarked ? " trip-search-card__saved-route-bookmark--active" : ""
-                }`}
-                aria-pressed={isBookmarked}
-                aria-label={isBookmarked ? "Remove from saved routes" : "Save this route"}
-                onClick={() => toggleBookmark(savedRoute.id)}
-              >
-                <Bookmark size={13} strokeWidth={2.25} fill={isBookmarked ? "currentColor" : "none"} />
-              </button>
-            </div>
-          );
-        })}
-      </div>
+      <div className="trip-search-card__quick-actions">
+        <button
+          type="button"
+          className="trip-search-card__voice-card"
+          onClick={onOpenVoiceAssistant}
+        >
+          <span className="trip-search-card__quick-action-label">Voice Assistant</span>
+          <span className="trip-search-card__voice-icon-wrap">
+            <span className="trip-search-card__voice-ring trip-search-card__voice-ring--1" />
+            <span className="trip-search-card__voice-ring trip-search-card__voice-ring--2" />
+            <span className="trip-search-card__voice-ring trip-search-card__voice-ring--3" />
+            <Mic size={40} strokeWidth={2} className="trip-search-card__voice-icon" />
+          </span>
+        </button>
 
-      <div className="trip-search-card__ai-tip">
-        <span className="trip-search-card__ai-badge">
-          <Sparkles size={12} strokeWidth={2.5} />
-          AI
-        </span>
-        <p>{AI_SEARCH_TIP_FIXTURE}</p>
+        <div className="trip-search-card__saved-routes-card">
+          <div className="trip-search-card__saved-routes-header">
+            <span className="trip-search-card__quick-action-label">Saved Routes</span>
+            <ChevronRight size={15} strokeWidth={2.5} className="trip-search-card__saved-routes-chevron" />
+          </div>
+          <div className="trip-search-card__saved-routes">
+            {SAVED_ROUTES_FIXTURE.slice(0, 3).map((savedRoute) => {
+              const isBookmarked = bookmarkedRouteIds.has(savedRoute.id);
+              return (
+                <div key={savedRoute.id} className="trip-search-card__saved-route-chip">
+                  <button
+                    type="button"
+                    className="trip-search-card__saved-route-label"
+                    onClick={() => onApplySavedRoute(savedRoute)}
+                  >
+                    {savedRoute.label}
+                  </button>
+                  <button
+                    type="button"
+                    className={`trip-search-card__saved-route-bookmark${
+                      isBookmarked ? " trip-search-card__saved-route-bookmark--active" : ""
+                    }`}
+                    aria-pressed={isBookmarked}
+                    aria-label={isBookmarked ? "Remove from saved routes" : "Save this route"}
+                    onClick={() => toggleBookmark(savedRoute.id)}
+                  >
+                    <Bookmark size={13} strokeWidth={2.25} fill={isBookmarked ? "currentColor" : "none"} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {searchError && <p className="trip-search-card__error">{searchError}</p>}

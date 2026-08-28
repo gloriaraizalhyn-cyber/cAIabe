@@ -1,20 +1,15 @@
 import { useEffect, useState } from "react";
 import MapView from "../../shared/components/MapView.jsx";
-import { useLiveDriverPosition } from "../../shared/hooks/useLiveDriverPosition.js";
+import { useLiveDriverPositions } from "../../shared/hooks/useLiveDriverPositions.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./LiveTrackerPage.css";
 
-// Demo-only screen: pick a route, then watch the live GPS + capacity
-// broadcasts a driving unit sends (e.g. via mock-driver-simulator.js at the
-// repo root) render as a moving marker in real time. Subscribes to the same
-// `route:{route_id}:driving` channel driver-location-update and
-// driver-capacity-toggle already broadcast to — no new backend needed.
-const DEFAULT_CENTER = { lat: 15.15, lng: 120.6 };
+const DEFAULT_CENTER = { lat: 15.1470, lng: 120.5850 };
 
 function LiveTrackerPage() {
   const [routes, setRoutes] = useState([]);
   const [selectedRouteId, setSelectedRouteId] = useState("");
-  const { position: driverPosition, capacityState, isConnected } = useLiveDriverPosition(selectedRouteId);
+  const { jeepneys, isConnected } = useLiveDriverPositions(selectedRouteId);
 
   useEffect(() => {
     supabase
@@ -28,12 +23,15 @@ function LiveTrackerPage() {
 
   const selectedRoute = routes.find((route) => route.id === selectedRouteId);
 
+  const availableCount = jeepneys.filter((j) => j.capacityState !== "full").length;
+  const fullCount = jeepneys.filter((j) => j.capacityState === "full").length;
+
   return (
     <main className="live-tracker-page">
       <header className="live-tracker-page__header">
-        <h1 className="live-tracker-page__title">Live Driver Tracker</h1>
+        <h1 className="live-tracker-page__title">Live Driver & Fleet Tracker</h1>
         <p className="live-tracker-page__subtitle">
-          Pick a route to watch real GPS and capacity broadcasts from a driving unit.
+          Pick a route to watch all active jeepneys moving smoothly along their path in real time.
         </p>
       </header>
 
@@ -59,31 +57,58 @@ function LiveTrackerPage() {
                 : "live-tracker-page__status"
             }
           >
-            {isConnected ? "● Connected — waiting for GPS" : "Connecting…"}
+            {isConnected
+              ? `● Connected (${jeepneys.length} ${jeepneys.length === 1 ? "unit" : "units"} broadcasting)`
+              : "Connecting…"}
           </span>
         )}
       </div>
 
       <div className="live-tracker-page__map">
         <MapView
-          origin={driverPosition}
-          center={driverPosition ?? DEFAULT_CENTER}
-          zoom={driverPosition ? 15 : 12}
+          jeepneys={jeepneys}
+          center={jeepneys[0] ? { lat: jeepneys[0].lat, lng: jeepneys[0].lng } : DEFAULT_CENTER}
+          zoom={jeepneys.length > 0 ? 14 : 13}
         />
       </div>
 
-      {driverPosition && (
-        <div className="live-tracker-page__info">
-          <span className="live-tracker-page__route-name">{selectedRoute?.name}</span>
-          <span
-            className={
-              capacityState === "full"
-                ? "live-tracker-page__capacity live-tracker-page__capacity--full"
-                : "live-tracker-page__capacity"
-            }
-          >
-            {capacityState === "full" ? "FULL" : "SEATS OPEN"}
-          </span>
+      {selectedRouteId && (
+        <div className="live-tracker-page__fleet-info">
+          <div className="live-tracker-page__info-header">
+            <div className="live-tracker-page__route-heading">
+              <span className="live-tracker-page__route-name">{selectedRoute?.name}</span>
+              <span className="live-tracker-page__unit-count">
+                {jeepneys.length} {jeepneys.length === 1 ? "Jeepney" : "Jeepneys"} on Route
+              </span>
+            </div>
+            <div className="live-tracker-page__summary-badges">
+              <span className="live-tracker-page__badge live-tracker-page__badge--available">
+                🟢 {availableCount} Seats Open
+              </span>
+              <span className="live-tracker-page__badge live-tracker-page__badge--full">
+                🔴 {fullCount} Full
+              </span>
+            </div>
+          </div>
+
+          {jeepneys.length > 0 && (
+            <div className="live-tracker-page__unit-list">
+              {jeepneys.map((jeep, index) => (
+                <div key={jeep.id} className="live-tracker-page__unit-card">
+                  <span className="live-tracker-page__unit-label">🚐 Unit #{index + 1}</span>
+                  <span
+                    className={
+                      jeep.capacityState === "full"
+                        ? "live-tracker-page__capacity live-tracker-page__capacity--full"
+                        : "live-tracker-page__capacity live-tracker-page__capacity--available"
+                    }
+                  >
+                    {jeep.capacityState === "full" ? "FULL" : "SEATS OPEN"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </main>

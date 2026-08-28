@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import LandingPage from "../user/pages/LandingPage.jsx";
 import AboutYouPage from "../user/pages/AboutYouPage.jsx";
 import FindRoutesPage from "../user/pages/FindRoutesPage.jsx";
+import VoiceSearchPage from "../user/pages/VoiceSearchPage.jsx";
 import WaitingForJeepPage from "../user/pages/WaitingForJeepPage.jsx";
 import OnRoutePage from "../user/pages/OnRoutePage.jsx";
 import DriverRegistrationPage from "../driver/pages/DriverRegistrationPage.jsx";
@@ -20,6 +21,7 @@ function AppRouter() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/about-you" element={<AboutYouPage />} />
       <Route path="/routes" element={<FindRoutesPage />} />
+      <Route path="/voice-search" element={<VoiceSearchPage />} />
       <Route path="/waiting" element={<WaitingForJeepPage />} />
       <Route path="/on-route" element={<OnRoutePage />} />
 

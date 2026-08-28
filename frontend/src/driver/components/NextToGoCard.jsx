@@ -2,7 +2,7 @@ import useBottomSheetDrag from "../../shared/hooks/useBottomSheetDrag.js";
 import "../../shared/styles/cardShell.css";
 import "./NextToGoCard.css";
 
-function NextToGoCard({ waitingCount, queuePosition, onWaitForMore, onGoNow }) {
+function NextToGoCard({ waitingCount, queuePosition, onWaitForMore }) {
   const { isExpanded, liveDragY, handlePointerDown, handlePointerMove, handlePointerUp } = useBottomSheetDrag();
 
   return (
@@ -31,9 +31,7 @@ function NextToGoCard({ waitingCount, queuePosition, onWaitForMore, onGoNow }) {
         <button type="button" className="next-to-go-card__wait-button" onClick={onWaitForMore}>
           Wait for more
         </button>
-        <button type="button" className="next-to-go-card__go-button" onClick={onGoNow}>
-          Go now
-        </button>
+        <div className="next-to-go-card__status-pill">Starts automatically when it's your turn</div>
       </div>
     </section>
   );

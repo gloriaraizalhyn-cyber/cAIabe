@@ -5,7 +5,17 @@ import "./NearestJeepCard.css";
 
 function NearestJeepCard({ waitingAtBay, onWaitForJeep, onSeeOtherOptions, isWatchingForDeparture = false }) {
   const { isExpanded, liveDragY, handlePointerDown, handlePointerMove, handlePointerUp } = useBottomSheetDrag();
-  const { nearestJeep, aiWaitRecommendation, jeepColorName } = waitingAtBay;
+  const jeepColorName = waitingAtBay?.jeepColorName || "Jeepney";
+  const nearestJeep = waitingAtBay?.nearestJeep || {
+    hasSeatsAvailable: true,
+    etaMinutes: 3,
+    distanceKm: "0.8",
+  };
+  const aiWaitRecommendation = waitingAtBay?.aiWaitRecommendation || {
+    recommendationType: "go",
+    headline: `The jeepney you are waiting for is color ${jeepColorName}`,
+    body: "An active unit is approaching along this route.",
+  };
   const isGoRecommendation = aiWaitRecommendation.recommendationType === "go";
 
   return (
@@ -23,7 +33,7 @@ function NearestJeepCard({ waitingAtBay, onWaitForJeep, onSeeOtherOptions, isWat
         <span className="card-shell__drag-handle-bar" />
       </div>
       <div className="nearest-jeep-card__header">
-        <p className="nearest-jeep-card__label">NEAREST {jeepColorName} JEEP</p>
+        <p className="nearest-jeep-card__label">NEAREST {jeepColorName.toUpperCase()} JEEP</p>
         <span
           className={
             nearestJeep.hasSeatsAvailable
