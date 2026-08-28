@@ -1,0 +1,35 @@
+.driver-dashboard-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background: #f5f6f8;
+  padding: 24px 16px;
+}
+
+.driver-dashboard-page__panel {
+  width: 100%;
+  max-width: 440px;
+}
+
+.driver-dashboard-page__header {
+  margin-bottom: 18px;
+}
+
+.driver-dashboard-page__title {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.driver-dashboard-page__subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6a6f79;
+}
+
+.driver-dashboard-page__loading {
+  font-size: 0.9rem;
+  color: #6a6f79;
+  text-align: center;
+}

@@ -1,0 +1,130 @@
+.trip-search-card {
+  position: relative;
+  z-index: 2;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  padding: 24px;
+  border-radius: 16px;
+  background: #faf6f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+}
+
+.trip-search-card__title {
+  margin: 0 0 6px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.trip-search-card__subtitle {
+  margin: 0 0 18px;
+  font-size: 0.85rem;
+  color: #7a7f89;
+  line-height: 1.4;
+}
+
+.trip-search-card__fields {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 4px 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  margin-bottom: 20px;
+}
+
+.trip-search-card__section-label {
+  margin: 0 0 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #9a9fa8;
+}
+
+.trip-search-card__saved-routes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.trip-search-card__saved-route-chip {
+  border: 1px solid #e2e4e9;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #333333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trip-search-card__saved-route-chip:hover {
+  border-color: #1a9e5c;
+}
+
+.trip-search-card__saved-route-chip span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #9aa1ac;
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+
+.trip-search-card__ai-tip {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: #e9f7ee;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+
+.trip-search-card__ai-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #1a9e5c;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+
+.trip-search-card__ai-tip p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #3d5a48;
+}
+
+.trip-search-card__error {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #c8471f;
+}
+
+.trip-search-card__find-button {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: #e0552f;
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 16px;
+}
+
+.trip-search-card__find-button:hover:not(:disabled) {
+  background: #c8471f;
+}
+
+.trip-search-card__find-button:disabled {
+  background: #e8b8a7;
+  cursor: not-allowed;
+}

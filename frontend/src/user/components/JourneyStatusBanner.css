@@ -1,0 +1,37 @@
+.journey-status-banner {
+  background: #1a1a1a;
+  color: #ffffff;
+  padding: 16px 20px 20px;
+}
+
+.journey-status-banner__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #a8adb5;
+}
+
+.journey-status-banner__status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1a9e5c;
+}
+
+.journey-status-banner__heading {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.journey-status-banner__subtext {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #c4c8ce;
+}

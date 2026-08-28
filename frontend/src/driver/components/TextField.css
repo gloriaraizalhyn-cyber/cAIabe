@@ -1,0 +1,59 @@
+.text-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.text-field__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.text-field__required-mark {
+  color: #c53030;
+  margin-left: 3px;
+}
+
+.text-field__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.text-field__input {
+  width: 100%;
+  border: 1px solid #d8dade;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+  color: #1a1a1a;
+  background: #ffffff;
+}
+
+.text-field__input:focus {
+  outline: none;
+  border-color: #1a1a1a;
+}
+
+.text-field__input--error {
+  border-color: #c53030;
+}
+
+.text-field__password-toggle {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #6a6f79;
+  padding: 4px;
+}
+
+.text-field__error {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #c53030;
+}

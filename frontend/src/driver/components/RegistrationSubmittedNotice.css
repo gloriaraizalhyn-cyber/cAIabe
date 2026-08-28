@@ -1,0 +1,44 @@
+.registration-submitted-notice {
+  max-width: 420px;
+  margin: 80px auto;
+  padding: 32px 28px;
+  border: 1px solid #e6e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.registration-submitted-notice__icon {
+  color: #1a9e5c;
+  margin-bottom: 12px;
+}
+
+.registration-submitted-notice__title {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1.35;
+}
+
+.registration-submitted-notice__body {
+  margin: 0 0 24px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #6a6f79;
+}
+
+.registration-submitted-notice__button {
+  width: 100%;
+  border: 1px solid #d8dade;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 13px;
+}
+
+.registration-submitted-notice__button:hover {
+  border-color: #1a1a1a;
+}
