@@ -1,0 +1,130 @@
+.ai-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.ai-note--calm {
+  background: #e9f7ee;
+}
+
+.ai-note--urgent {
+  background: #fbeaea;
+}
+
+.ai-note__badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+
+.ai-note--calm .ai-note__badge {
+  background: #1a9e5c;
+}
+
+.ai-note--urgent .ai-note__badge {
+  background: #c53030;
+}
+
+.ai-note__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-note__content p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.ai-note--calm .ai-note__content p {
+  color: #3d5a48;
+}
+
+.ai-note--urgent .ai-note__content p {
+  color: #7a2b2b;
+}
+
+.ai-note--urgent .ai-note__content p strong {
+  color: #c53030;
+}
+
+.ai-note__listen-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-note__language-select {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: #ffffff;
+  padding: 3px 6px;
+  color: #333333;
+}
+
+.ai-note__listen-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 999px;
+  border: none;
+  padding: 4px 10px;
+  cursor: pointer;
+  color: #ffffff;
+}
+
+.ai-note--calm .ai-note__listen-button {
+  background: #1a9e5c;
+}
+
+.ai-note--urgent .ai-note__listen-button {
+  background: #c53030;
+}
+
+.ai-note__listen-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ai-note__spin {
+  animation: ai-note-spin 0.8s linear infinite;
+}
+
+@keyframes ai-note-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ai-note__error {
+  margin-top: 6px !important;
+  font-size: 0.7rem !important;
+  color: #c53030 !important;
+}
+
+@media (max-width: 640px) {
+  .ai-note {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .ai-note__content p {
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+}

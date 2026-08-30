@@ -12,12 +12,23 @@ export interface Landmark {
   lng: number;
 }
 
+// Thrown by findLandmark when free text substring-matches more than one
+// landmark (e.g. "mall" matching every mall in the table) — the caller
+// should ask the passenger to be more specific rather than silently
+// guessing, since guessing wrong sends them to the wrong place entirely.
+export class AmbiguousLandmarkError extends Error {
+  constructor(public readonly query: string, public readonly candidates: string[]) {
+    super(`Ambiguous landmark match for "${query}": ${candidates.join(", ")}`);
+  }
+}
+
 const EARTH_RADIUS_METERS = 6371000;
 
 // Exact label match first, then substring in either direction (handles
 // both a shortened text like "Nepo" -> "Nepo Mall" and a padded one like
-// "the JENRA Grand Mall please" -> "JENRA Grand Mall"). First match wins —
-// the list is small and curated enough that ambiguity isn't a real risk.
+// "the JENRA Grand Mall please" -> "JENRA Grand Mall"). An exact match is
+// never ambiguous; a substring match that hits more than one landmark
+// throws AmbiguousLandmarkError instead of silently picking the first one.
 export async function findLandmark(
   supabase: ReturnType<typeof getServiceClient>,
   text: string,
@@ -31,10 +42,13 @@ export async function findLandmark(
   const exact = data.find((row) => row.label.toLowerCase() === needle);
   if (exact) return exact;
 
-  const partial = data.find(
+  const partial = data.filter(
     (row) => needle.includes(row.label.toLowerCase()) || row.label.toLowerCase().includes(needle),
   );
-  return partial ?? null;
+  if (partial.length > 1) {
+    throw new AmbiguousLandmarkError(text.trim(), partial.map((row) => row.label));
+  }
+  return partial[0] ?? null;
 }
 
 function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {

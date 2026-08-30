@@ -1,4 +1,5 @@
-import { Plus, Minus, Footprints, Clock, ArrowRightLeft, Sparkles, Bus } from "lucide-react";
+import { Plus, Minus, Footprints, Clock, ArrowRightLeft, Bus } from "lucide-react";
+import AiNote from "../../shared/components/AiNote.jsx";
 import "./RouteOptionCard.css";
 
 function formatFare(fare) {
@@ -137,13 +138,7 @@ function RouteOptionCard({
       {isExpanded && (
         <div className="route-option-card__details">
           {route.aiNote && (
-            <div className="route-option-card__ai-note">
-              <span className="route-option-card__ai-badge">
-                <Sparkles size={12} strokeWidth={2.5} />
-                AI
-              </span>
-              <p>{route.aiNote}</p>
-            </div>
+            <AiNote tone="calm" text={route.aiNote} className="route-option-card__ai-note" />
           )}
 
           {route.legs.length > 0 ? (

@@ -5,4 +5,4 @@
 
 alter table passenger_waiting_state
   add column if not exists discount_type text not null default 'regular'
-  check (discount_type in ('regular', 'student', 'pwd', 'senior_citizen', 'pregnant_woman'));
+  check (discount_type in ('regular', 'student', 'pwd', 'senior_citizen'));
