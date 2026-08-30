@@ -1,3 +1,9 @@
+# Python virtual environment
+whisper-env/
+
+# Python cache
+__pycache__/
+*.pyc
 node_modules/
 supabase/.temp/
 supabase/.branches/
