@@ -177,33 +177,7 @@
 }
 
 .route-option-card__ai-note {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  background: #e9f7ee;
-  border-radius: 10px;
-  padding: 12px 14px;
   margin-bottom: 14px;
-}
-
-.route-option-card__ai-badge {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  background: #1a9e5c;
-  color: #ffffff;
-  font-size: 0.65rem;
-  font-weight: 700;
-  border-radius: 5px;
-  padding: 2px 6px;
-}
-
-.route-option-card__ai-note p {
-  margin: 0;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  color: #3d5a48;
 }
 
 .route-option-card__legs {

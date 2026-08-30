@@ -1,0 +1,85 @@
+.delete-drivers-confirm-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 26, 26, 0.45);
+  padding: 16px;
+}
+
+.delete-drivers-confirm-modal {
+  width: 100%;
+  max-width: 380px;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 24px;
+  text-align: center;
+}
+
+.delete-drivers-confirm-modal__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fbeaea;
+  color: #c53030;
+  margin-bottom: 12px;
+}
+
+.delete-drivers-confirm-modal__title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.delete-drivers-confirm-modal__body {
+  margin: 0 0 22px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #6a6f79;
+}
+
+.delete-drivers-confirm-modal__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.delete-drivers-confirm-modal__cancel-button {
+  flex: 1;
+  border: 1px solid #d8dade;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 12px;
+}
+
+.delete-drivers-confirm-modal__cancel-button:hover:not(:disabled) {
+  border-color: #1a1a1a;
+}
+
+.delete-drivers-confirm-modal__delete-button {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  background: #c53030;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 12px;
+}
+
+.delete-drivers-confirm-modal__delete-button:hover:not(:disabled) {
+  background: #a12727;
+}
+
+.delete-drivers-confirm-modal__cancel-button:disabled,
+.delete-drivers-confirm-modal__delete-button:disabled {
+  opacity: 0.6;
+}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Mic, RotateCcw, Check, Square, Quote } from "lucide-react";
 import { mockTranscribeAndParseVoice } from "../utils/mockVoiceParse.js";
+import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import "./VoiceSearchPage.css";
 
 // idle -> recording -> processing -> confirm (-> retake back to idle)
@@ -115,10 +116,7 @@ function VoiceSearchPage() {
         )}
 
         {stage === "processing" && (
-          <>
-            <div className="voice-search-page__processing-spinner" aria-hidden="true" />
-            <p className="voice-search-page__instruction">Making sense of that…</p>
-          </>
+          <LoadingScreen message="Making sense of that…" fullScreen={false} />
         )}
 
         {stage === "confirm" && parsedResult && (

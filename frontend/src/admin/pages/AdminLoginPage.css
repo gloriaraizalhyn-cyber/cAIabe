@@ -1,0 +1,85 @@
+.admin-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f6f8;
+  padding: 24px 16px;
+}
+
+.admin-login-page__card {
+  width: 100%;
+  max-width: 380px;
+  border: 2px solid #000000;
+  border-left: 5px solid #1b3fa0;
+  border-top: 5px solid #d71920;
+  border-radius: 16px;
+  background: #faf6f0;
+  padding: 22px 20px;
+}
+
+.admin-login-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e5e2da;
+}
+
+.admin-login-page__title {
+  margin: 0 0 4px;
+  font-family: "LL Karatula", "DM Sans", "Segoe UI", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1.1;
+}
+
+.admin-login-page__logo {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.admin-login-page__subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6a6f79;
+}
+
+.admin-login-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-login-page__submit-error {
+  margin: -4px 0 0;
+  font-size: 0.82rem;
+  color: #c53030;
+  background: #fbeaea;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.admin-login-page__submit-button {
+  border: none;
+  border-radius: 10px;
+  background: #1b3fa0;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 12px;
+}
+
+.admin-login-page__submit-button:hover:not(:disabled) {
+  background: #142f7e;
+}
+
+.admin-login-page__submit-button:disabled {
+  background: #9a9fa8;
+  cursor: not-allowed;
+}

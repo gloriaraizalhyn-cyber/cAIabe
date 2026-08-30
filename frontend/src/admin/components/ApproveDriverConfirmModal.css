@@ -1,0 +1,85 @@
+.approve-driver-confirm-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 26, 26, 0.45);
+  padding: 16px;
+}
+
+.approve-driver-confirm-modal {
+  width: 100%;
+  max-width: 380px;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 24px;
+  text-align: center;
+}
+
+.approve-driver-confirm-modal__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #e2f3e8;
+  color: #1b8a4a;
+  margin-bottom: 12px;
+}
+
+.approve-driver-confirm-modal__title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.approve-driver-confirm-modal__body {
+  margin: 0 0 22px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #6a6f79;
+}
+
+.approve-driver-confirm-modal__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.approve-driver-confirm-modal__cancel-button {
+  flex: 1;
+  border: 1px solid #d8dade;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 12px;
+}
+
+.approve-driver-confirm-modal__cancel-button:hover:not(:disabled) {
+  border-color: #1a1a1a;
+}
+
+.approve-driver-confirm-modal__approve-button {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  background: #1b8a4a;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 12px;
+}
+
+.approve-driver-confirm-modal__approve-button:hover:not(:disabled) {
+  background: #146d3a;
+}
+
+.approve-driver-confirm-modal__cancel-button:disabled,
+.approve-driver-confirm-modal__approve-button:disabled {
+  opacity: 0.6;
+}

@@ -1,0 +1,153 @@
+.driver-attachments {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e2da;
+}
+
+/* Sidebar variant: a 4th column running alongside the fields grid instead
+   of a full-width section underneath it — no top divider, fixed width, and
+   the date/type columns drop out since there isn't room for them. */
+.driver-attachments--sidebar {
+  flex-shrink: 0;
+  width: 220px;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.driver-attachments--sidebar .driver-attachments__row-date,
+.driver-attachments--sidebar .driver-attachments__row-type {
+  display: none;
+}
+
+.driver-attachments__label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #6a6f79;
+  margin-bottom: 8px;
+}
+
+.driver-attachments__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.driver-attachments__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid #e5e2da;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.82rem;
+}
+
+.driver-attachments__row:not(.driver-attachments__row--missing):hover {
+  background: #f0f4fd;
+  border-color: #1b3fa0;
+}
+
+.driver-attachments__row-icon {
+  flex-shrink: 0;
+  color: #1b3fa0;
+}
+
+.driver-attachments__row--missing .driver-attachments__row-icon {
+  color: #b5b8bf;
+}
+
+.driver-attachments__row-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.driver-attachments__row--missing .driver-attachments__row-name {
+  color: #9a9fa8;
+  font-weight: 500;
+}
+
+.driver-attachments__row-date {
+  flex-shrink: 0;
+  width: 88px;
+  color: #6a6f79;
+}
+
+.driver-attachments__row-type {
+  flex-shrink: 0;
+  width: 82px;
+  color: #6a6f79;
+  text-align: right;
+}
+
+.driver-attachments__empty {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #9a9fa8;
+}
+
+.driver-attachments__lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 26, 26, 0.75);
+  padding: 24px;
+}
+
+.driver-attachments__lightbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: min(90vw, 640px);
+  max-height: 90vh;
+}
+
+.driver-attachments__lightbox-back-button {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 8px 14px;
+}
+
+.driver-attachments__lightbox-back-button:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.driver-attachments__lightbox-image {
+  max-width: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #1a1a1a;
+}
+
+.driver-attachments__lightbox-label {
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 600;
+}

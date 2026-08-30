@@ -55,58 +55,7 @@
 }
 
 .nearest-jeep-card__ai-note {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  border-radius: 10px;
-  padding: 10px 12px;
   margin-bottom: 14px;
-}
-
-.nearest-jeep-card__ai-note--wait {
-  background: #e9f7ee;
-}
-
-.nearest-jeep-card__ai-note--go {
-  background: #fbeaea;
-}
-
-.nearest-jeep-card__ai-badge {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  color: #ffffff;
-  font-size: 0.65rem;
-  font-weight: 700;
-  border-radius: 5px;
-  padding: 2px 6px;
-}
-
-.nearest-jeep-card__ai-note--wait .nearest-jeep-card__ai-badge {
-  background: #1a9e5c;
-}
-
-.nearest-jeep-card__ai-note--go .nearest-jeep-card__ai-badge {
-  background: #c53030;
-}
-
-.nearest-jeep-card__ai-note p {
-  margin: 0;
-  font-size: 0.82rem;
-  line-height: 1.5;
-}
-
-.nearest-jeep-card__ai-note--wait p {
-  color: #3d5a48;
-}
-
-.nearest-jeep-card__ai-note--go p {
-  color: #7a2b2b;
-}
-
-.nearest-jeep-card__ai-note--go p strong {
-  color: #c53030;
 }
 
 .nearest-jeep-card__departure-status {
@@ -180,14 +129,7 @@
   }
 
   .nearest-jeep-card__ai-note {
-    gap: 8px;
-    padding: 10px 12px;
     margin-bottom: 12px;
-  }
-
-  .nearest-jeep-card__ai-note p {
-    font-size: 0.78rem;
-    line-height: 1.35;
   }
 
   .nearest-jeep-card__actions {

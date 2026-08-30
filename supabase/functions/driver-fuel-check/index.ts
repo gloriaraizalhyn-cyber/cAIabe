@@ -55,6 +55,13 @@ Deno.serve(async (req: Request) => {
       .single();
     if (driverErr || !driver) return json({ error: "driver not found" }, 404);
 
+    // Real passenger demand on this driver's route, from the existing
+    // passenger_waiting_state table — not fabricated. null for tricycles
+    // (no fixed route to count against).
+    const waitingCount = driver.route_id
+      ? (await supabase.rpc("get_waiting_passenger_count", { p_route_id: driver.route_id })).data ?? null
+      : null;
+
     const { data: positionRows } = await supabase.rpc("get_driver_position", { p_driver_id: driverId });
     const origin = positionRows?.[0] as LatLng | undefined;
     if (!origin) {
@@ -78,7 +85,10 @@ Deno.serve(async (req: Request) => {
     const dest = terminus?.[0];
     if (!dest) return json({ error: "route has no terminus on file" }, 500);
 
-    return json(await checkJeepneyTrafficFuel(origin, { lat: dest.lat, lng: dest.lng }));
+    return json({
+      ...(await checkJeepneyTrafficFuel(origin, { lat: dest.lat, lng: dest.lng })),
+      waiting_passenger_count: waitingCount,
+    });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }

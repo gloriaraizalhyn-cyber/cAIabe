@@ -240,6 +240,68 @@ async function getRoadPath(origin, destination, label) {
   return smoothPath;
 }
 
+// ---------- live demo controls (triggered from stdin, see setupDemoControls) ----------
+//
+// Keyed by the same label printed next to each unit at startup
+// ("<route name> (Unit #N)") so the presenter can target one by name during
+// a live demo instead of editing code. Slowing a unit is a REAL change —
+// it jumps the unit backward along its road path (so the next live GPS
+// broadcast is genuinely farther from any waiting passenger) and multiplies
+// its step delay, so every AI recommendation that reads live position
+// (nearby-jeepney-eta) reacts to real, changed data rather than a faked
+// label.
+const activeUnits = new Map();
+
+function setupDemoControls() {
+  if (!process.stdin.isTTY) return; // no interactive terminal (e.g. piped/background run) — skip
+  console.log('\nDemo controls: type "slow <unit label>", "resume <unit label>", or "list", then Enter.');
+  console.log('Example: slow Cloudstaff - NU Clark (Direct) (Unit #1)\n');
+
+  const readline = require("readline");
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  rl.on("line", (line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    if (trimmed === "list") {
+      if (!activeUnits.size) {
+        console.log("(no active units yet)");
+        return;
+      }
+      for (const label of activeUnits.keys()) console.log(`  - ${label}`);
+      return;
+    }
+
+    const slowMatch = trimmed.match(/^slow\s+(.+)$/i);
+    const resumeMatch = trimmed.match(/^resume\s+(.+)$/i);
+    const target = slowMatch?.[1] ?? resumeMatch?.[1];
+    if (!target) {
+      console.log('Unrecognized command. Use "slow <unit label>", "resume <unit label>", or "list".');
+      return;
+    }
+
+    const matches = [...activeUnits.entries()].filter(([label]) =>
+      label.toLowerCase().includes(target.toLowerCase())
+    );
+    if (!matches.length) {
+      console.log(`No active unit matches "${target}". Try "list" to see active units.`);
+      return;
+    }
+
+    for (const [label, state] of matches) {
+      if (slowMatch) {
+        state.delayMultiplier = 6;
+        state.jumpBackRequested = true;
+        console.log(`🐢 [${label}] simulating heavy traffic — jumped back on its path and slowed down.`);
+      } else {
+        state.delayMultiplier = 1;
+        console.log(`✅ [${label}] back to normal speed.`);
+      }
+    }
+  });
+}
+
 // ---------- driving loop for a single jeepney unit ----------
 
 async function driveSingleJeep(route, terminal, forwardPath, backwardPath, driverIndex, totalJeeps) {
@@ -258,11 +320,21 @@ async function driveSingleJeep(route, terminal, forwardPath, backwardPath, drive
   let step = 0;
 
   // Add slight timing variance (750ms - 850ms) so vehicles drive naturally
-  const vehicleDelay = STEP_DELAY_MS + ((driverIndex * 67) % 100) - 50;
+  const baseVehicleDelay = STEP_DELAY_MS + ((driverIndex * 67) % 100) - 50;
 
   let currentIdx = startOffset;
 
+  const demoState = { delayMultiplier: 1, jumpBackRequested: false };
+  activeUnits.set(driverLabel, demoState);
+
   while (true) {
+    if (demoState.jumpBackRequested) {
+      // Jump back a third of the loop so the next broadcast position is
+      // genuinely farther from wherever this unit already was.
+      currentIdx = (currentIdx - Math.floor(circuitLength / 3) + circuitLength) % circuitLength;
+      demoState.jumpBackRequested = false;
+    }
+
     const point = circuit[currentIdx];
 
     await callFunction(
@@ -288,7 +360,7 @@ async function driveSingleJeep(route, terminal, forwardPath, backwardPath, drive
     }
 
     currentIdx = (currentIdx + 1) % circuitLength;
-    await sleep(vehicleDelay);
+    await sleep(baseVehicleDelay * demoState.delayMultiplier);
   }
 }
 
@@ -330,6 +402,8 @@ async function main() {
   console.log(`Step delay (ms)    : ${STEP_DELAY_MS}`);
   if (ROUTE_FILTER) console.log(`Route filter       : "${ROUTE_FILTER}"`);
   console.log("Fetching routes and terminals from Supabase...\n");
+
+  setupDemoControls();
 
   const [routes, terminalRoutes, terminals] = await Promise.all([
     restSelect("routes?select=id,name,color"),

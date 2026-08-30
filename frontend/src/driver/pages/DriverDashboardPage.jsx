@@ -9,10 +9,8 @@ import LocationPermissionModal from "../components/LocationPermissionModal.jsx";
 import HeadingToTerminalPanel from "../components/HeadingToTerminalPanel.jsx";
 import ArrivedAtTerminalPanel from "../components/ArrivedAtTerminalPanel.jsx";
 import QueueTurnAlert from "../components/QueueTurnAlert.jsx";
-import SmsFallbackLog from "../components/SmsFallbackLog.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
 import { useFcmRegistration } from "../hooks/useFcmRegistration.js";
-import { useSmsLog } from "../hooks/useSmsLog.js";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { haversineDistanceMeters } from "../../shared/utils/geo.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
@@ -25,7 +23,6 @@ function DriverDashboardPage() {
   const location = useLocation();
   const { driver, loading, error, session } = useDriverSession();
   useFcmRegistration(driver);
-  const smsLogEntries = useSmsLog(driver?.id);
 
   const [shiftStage, setShiftStage] = useState(location.state?.shiftStage ?? "not_started");
   const [ownQueueEntry, setOwnQueueEntry] = useState(null);
@@ -296,8 +293,6 @@ function DriverDashboardPage() {
             onViewQueue={handleViewQueue}
           />
         )}
-
-        <SmsFallbackLog entries={smsLogEntries} />
       </div>
 
       {shiftStage === "awaiting_location_permission" && (
