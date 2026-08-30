@@ -5,15 +5,14 @@
 create extension if not exists pg_cron;
 create extension if not exists pg_net; -- lets Postgres make outbound HTTP calls
 
--- Schedules queue-advance to run every minute. pg_cron's standard syntax is
--- minute-level at minimum — some pg_cron versions support finer intervals
--- like '30 seconds', but that support varies by environment, so this starts
--- with the reliable, well-supported option. Every-minute is a reasonable
--- starting responsiveness for a queue system; tighten later if needed (see
--- note at the bottom of this file).
+-- Schedules queue-advance to run every 15 seconds. This project's pg_cron
+-- version DOES support sub-minute interval strings (confirmed live).
+-- Tightened from every-minute to 15s so testing/demoing the queue (next-2
+-- notifications, next_to_go -> driving promotion) doesn't require waiting
+-- up to a minute between steps.
 select cron.schedule(
-  'queue-advance-every-minute',
-  '* * * * *',
+  'queue-advance-every-15s',
+  '15 seconds',
   $$
   select net.http_post(
     url := 'https://hprgaaynsucaguzlcndd.supabase.co/functions/v1/queue-advance',
@@ -30,6 +29,11 @@ select cron.schedule(
 -- Edge Functions gateway rejects requests missing Authorization with a 401
 -- (UNAUTHORIZED_NO_AUTH_HEADER), even though queue-advance's own code
 -- doesn't check auth. This tripped us up on first setup — don't drop it.
+--
+-- The original every-minute version of this job ('queue-advance-every-minute')
+-- was unscheduled when this one was created. To go back to it:
+--   select cron.unschedule('queue-advance-every-15s');
+--   select cron.schedule('queue-advance-every-minute', '* * * * *', $$ ...same body... $$);
 
 -- ==========================================================
 -- Useful queries for checking it's actually working
@@ -46,21 +50,4 @@ select cron.schedule(
 -- select * from net._http_response order by created desc limit 20;
 
 -- To stop/replace this schedule later:
--- select cron.unschedule('queue-advance-every-minute');
-
--- ==========================================================
--- OPTIONAL: tighter interval, if your pg_cron version supports it
--- ==========================================================
--- Some pg_cron versions accept an interval string directly instead of cron
--- syntax. If the standard schedule above works, you can try replacing it
--- with a 15-30 second interval for tighter responsiveness:
---
--- select cron.unschedule('queue-advance-every-minute');
--- select cron.schedule(
---   'queue-advance-every-30s',
---   '30 seconds',
---   $$ select net.http_post( ... same body as above ... ); $$
--- );
---
--- If this errors ("invalid input syntax"), your pg_cron version doesn't
--- support sub-minute scheduling — just keep the every-minute version above.
+-- select cron.unschedule('queue-advance-every-15s');

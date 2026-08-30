@@ -1,0 +1,31 @@
+.demand-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+  margin: 14px 0 0;
+}
+
+.demand-stat-grid__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.035);
+}
+
+.demand-stat-grid__label {
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9a9fa8;
+}
+
+.demand-stat-grid__value {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}

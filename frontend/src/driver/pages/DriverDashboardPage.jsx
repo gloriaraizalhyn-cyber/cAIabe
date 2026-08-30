@@ -27,6 +27,7 @@ function DriverDashboardPage() {
   const [shiftStage, setShiftStage] = useState(location.state?.shiftStage ?? "not_started");
   const [ownQueueEntry, setOwnQueueEntry] = useState(null);
   const [isRespondingToQueue, setIsRespondingToQueue] = useState(false);
+  const [isSkippingQueueWait, setIsSkippingQueueWait] = useState(false);
   const [driverPosition, setDriverPosition] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -109,6 +110,19 @@ function DriverDashboardPage() {
     setShiftStage("not_started");
   };
 
+  // Demo/testing bypass — never calls navigator.geolocation, so it never
+  // triggers the browser's location prompt at all. Lets someone test from
+  // anywhere (or with location permission denied/unavailable) by placing
+  // them at their assigned terminal's real, known coordinates instead of
+  // their actual device GPS — the AI reasoning downstream is unaffected,
+  // only the driver's own starting coordinate source changes.
+  const handleUseTerminalLocation = () => {
+    if (!driver?.terminal?.position) return;
+    setDriverPosition(driver.terminal.position);
+    setShiftStage("arrived");
+    joinQueue();
+  };
+
   const handleEnableLocation = () => {
     if (!navigator.geolocation) {
       setShiftStage("heading_to_terminal");
@@ -143,6 +157,19 @@ function DriverDashboardPage() {
     setIsRespondingToQueue(true);
     await supabase.functions.invoke("driver-queue-respond", { body: { response: "lining_up" } });
     setIsRespondingToQueue(false);
+    navigate("/driver/next-to-go");
+  };
+
+  // Testing/demo bypass — driver-queue-respond doesn't actually require
+  // notified_at to be set (it only checks the entry is waiting/next_to_go),
+  // so this skips waiting on the next-2 notification entirely: it calls the
+  // exact same "lining up" response a real notification would trigger. One
+  // click = one stage forward (arrived -> next_to_go), matching NextToGoPage's
+  // own "skip to driving" control for the next stage.
+  const handleSkipQueueWait = async () => {
+    setIsSkippingQueueWait(true);
+    await supabase.functions.invoke("driver-queue-respond", { body: { response: "lining_up" } });
+    setIsSkippingQueueWait(false);
     navigate("/driver/next-to-go");
   };
 
@@ -283,6 +310,7 @@ function DriverDashboardPage() {
             driverPosition={driverPosition}
             terminalPosition={driver.terminal?.position}
             terminalName={assignedTerminalName}
+            onUseTerminalLocation={handleUseTerminalLocation}
           />
         )}
 
@@ -291,6 +319,8 @@ function DriverDashboardPage() {
             queuePosition={ownQueueEntry?.position ?? "…"}
             assignedRouteLabel={assignedRouteLabel}
             onViewQueue={handleViewQueue}
+            onSkipQueueWait={handleSkipQueueWait}
+            isSkippingQueueWait={isSkippingQueueWait}
           />
         )}
       </div>
@@ -299,6 +329,7 @@ function DriverDashboardPage() {
         <LocationPermissionModal
           onEnableLocation={handleEnableLocation}
           onCancel={handleCancelLocationPermission}
+          onUseTerminalLocation={handleUseTerminalLocation}
         />
       )}
 

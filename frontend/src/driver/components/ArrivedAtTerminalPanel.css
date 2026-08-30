@@ -80,3 +80,24 @@
 .arrived-at-terminal-panel__view-queue-button:hover {
   background: #142f7e;
 }
+
+.arrived-at-terminal-panel__skip-button {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px dashed #9a9fa8;
+  border-radius: 10px;
+  background: none;
+  color: #6a6f79;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 10px;
+}
+
+.arrived-at-terminal-panel__skip-button:hover {
+  border-color: #1a1a1a;
+  color: #1a1a1a;
+}
+
+.arrived-at-terminal-panel__skip-button:disabled {
+  opacity: 0.6;
+}

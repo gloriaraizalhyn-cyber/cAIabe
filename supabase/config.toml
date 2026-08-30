@@ -412,10 +412,8 @@ enabled = true
 # declarative_schema_path = "./schemas"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
-<<<<<<< Updated upstream
 [functions.translate-to-voice]
 verify_jwt = false
-=======
 
 [functions.speech-to-text]
 enabled = true
@@ -427,4 +425,3 @@ entrypoint = "./functions/speech-to-text/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/speech-to-text/*.html" ]
->>>>>>> Stashed changes

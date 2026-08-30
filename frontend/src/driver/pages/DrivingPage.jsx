@@ -5,8 +5,10 @@ import MapView from "../../shared/components/MapView.jsx";
 import NextPickupCard from "../components/NextPickupCard.jsx";
 import TripCompleteModal from "../components/TripCompleteModal.jsx";
 import TripInfoPanel from "../components/TripInfoPanel.jsx";
+import OperatingStatusCard from "../components/OperatingStatusCard.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
 import { useDriverFuelCheck } from "../hooks/useDriverFuelCheck.js";
+import { useDriverDemand } from "../hooks/useDriverDemand.js";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { COLOR_NAME_TO_HEX } from "../../shared/constants/driverRegistrationFixtures.js";
@@ -28,6 +30,7 @@ function DrivingPage() {
   const [isTripComplete, setIsTripComplete] = useState(false);
   const [newQueuePosition, setNewQueuePosition] = useState(null);
   const [tripTimeMinutes, setTripTimeMinutes] = useState(null);
+  const [isUsingDemoPosition, setIsUsingDemoPosition] = useState(false);
 
   const lastUpdateAtRef = useRef(0);
   const watchIdRef = useRef(null);
@@ -37,8 +40,30 @@ function DrivingPage() {
   // needs one already broadcast via driver-location-update.
   const fuelInfo = useDriverFuelCheck(Boolean(currentPosition) && !isTripComplete);
 
+  // Sak.AI "CONTINUE or GARAGE?" — same demand engine as NextToGoPage's
+  // WAIT/GO card, weighed here against the real recent-vs-prior request
+  // trend (see driver-demand-check's calculateOperatingDemand()).
+  const { data: demand, isLoading: isDemandLoading } = useDriverDemand({
+    routeId: driver?.route?.id,
+    position: currentPosition,
+    isActive: !isTripComplete,
+  });
+
+  // Demo/testing bypass — sidesteps real device GPS entirely (useful when
+  // testing from outside Clark/Angeles, or without granting location at
+  // all) by placing the driver at their own terminal's real coordinates.
+  // driver-location-update still fires with this position, same as it would
+  // with a real one — only where the coordinate comes from changes.
+  const handleUseTerminalLocation = () => {
+    if (!driver?.terminal?.position) return;
+    setIsUsingDemoPosition(true);
+    setCurrentPosition(driver.terminal.position);
+    lastUpdateAtRef.current = Date.now();
+    supabase.functions.invoke("driver-location-update", { body: driver.terminal.position });
+  };
+
   useEffect(() => {
-    if (!navigator.geolocation) return undefined;
+    if (isUsingDemoPosition || !navigator.geolocation) return undefined;
 
     const id = navigator.geolocation.watchPosition(
       (geoPosition) => {
@@ -68,7 +93,7 @@ function DrivingPage() {
     );
     watchIdRef.current = id;
     return () => navigator.geolocation.clearWatch(id);
-  }, [driver?.route?.id, session?.user?.id]);
+  }, [driver?.route?.id, session?.user?.id, isUsingDemoPosition]);
 
   const handleSetCapacityStatus = (state) => {
     setCapacityStatus(state);
@@ -106,13 +131,23 @@ function DrivingPage() {
 
   return (
     <main className="driving-page">
-      <MapView jeepneys={ownJeepney} center={currentPosition ?? undefined} zoom={16} />
+      <MapView
+        jeepneys={ownJeepney}
+        demandClusters={demand?.clusters ?? []}
+        center={currentPosition ?? undefined}
+        zoom={16}
+      />
       <DrivingStatusBar
         routeColorName={routeColorName}
         routeColorHex={routeColorHex}
         capacityStatus={capacityStatus}
       />
       <TripInfoPanel fuelInfo={fuelInfo} capacityStatus={capacityStatus} />
+      <OperatingStatusCard
+        data={demand}
+        isLoading={isDemandLoading}
+        onUseTerminalLocation={!currentPosition ? handleUseTerminalLocation : null}
+      />
       <NextPickupCard
         nextPickup={NEXT_WAITING_PICKUP_FIXTURE}
         capacityStatus={capacityStatus}

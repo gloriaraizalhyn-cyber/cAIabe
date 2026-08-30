@@ -1,6 +1,12 @@
 import "./ArrivedAtTerminalPanel.css";
 
-function ArrivedAtTerminalPanel({ queuePosition, assignedRouteLabel, onViewQueue }) {
+function ArrivedAtTerminalPanel({
+  queuePosition,
+  assignedRouteLabel,
+  onViewQueue,
+  onSkipQueueWait,
+  isSkippingQueueWait,
+}) {
   // Position #1 means there's no one ahead — nothing left to queue for, so
   // the action becomes "go see the live map" instead of "go see the queue".
   const isNextToGo = queuePosition === 1;
@@ -28,6 +34,17 @@ function ArrivedAtTerminalPanel({ queuePosition, assignedRouteLabel, onViewQueue
       <button type="button" className="arrived-at-terminal-panel__view-queue-button" onClick={onViewQueue}>
         {isNextToGo ? "View Map" : "View Queue"}
       </button>
+
+      {onSkipQueueWait && (
+        <button
+          type="button"
+          className="arrived-at-terminal-panel__skip-button"
+          onClick={onSkipQueueWait}
+          disabled={isSkippingQueueWait}
+        >
+          {isSkippingQueueWait ? "Skipping…" : "Skip wait (testing) — go to front now"}
+        </button>
+      )}
     </section>
   );
 }

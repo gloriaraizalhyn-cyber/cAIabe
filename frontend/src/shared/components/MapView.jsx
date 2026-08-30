@@ -149,6 +149,34 @@ function createJeepneyMarkerIcon(capacityState, routeHexColor = "#CB4747", route
   return undefined;
 }
 
+// demandClusters: [{ lat, lng, count, distance_km, band, band_label }] —
+// Sak.AI driver-side passenger-demand clusters from driver-demand-check,
+// rendered as grouped pins distinct from live jeepney markers so a driver
+// can see "there are passengers ahead of me" at a glance.
+function DemandClusterMarkers({ clusters }) {
+  if (!clusters?.length) return null;
+
+  return (
+    <>
+      {clusters.map((cluster, index) => (
+        <OverlayView
+          key={`demand-cluster-${index}`}
+          position={{ lat: cluster.lat, lng: cluster.lng }}
+          mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+          getPixelPositionOffset={(width, height) => ({ x: -(width / 2), y: -height - 6 })}
+        >
+          <div className={`map-view__demand-cluster map-view__demand-cluster--${cluster.band}`}>
+            <span className="map-view__demand-cluster-count">👥 {cluster.count}</span>
+            <span className="map-view__demand-cluster-band">{cluster.band_label}</span>
+            <span className="map-view__demand-cluster-distance">{cluster.distance_km} km</span>
+            <span className="map-view__demand-cluster-stem" />
+          </div>
+        </OverlayView>
+      ))}
+    </>
+  );
+}
+
 // Interpolates vehicle GPS movements smoothly over time at 60 FPS using
 // requestAnimationFrame so vehicles glide continuously along streets instead
 // of jumping or popping between discrete coordinate updates.
@@ -269,6 +297,7 @@ function MapView({
   destination,
   routes = [],
   jeepneys = [],
+  demandClusters = [],
   center,
   zoom = 13,
   showDirections = false,
@@ -338,6 +367,10 @@ function MapView({
         hasPoints = true;
       });
     });
+    demandClusters.forEach((cluster) => {
+      bounds.extend({ lat: cluster.lat, lng: cluster.lng });
+      hasPoints = true;
+    });
 
     if (!hasPoints) return;
     if (bounds.getNorthEast().equals(bounds.getSouthWest())) {
@@ -348,7 +381,7 @@ function MapView({
       return;
     }
     mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 60, left: 50 });
-  }, [origin, destination, routes, smoothJeepneys.length]);
+  }, [origin, destination, routes, smoothJeepneys.length, demandClusters]);
 
   if (!GOOGLE_MAPS_API_KEY) {
     return (
@@ -546,6 +579,9 @@ function MapView({
         {routes.map((route) => (
           <RoutePolylines key={route.cardKey ?? route.id} route={route} />
         ))}
+
+        {/* Sak.AI passenger-demand clusters (driver-side) */}
+        <DemandClusterMarkers clusters={demandClusters} />
       </GoogleMap>
     </div>
   );

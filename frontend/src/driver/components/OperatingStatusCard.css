@@ -1,0 +1,114 @@
+.operating-status-card {
+  position: absolute;
+  top: 168px;
+  left: 16px;
+  right: 16px;
+  z-index: 2;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 10px 14px 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #9a9fa8;
+}
+
+.operating-status-card--continue {
+  border-left-color: #1a9e5c;
+}
+
+.operating-status-card--continue_caution {
+  border-left-color: #e0a82e;
+}
+
+.operating-status-card--garage {
+  border-left-color: #1b3fa0;
+}
+
+.operating-status-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.operating-status-card__badge {
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.operating-status-card__body {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #6a6f79;
+  text-align: left;
+}
+
+.operating-status-card__reasons {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.operating-status-card__reasons li {
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: #4a4f59;
+}
+
+.operating-status-card__disclaimer {
+  margin: 10px 0 0;
+  font-size: 0.68rem;
+  font-style: italic;
+  color: #9a9fa8;
+}
+
+.operating-status-card--pending {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+}
+
+.operating-status-card--pending .operating-status-card__body {
+  text-align: center;
+}
+
+.operating-status-card__demo-button {
+  border: 1px dashed #9a9fa8;
+  border-radius: 8px;
+  background: none;
+  padding: 7px 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #6a6f79;
+}
+
+.operating-status-card__demo-button:hover {
+  border-color: #1a1a1a;
+  color: #1a1a1a;
+}
+
+.operating-status-card__refreshing {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #9a9fa8;
+}
+
+@media (max-width: 640px) {
+  .operating-status-card {
+    top: 148px;
+    padding: 8px 12px 10px;
+  }
+}

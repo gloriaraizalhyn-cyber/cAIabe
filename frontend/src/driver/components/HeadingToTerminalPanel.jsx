@@ -2,7 +2,7 @@ import { EyeOff } from "lucide-react";
 import MapView from "../../shared/components/MapView.jsx";
 import "./HeadingToTerminalPanel.css";
 
-function HeadingToTerminalPanel({ driverPosition, terminalPosition, terminalName }) {
+function HeadingToTerminalPanel({ driverPosition, terminalPosition, terminalName, onUseTerminalLocation }) {
   return (
     <section className="heading-to-terminal-panel">
       <div className="heading-to-terminal-panel__status">
@@ -12,6 +12,16 @@ function HeadingToTerminalPanel({ driverPosition, terminalPosition, terminalName
       <p className="heading-to-terminal-panel__message">
         Head to your assigned terminal to join the queue.
       </p>
+
+      {onUseTerminalLocation && (
+        <button
+          type="button"
+          className="heading-to-terminal-panel__demo-button"
+          onClick={onUseTerminalLocation}
+        >
+          No GPS? Skip — I'm at the terminal
+        </button>
+      )}
 
       <div className="heading-to-terminal-panel__sharing-row">
         <span className="heading-to-terminal-panel__sharing-dot" />

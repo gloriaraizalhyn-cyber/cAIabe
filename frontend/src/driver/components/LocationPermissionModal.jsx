@@ -1,7 +1,7 @@
 import { MapPin } from "lucide-react";
 import "./LocationPermissionModal.css";
 
-function LocationPermissionModal({ onEnableLocation, onCancel }) {
+function LocationPermissionModal({ onEnableLocation, onCancel, onUseTerminalLocation }) {
   return (
     <div className="location-permission-modal__backdrop">
       <div className="location-permission-modal" role="dialog" aria-modal="true">
@@ -25,6 +25,15 @@ function LocationPermissionModal({ onEnableLocation, onCancel }) {
             Enable Location
           </button>
         </div>
+        {onUseTerminalLocation && (
+          <button
+            type="button"
+            className="location-permission-modal__demo-link"
+            onClick={onUseTerminalLocation}
+          >
+            Testing without GPS? Use terminal location instead
+          </button>
+        )}
       </div>
     </div>
   );

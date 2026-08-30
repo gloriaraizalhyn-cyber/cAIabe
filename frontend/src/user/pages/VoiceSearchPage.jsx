@@ -1,19 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-<<<<<<< Updated upstream
 import { ChevronLeft, Mic, RotateCcw, Check, Square, Quote } from "lucide-react";
 import { mockTranscribeAndParseVoice } from "../utils/mockVoiceParse.js";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
-=======
-import {
-  ChevronLeft,
-  Mic,
-  RotateCcw,
-  Check,
-  Square,
-  Quote,
-} from "lucide-react";
->>>>>>> Stashed changes
 import "./VoiceSearchPage.css";
 
 function VoiceSearchPage() {
@@ -249,20 +238,7 @@ function VoiceSearchPage() {
         )}
 
         {stage === "processing" && (
-<<<<<<< Updated upstream
           <LoadingScreen message="Making sense of that…" fullScreen={false} />
-=======
-          <>
-            <div
-              className="voice-search-page__processing-spinner"
-              aria-hidden="true"
-            />
-
-            <p className="voice-search-page__instruction">
-              Making sense of that…
-            </p>
-          </>
->>>>>>> Stashed changes
         )}
 
         {stage === "confirm" && parsedResult && (

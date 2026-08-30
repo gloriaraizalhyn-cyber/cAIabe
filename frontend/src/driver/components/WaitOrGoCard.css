@@ -1,0 +1,163 @@
+.wait-or-go-card {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  width: calc(100% - 32px);
+  max-width: 420px;
+  max-height: calc(100vh - 250px);
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+  border-top: 4px solid #9a9fa8;
+}
+
+.wait-or-go-card--go {
+  border-top-color: #1a9e5c;
+}
+
+.wait-or-go-card--wait {
+  border-top-color: #e0a82e;
+}
+
+.wait-or-go-card--pending {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px 18px;
+}
+
+.wait-or-go-card__pending-text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #6a6f79;
+  text-align: center;
+}
+
+.wait-or-go-card__demo-button {
+  border: 1px dashed #9a9fa8;
+  border-radius: 8px;
+  background: none;
+  padding: 8px 14px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #6a6f79;
+}
+
+.wait-or-go-card__demo-button:hover {
+  border-color: #1a1a1a;
+  color: #1a1a1a;
+}
+
+.wait-or-go-card__demo-button--footer {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.wait-or-go-card__demo-button:disabled {
+  opacity: 0.6;
+}
+
+.wait-or-go-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wait-or-go-card__kicker {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #9a9fa8;
+}
+
+.wait-or-go-card__refreshing {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #9a9fa8;
+}
+
+.wait-or-go-card__badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.wait-or-go-card__badge {
+  font-family: "DM Sans", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.wait-or-go-card__confidence {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #6a6f79;
+}
+
+.wait-or-go-card__headline {
+  margin: 10px 0 2px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.wait-or-go-card__body {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #6a6f79;
+}
+
+.wait-or-go-card__why {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.wait-or-go-card__why-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #1a1a1a;
+}
+
+.wait-or-go-card__reasons {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wait-or-go-card__reasons li {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #4a4f59;
+}
+
+.wait-or-go-card__action {
+  margin: 10px 0 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+@media (max-width: 640px) {
+  .wait-or-go-card {
+    max-width: none;
+    padding: 14px 16px;
+  }
+
+  .wait-or-go-card__badge {
+    font-size: 1.15rem;
+  }
+}
