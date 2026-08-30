@@ -15,7 +15,7 @@ import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
 import { sendSms } from "../_shared/textbee.ts";
 import { normalizePhMobileNumber } from "../_shared/phone.ts";
-import { findLandmark, nearestLandmarkName, type Landmark } from "../_shared/landmarks.ts";
+import { findLandmark, nearestLandmarkName, AmbiguousLandmarkError, type Landmark } from "../_shared/landmarks.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -23,6 +23,12 @@ const WEBHOOK_SECRET = Deno.env.get("TEXTBEE_WEBHOOK_SECRET");
 
 const HELP_TEXT =
   "cAIabe: Text ROUTE <from> to <to> — e.g. ROUTE JENRA Grand Mall to Nepo Mall";
+const NO_SESSION_TEXT =
+  "cAIabe: No active route. Send: ROUTE <origin> to <destination>";
+const NO_ROUTE_TEXT =
+  "cAIabe: No route found. Try: ROUTE JENRA Grand Mall to Nepo Mall";
+const SERVICE_UNAVAILABLE_TEXT =
+  "cAIabe: Route service is temporarily unavailable. Please try again shortly.";
 
 interface RouteSearchLeg {
   kind: "walk" | "jeep";
@@ -57,12 +63,17 @@ Deno.serve(async (req: Request) => {
 
   // Delivery receipts / other event types — ack without acting, so TextBee
   // doesn't treat "we ignored this on purpose" as a failed delivery.
-  if (payload?.event !== "MESSAGE_RECEIVED") {
+  // NOTE: TextBee's actual webhook payload is flat — "webhookEvent",
+  // "sender", "message" all sit at the top level, not nested under "data"
+  // with a field called "event" (verified against a real delivered
+  // payload from TextBee's dashboard; their own docs describe the nested
+  // shape, but that's not what they actually send).
+  if (payload?.webhookEvent !== "MESSAGE_RECEIVED") {
     return json({ ok: true });
   }
 
-  const sender: string | undefined = payload?.data?.sender;
-  const messageText: string | undefined = payload?.data?.message;
+  const sender: string | undefined = payload?.sender;
+  const messageText: string | undefined = payload?.message;
   if (!sender || !messageText) return json({ ok: true });
 
   const phoneNumber = normalizePhMobileNumber(sender);
@@ -98,14 +109,32 @@ async function handleRouteRequest(
   originText: string,
   destinationText: string,
 ) {
-  const [origin, destination] = await Promise.all([
-    findLandmark(supabase, originText),
-    findLandmark(supabase, destinationText),
-  ]);
-
+  // Resolved sequentially (not Promise.all) so an AmbiguousLandmarkError on
+  // either side can be attributed to the right one for the reply.
+  let origin: Landmark | null;
+  try {
+    origin = await findLandmark(supabase, originText);
+  } catch (err) {
+    if (err instanceof AmbiguousLandmarkError) {
+      await sendSms(supabase, null, phoneNumber, ambiguousLandmarkReply(err));
+      return;
+    }
+    throw err;
+  }
   if (!origin) {
     await sendSms(supabase, null, phoneNumber, `cAIabe: Couldn't find "${originText.trim()}". Try a nearby terminal, mall, or landmark name.`);
     return;
+  }
+
+  let destination: Landmark | null;
+  try {
+    destination = await findLandmark(supabase, destinationText);
+  } catch (err) {
+    if (err instanceof AmbiguousLandmarkError) {
+      await sendSms(supabase, null, phoneNumber, ambiguousLandmarkReply(err));
+      return;
+    }
+    throw err;
   }
   if (!destination) {
     await sendSms(supabase, null, phoneNumber, `cAIabe: Couldn't find "${destinationText.trim()}". Try a nearby terminal, mall, or landmark name.`);
@@ -127,7 +156,16 @@ async function handleRouteRequest(
   const data = await res.json();
 
   if (!res.ok || data.error) {
-    await sendSms(supabase, null, phoneNumber, `cAIabe: ${data.error ?? "No routes found for that trip."}`);
+    // 404 from route-search means "genuinely no route" — tell the passenger
+    // plainly. Anything else (500/502 from a Google API hiccup, etc.) is a
+    // backend problem, not a "no route exists" fact, so don't quote the raw
+    // error text at the passenger; log it for us instead.
+    if (res.status === 404) {
+      await sendSms(supabase, null, phoneNumber, NO_ROUTE_TEXT);
+    } else {
+      console.error("sms-webhook: route-search failed:", res.status, data.error);
+      await sendSms(supabase, null, phoneNumber, SERVICE_UNAVAILABLE_TEXT);
+    }
     return;
   }
 
@@ -156,7 +194,7 @@ async function handleDirectionsRequest(
     .maybeSingle();
 
   if (!session || new Date(session.expires_at).getTime() < Date.now()) {
-    await sendSms(supabase, null, phoneNumber, HELP_TEXT);
+    await sendSms(supabase, null, phoneNumber, NO_SESSION_TEXT);
     return;
   }
 
@@ -174,6 +212,11 @@ async function handleDirectionsRequest(
   await sendSms(supabase, null, phoneNumber, directions);
 }
 
+function ambiguousLandmarkReply(err: AmbiguousLandmarkError): string {
+  const options = err.candidates.slice(0, 3).join(", ");
+  return `cAIabe: "${err.query}" matches multiple places (${options}). Please be more specific.`;
+}
+
 function formatOptionsReply(options: RouteSearchResult[]): string {
   const lines = ["cAIabe"];
   options.forEach((option, index) => {
@@ -183,8 +226,8 @@ function formatOptionsReply(options: RouteSearchResult[]): string {
       .join("+");
     const fare = Math.round(option.fare ?? option.fare_before_discount ?? 0);
     const duration = Math.round(option.duration_min);
-    lines.push(`${index + 1}) ${colors} JP | ${duration}m | P${fare}`);
-    if (index === 0) lines.push("BEST");
+    const best = index === 0 ? " | BEST" : "";
+    lines.push(`${index + 1}) ${colors} JP | ${duration}m | P${fare}${best}`);
   });
   const replyRange = options.length > 1 ? `1${options.length === 2 ? " or 2" : `, 2 or ${options.length}`}` : "1";
   lines.push(`Reply ${replyRange} for step-by-step directions.`);
@@ -197,7 +240,7 @@ async function formatDirectionsReply(
   origin: Landmark,
   destination: Landmark,
 ): Promise<string> {
-  const lines: string[] = [];
+  const steps: string[] = [];
 
   for (let i = 0; i < option.legs.length; i++) {
     const leg = option.legs[i];
@@ -209,16 +252,17 @@ async function formatDirectionsReply(
 
     if (isFirst && nextJeep) {
       const name = (nextJeep.from && (await nearestLandmarkName(supabase, nextJeep.from))) ?? origin.label;
-      lines.push(`→ WALK + BOARD: ${name} (${colorName(nextJeep.color)} JP)`);
+      steps.push(`WALK+BOARD: ${name} (${colorName(nextJeep.color)} JP)`);
     } else if (isLast) {
-      lines.push(`→ GET OFF: ${destination.label}`);
+      steps.push(`GET OFF: ${destination.label}`);
     } else if (nextJeep) {
       const name = (leg.to && (await nearestLandmarkName(supabase, leg.to))) ?? "the transfer point";
-      lines.push(`→ GET OFF + BOARD: ${name} (${colorName(nextJeep.color)} JP)`);
+      steps.push(`GET OFF+BOARD: ${name} (${colorName(nextJeep.color)} JP)`);
     }
   }
 
-  return lines.length ? lines.join("\n") : "cAIabe: No directions available for that option.";
+  if (!steps.length) return "cAIabe: No directions available for that option.";
+  return steps.map((step, i) => `${i + 1}) ${step}`).join("\n");
 }
 
 // route-search's leg.color is either a plain word ("green") or a hex value

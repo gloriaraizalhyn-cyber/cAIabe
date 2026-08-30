@@ -4,7 +4,9 @@ import DrivingStatusBar from "../components/DrivingStatusBar.jsx";
 import MapView from "../../shared/components/MapView.jsx";
 import NextPickupCard from "../components/NextPickupCard.jsx";
 import TripCompleteModal from "../components/TripCompleteModal.jsx";
+import TripInfoPanel from "../components/TripInfoPanel.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
+import { useDriverFuelCheck } from "../hooks/useDriverFuelCheck.js";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { COLOR_NAME_TO_HEX } from "../../shared/constants/driverRegistrationFixtures.js";
@@ -30,6 +32,10 @@ function DrivingPage() {
   const lastUpdateAtRef = useRef(0);
   const watchIdRef = useRef(null);
   const startedAtRef = useRef(Date.now());
+
+  // Only start polling once a live position is actually on file — driver-fuel-check
+  // needs one already broadcast via driver-location-update.
+  const fuelInfo = useDriverFuelCheck(Boolean(currentPosition) && !isTripComplete);
 
   useEffect(() => {
     if (!navigator.geolocation) return undefined;
@@ -106,6 +112,7 @@ function DrivingPage() {
         routeColorHex={routeColorHex}
         capacityStatus={capacityStatus}
       />
+      <TripInfoPanel fuelInfo={fuelInfo} capacityStatus={capacityStatus} />
       <NextPickupCard
         nextPickup={NEXT_WAITING_PICKUP_FIXTURE}
         capacityStatus={capacityStatus}

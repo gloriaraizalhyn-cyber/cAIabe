@@ -1,5 +1,5 @@
-import { Sparkles } from "lucide-react";
 import useBottomSheetDrag from "../../shared/hooks/useBottomSheetDrag.js";
+import AiNote from "../../shared/components/AiNote.jsx";
 import "../../shared/styles/cardShell.css";
 import "./NearestJeepCard.css";
 
@@ -52,23 +52,12 @@ function NearestJeepCard({ waitingAtBay, onWaitForJeep, onSeeOtherOptions, isWat
         </span>
       </p>
 
-      <div
-        className={
-          isGoRecommendation
-            ? "nearest-jeep-card__ai-note nearest-jeep-card__ai-note--go"
-            : "nearest-jeep-card__ai-note nearest-jeep-card__ai-note--wait"
-        }
-      >
-        <span className="nearest-jeep-card__ai-badge">
-          <Sparkles size={12} strokeWidth={2.5} />
-          AI
-        </span>
-        <p>
-          <strong>{aiWaitRecommendation.headline}</strong>
-          <br />
-          {aiWaitRecommendation.body}
-        </p>
-      </div>
+      <AiNote
+        tone={isGoRecommendation ? "urgent" : "calm"}
+        headline={aiWaitRecommendation.headline}
+        body={aiWaitRecommendation.body}
+        className="nearest-jeep-card__ai-note"
+      />
 
       {isWatchingForDeparture && (
         <p className="nearest-jeep-card__departure-status">
