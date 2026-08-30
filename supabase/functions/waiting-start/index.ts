@@ -15,7 +15,6 @@ const VALID_DISCOUNT_TYPES = [
   "student",
   "pwd",
   "senior_citizen",
-  "pregnant_woman",
 ];
 
 Deno.serve(async (req: Request) => {

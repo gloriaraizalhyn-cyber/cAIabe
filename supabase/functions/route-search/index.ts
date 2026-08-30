@@ -7,8 +7,12 @@
 // between routes that pass close enough to each other to walk between.
 // Scoring (time/fare/distance/traffic) is computed here in code, NOT by
 // Gemini. Gemini is only used to phrase the one-line explanation for the
-// top pick — traffic itself is a real Google Routes API signal folded into
-// each ride leg's duration before scoring, not something the model estimates.
+// top pick, and a one-line "why not this one" headline for each
+// alternative — traffic itself is a real Google Routes API signal folded
+// into each ride leg's duration before scoring, not something the model
+// estimates. Alternatives' pros/cons lists are likewise computed here in
+// code (real deltas vs the top pick), never invented by the model — Gemini
+// only rephrases those given facts into a short sentence.
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
@@ -27,17 +31,18 @@ const WALK_TRANSFER_METERS = 250;
 const AVG_JEEPNEY_SPEED_KMH = 15;
 const MAX_RESULTS = 5;
 
+// A route's base_fare is a flat minimum fare covering the first
+// MIN_FARE_DISTANCE_KM of a ride leg; per_km_rate only applies beyond that.
+const MIN_FARE_DISTANCE_KM = 4;
+
 // Fare discount rates by passenger type. Student/PWD/Senior Citizen are
 // legally mandated 20% discounts in the Philippines (RA 11314, RA 10754,
-// RA 9994 respectively). Pregnant Woman is intentionally 0% — Philippine
-// law entitles pregnant passengers to priority seating, not a fare
-// discount — change this if your implementation wants otherwise.
+// RA 9994 respectively).
 const DISCOUNT_RATES: Record<string, number> = {
   regular: 0,
   student: 0.20,
   pwd: 0.20,
   senior_citizen: 0.20,
-  pregnant_woman: 0,
 };
 
 interface LatLng {
@@ -325,7 +330,9 @@ Deno.serve(async (req: Request) => {
             hasFareData = false;
             rideFares[i] = 0;
           } else {
-            const fare = fareRef.base_fare + fareRef.per_km_rate * distanceKm;
+            const fare = distanceKm <= MIN_FARE_DISTANCE_KM
+              ? fareRef.base_fare
+              : fareRef.base_fare + fareRef.per_km_rate * (distanceKm - MIN_FARE_DISTANCE_KM);
             rideFares[i] = fare;
             fareBeforeDiscount += fare;
           }
@@ -377,11 +384,14 @@ Deno.serve(async (req: Request) => {
     const results = await Promise.all(top.map((c) => buildResult(supabase, c, discountType, discountRate)));
 
     const [best, ...rest] = results;
-    const explanation = await explainTopPick(best);
+    const [explanation, alternatives] = await Promise.all([
+      explainTopPick(best),
+      Promise.all(rest.map(async (alt) => ({ ...alt, comparison: await explainAlternative(alt, best) }))),
+    ]);
 
     return json({
       recommended: { ...best, explanation },
-      alternatives: rest,
+      alternatives,
     });
   } catch (err) {
     return json({ error: String(err) }, 500);
@@ -561,6 +571,96 @@ async function explainTopPick(pick: any): Promise<string> {
   } catch (err) {
     console.error("explainTopPick: Gemini call threw:", err);
     return `${pick.route_name} is the recommended trip.`;
+  }
+}
+
+// Real deltas vs the top pick, computed from the same numbers already in
+// each result — never invented. Each entry is a short, already-readable
+// phrase (e.g. "6 min slower") so it works as a bullet point even in the
+// no-Gemini fallback path.
+function compareToPick(alt: any, best: any): { pros: string[]; cons: string[] } {
+  const pros: string[] = [];
+  const cons: string[] = [];
+
+  const timeDelta = Math.round(alt.duration_min - best.duration_min);
+  const altFare = alt.fare ?? alt.fare_before_discount ?? 0;
+  const bestFare = best.fare ?? best.fare_before_discount ?? 0;
+  const fareDelta = round(altFare - bestFare);
+  const transferDelta = alt.transfer_count - best.transfer_count;
+  const altMultiplier = alt.traffic_multiplier ?? 1;
+  const bestMultiplier = best.traffic_multiplier ?? 1;
+
+  if (timeDelta <= -1) pros.push(`${Math.abs(timeDelta)} min faster`);
+  else if (timeDelta >= 1) cons.push(`${timeDelta} min slower`);
+
+  if (fareDelta <= -0.5) pros.push(`₱${Math.abs(fareDelta).toFixed(2)} cheaper`);
+  else if (fareDelta >= 0.5) cons.push(`₱${fareDelta.toFixed(2)} more expensive`);
+
+  if (transferDelta < 0) {
+    pros.push(transferDelta === -1 ? "1 fewer transfer" : `${Math.abs(transferDelta)} fewer transfers`);
+  } else if (transferDelta > 0) {
+    cons.push(transferDelta === 1 ? "1 more transfer" : `${transferDelta} more transfers`);
+  }
+
+  if (altMultiplier < bestMultiplier - 0.05) {
+    pros.push(`lighter traffic (${trafficDescriptor(altMultiplier)})`);
+  } else if (altMultiplier > bestMultiplier + 0.05) {
+    cons.push(`heavier traffic (${trafficDescriptor(altMultiplier)})`);
+  }
+
+  return {
+    pros: pros.length ? pros : ["Still gets you to your destination"],
+    cons: cons.length ? cons : ["Slightly behind the top pick overall"],
+  };
+}
+
+async function explainAlternative(
+  alt: any,
+  best: any,
+): Promise<{ headline: string; pros: string[]; cons: string[] }> {
+  const { pros, cons } = compareToPick(alt, best);
+  const fallbackHeadline = `${alt.route_name} wasn't the top pick — ${cons[0]}.`;
+
+  if (!GEMINI_KEY) {
+    return { headline: fallbackHeadline, pros, cons };
+  }
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{
+              text:
+                "Write ONE short, plain sentence explaining why this jeepney trip option was not the top " +
+                "recommendation, based ONLY on the given pros/cons facts. Do not invent new facts or numbers. " +
+                "No markdown, no exclamation points.",
+            }],
+          },
+          contents: [{
+            parts: [{
+              text:
+                `Trip: ${alt.route_name}. Compared to the top pick — pros: ${pros.join("; ")}. ` +
+                `cons: ${cons.join("; ")}.`,
+            }],
+          }],
+          generationConfig: { maxOutputTokens: 60, temperature: 0.4 },
+        }),
+      },
+    );
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!text) {
+      console.error(`explainAlternative: no text in Gemini response (status ${res.status}):`, JSON.stringify(data));
+      return { headline: fallbackHeadline, pros, cons };
+    }
+    return { headline: text, pros, cons };
+  } catch (err) {
+    console.error("explainAlternative: Gemini call threw:", err);
+    return { headline: fallbackHeadline, pros, cons };
   }
 }
 

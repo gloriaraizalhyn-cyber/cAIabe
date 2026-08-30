@@ -11,16 +11,19 @@ const LANGUAGES = [
   { code: "Ilocano", label: "Ilocano" },
 ];
 
-// Renders an AI-generated note (either a single `text` string, or a
-// `headline`/`body` pair) with a "Listen" control that translates it and
-// plays it back via the translate-to-voice edge function (GPT-4o-mini +
-// TTS) in the passenger's chosen language.
-function AiNote({ tone = "calm", text, headline, body, className = "" }) {
+// Renders an AI-generated note (a single `text` string, a `headline`/`body`
+// pair, and/or a `pros`/`cons` list — e.g. why an alternative route wasn't
+// the top pick) with a "Listen" control that translates it and plays it
+// back via the translate-to-voice edge function (GPT-4o-mini + TTS) in the
+// passenger's chosen language.
+function AiNote({ tone = "calm", text, headline, body, pros, cons, className = "" }) {
   const [language, setLanguage] = useState(LANGUAGES[0].code);
   const [status, setStatus] = useState("idle"); // idle | loading | playing | error
   const audioRef = useRef(null);
 
-  const spokenText = text ?? [headline, body].filter(Boolean).join(". ");
+  const prosText = pros?.length ? `Pros: ${pros.join(", ")}.` : "";
+  const consText = cons?.length ? `Cons: ${cons.join(", ")}.` : "";
+  const spokenText = text ?? [headline, body, prosText, consText].filter(Boolean).join(" ");
 
   const handleListen = async () => {
     if (status === "loading") return;
@@ -67,6 +70,25 @@ function AiNote({ tone = "calm", text, headline, body, className = "" }) {
           </p>
         ) : (
           <p>{text}</p>
+        )}
+
+        {(pros?.length > 0 || cons?.length > 0) && (
+          <div className="ai-note__comparison">
+            {pros?.length > 0 && (
+              <ul className="ai-note__list ai-note__list--pros">
+                {pros.map((pro, index) => (
+                  <li key={`pro-${index}`}>{pro}</li>
+                ))}
+              </ul>
+            )}
+            {cons?.length > 0 && (
+              <ul className="ai-note__list ai-note__list--cons">
+                {cons.map((con, index) => (
+                  <li key={`con-${index}`}>{con}</li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
 
         <div className="ai-note__listen-row" onClick={(event) => event.stopPropagation()}>

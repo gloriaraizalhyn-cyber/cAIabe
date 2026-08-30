@@ -30,7 +30,7 @@ function TripResultsPanel({
   const [liveDragY, setLiveDragY] = useState(null);
   const dragStateRef = useRef(null);
 
-  const bestPickRoute = routes.find((route) => route.aiNote) ?? routes[0];
+  const bestPickRoute = routes.find((route) => route.isRecommended) ?? routes[0];
 
   const otherRoutes = useMemo(() => {
     const sortField = SORT_METRIC_TO_FIELD[sortMetric];

@@ -137,8 +137,18 @@ function RouteOptionCard({
 
       {isExpanded && (
         <div className="route-option-card__details">
-          {route.aiNote && (
-            <AiNote tone="calm" text={route.aiNote} className="route-option-card__ai-note" />
+          {route.comparison ? (
+            <AiNote
+              tone="calm"
+              headline={route.comparison.headline}
+              pros={route.comparison.pros}
+              cons={route.comparison.cons}
+              className="route-option-card__ai-note"
+            />
+          ) : (
+            route.aiNote && (
+              <AiNote tone="calm" text={route.aiNote} className="route-option-card__ai-note" />
+            )
           )}
 
           {route.legs.length > 0 ? (

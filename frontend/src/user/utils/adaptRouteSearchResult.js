@@ -73,7 +73,7 @@ function buildItineraryKey(result) {
     .join(">");
 }
 
-function adaptOneRoute(result) {
+function adaptOneRoute(result, isRecommended) {
   const jeepLegs = result.legs.filter((leg) => leg.kind === "jeep");
   const walkLegs = result.legs.filter((leg) => leg.kind === "walk");
   const primaryLeg = jeepLegs[0];
@@ -104,7 +104,12 @@ function adaptOneRoute(result) {
     leaveTime: formatClockTime(now),
     arriveTime: formatClockTime(arrive),
     availabilityNote: null,
+    isRecommended,
     aiNote: result.explanation ?? null,
+    // Only set on non-best alternatives: why this route wasn't the top
+    // pick, with pros/cons computed from real deltas vs the recommended
+    // route (see route-search's explainAlternative).
+    comparison: result.comparison ?? null,
     legs: result.legs.map((leg, index) => adaptLeg(leg, index, result.legs)),
     path: result.legs.flatMap(legPathPoints),
     // One entry per leg, so the map can draw walk legs as dashed and ride
@@ -114,5 +119,7 @@ function adaptOneRoute(result) {
 }
 
 export function adaptRouteSearchResult({ recommended, alternatives }) {
-  return [recommended, ...(alternatives ?? [])].filter(Boolean).map(adaptOneRoute);
+  return [recommended, ...(alternatives ?? [])]
+    .filter(Boolean)
+    .map((result, index) => adaptOneRoute(result, index === 0));
 }
