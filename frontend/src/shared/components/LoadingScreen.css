@@ -1,5 +1,11 @@
+/* `position: fixed` + `inset: 0` centers on the actual viewport regardless
+   of scroll position or any quirks in an ancestor's height/flow — more
+   reliable for "always centered on screen" than a min-height:100vh block
+   sitting in normal document flow. */
 .loading-screen {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -9,22 +15,37 @@
   padding: 24px;
 }
 
+/* For embedding inline within an already-rendered page (e.g. a table's
+   "loading rows" state) instead of taking over the whole viewport. */
+.loading-screen--inline {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  width: 100%;
+  background: transparent;
+  padding: 40px 24px;
+}
+
 /* The source animation is a 640x360 canvas with the wheel graphic centered
    in a 290x290 square (at 320,180) — this crops the rendered frame down to
-   just that square instead of showing the wheel adrift in empty canvas. */
+   just that square instead of showing the wheel adrift in empty canvas.
+   Sized with clamp() so it scales with the viewport (small on phones,
+   capped on desktop) instead of staying a fixed pixel size everywhere;
+   the animation inside is positioned in percentages of this box rather
+   than fixed px, so it stays proportional at any size the crop resolves to. */
 .loading-screen__crop {
-  width: 100px;
-  height: 100px;
+  width: clamp(72px, 18vw, 120px);
+  height: clamp(72px, 18vw, 120px);
   overflow: hidden;
   position: relative;
 }
 
 .loading-screen__animation {
   position: absolute;
-  top: -12.07px;
-  left: -60.34px;
-  width: 220.69px;
-  height: 124.14px;
+  top: -12.07%;
+  left: -60.34%;
+  width: 220.69%;
+  height: 124.14%;
 }
 
 .loading-screen__message {
@@ -32,4 +53,5 @@
   font-size: 0.92rem;
   font-weight: 700;
   color: #6a6f79;
+  text-align: center;
 }

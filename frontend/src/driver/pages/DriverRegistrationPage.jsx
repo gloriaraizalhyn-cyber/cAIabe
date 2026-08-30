@@ -101,9 +101,6 @@ function DriverRegistrationPage() {
     setSubmitError(null);
     setIsSubmitting(true);
 
-    // Franchise permit, vehicle registration, and plate number are
-    // collected above but intentionally not sent anywhere below — the
-    // `drivers` table has no columns for them yet.
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: formValues.emailAddress,
       password: formValues.password,
@@ -137,7 +134,13 @@ function DriverRegistrationPage() {
     }
 
     try {
-      const license_photo_base64 = await fileToBase64(formValues.driversLicensePhotoFile);
+      const [license_photo_base64, franchise_permit_photo_base64, vehicle_registration_photo_base64] =
+        await Promise.all([
+          fileToBase64(formValues.driversLicensePhotoFile),
+          fileToBase64(formValues.franchisePermitPhotoFile),
+          fileToBase64(formValues.vehicleRegistrationPhotoFile),
+        ]);
+
       const { data: onboardData, error: onboardError } = await supabase.functions.invoke(
         "driver-onboarding",
         {
@@ -147,6 +150,10 @@ function DriverRegistrationPage() {
             jeep_color: formValues.jeepneyColor,
             license_photo_base64,
             license_photo_mime: formValues.driversLicensePhotoFile.type,
+            franchise_permit_photo_base64,
+            franchise_permit_photo_mime: formValues.franchisePermitPhotoFile.type,
+            vehicle_registration_photo_base64,
+            vehicle_registration_photo_mime: formValues.vehicleRegistrationPhotoFile.type,
           },
         }
       );

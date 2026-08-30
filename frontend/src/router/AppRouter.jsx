@@ -12,9 +12,12 @@ import NextToGoPage from "../driver/pages/NextToGoPage.jsx";
 import DriverQueueListPage from "../driver/pages/DriverQueueListPage.jsx";
 import DrivingPage from "../driver/pages/DrivingPage.jsx";
 import LiveTrackerPage from "../demo/pages/LiveTrackerPage.jsx";
+import AdminLoginPage from "../admin/pages/AdminLoginPage.jsx";
+import AdminDashboardPage from "../admin/pages/AdminDashboardPage.jsx";
 
 // User-end routes above; driver-end routes below under their own "/driver/*"
-// prefix so the two flows stay clearly separated.
+// prefix, and admin-end routes under "/admin/*", so the flows stay clearly
+// separated.
 function AppRouter() {
   return (
     <Routes>
@@ -31,6 +34,9 @@ function AppRouter() {
       <Route path="/driver/next-to-go" element={<NextToGoPage />} />
       <Route path="/driver/queue" element={<DriverQueueListPage />} />
       <Route path="/driver/driving" element={<DrivingPage />} />
+
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
 
       <Route path="/live-tracker" element={<LiveTrackerPage />} />
     </Routes>

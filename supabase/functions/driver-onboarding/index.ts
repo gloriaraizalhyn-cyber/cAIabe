@@ -4,14 +4,18 @@
 //   route_id: string,
 //   home_terminal_id: string,
 //   jeep_color?: string,
-//   license_photo_base64: string,   // raw base64, no "data:image/..;base64," prefix
-//   license_photo_mime?: string     // defaults to "image/jpeg"
+//   license_photo_base64: string,             // raw base64, no "data:image/..;base64," prefix
+//   license_photo_mime?: string,               // defaults to "image/jpeg"
+//   franchise_permit_photo_base64: string,
+//   franchise_permit_photo_mime?: string,
+//   vehicle_registration_photo_base64: string,
+//   vehicle_registration_photo_mime?: string,
 // }
 //
-// Uploads the license photo to the private `license-photos` bucket and
-// creates/updates the driver's profile row. verification_status is always
-// (re)set to 'pending' here — admin approval is out of scope, so for
-// testing you'll still manually flip it to 'approved' in Table Editor,
+// Uploads all three verification photos to the private `license-photos`
+// bucket and creates/updates the driver's profile row. verification_status
+// is always (re)set to 'pending' here — admin approval is out of scope, so
+// for testing you'll still manually flip it to 'approved' in Table Editor,
 // same as before.
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
@@ -31,17 +35,32 @@ Deno.serve(async (req: Request) => {
       jeep_color,
       license_photo_base64,
       license_photo_mime,
+      franchise_permit_photo_base64,
+      franchise_permit_photo_mime,
+      vehicle_registration_photo_base64,
+      vehicle_registration_photo_mime,
     } = await req.json() as {
       route_id: string;
       home_terminal_id: string;
       jeep_color?: string;
       license_photo_base64: string;
       license_photo_mime?: string;
+      franchise_permit_photo_base64: string;
+      franchise_permit_photo_mime?: string;
+      vehicle_registration_photo_base64: string;
+      vehicle_registration_photo_mime?: string;
     };
 
-    if (!route_id || !home_terminal_id || !license_photo_base64) {
+    if (
+      !route_id || !home_terminal_id || !license_photo_base64 ||
+      !franchise_permit_photo_base64 || !vehicle_registration_photo_base64
+    ) {
       return json(
-        { error: "route_id, home_terminal_id, and license_photo_base64 are required" },
+        {
+          error:
+            "route_id, home_terminal_id, license_photo_base64, franchise_permit_photo_base64, " +
+            "and vehicle_registration_photo_base64 are required",
+        },
         400,
       );
     }
@@ -64,19 +83,32 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (!terminal) return json({ error: "home_terminal_id does not exist" }, 400);
 
-    // Decode and upload the license photo
-    const mime = license_photo_mime || "image/jpeg";
-    const ext = mime.split("/")[1] || "jpg";
-    const bytes = base64ToBytes(license_photo_base64);
-    const storagePath = `${driverId}/license.${ext}`;
+    const licensePath = await uploadDocument(
+      supabase,
+      driverId,
+      "license",
+      license_photo_base64,
+      license_photo_mime,
+    );
+    if ("error" in licensePath) return json({ error: licensePath.error }, 500);
 
-    const { error: uploadErr } = await supabase.storage
-      .from("license-photos")
-      .upload(storagePath, bytes, { contentType: mime, upsert: true });
+    const franchisePermitPath = await uploadDocument(
+      supabase,
+      driverId,
+      "franchise-permit",
+      franchise_permit_photo_base64,
+      franchise_permit_photo_mime,
+    );
+    if ("error" in franchisePermitPath) return json({ error: franchisePermitPath.error }, 500);
 
-    if (uploadErr) {
-      return json({ error: `photo upload failed: ${uploadErr.message}` }, 500);
-    }
+    const vehicleRegistrationPath = await uploadDocument(
+      supabase,
+      driverId,
+      "vehicle-registration",
+      vehicle_registration_photo_base64,
+      vehicle_registration_photo_mime,
+    );
+    if ("error" in vehicleRegistrationPath) return json({ error: vehicleRegistrationPath.error }, 500);
 
     // Upsert the driver's profile. Resubmitting always resets status to
     // 'pending' — a driver changing their route/photo should be re-reviewed.
@@ -88,7 +120,10 @@ Deno.serve(async (req: Request) => {
           route_id,
           home_terminal_id,
           jeep_color: jeep_color ?? null,
-          license_photo_url: storagePath, // storage path, not a public URL — bucket is private
+          // storage paths, not public URLs — the bucket is private
+          license_photo_url: licensePath.path,
+          franchise_permit_photo_url: franchisePermitPath.path,
+          vehicle_registration_photo_url: vehicleRegistrationPath.path,
           verification_status: "pending",
         },
         { onConflict: "id" },
@@ -103,6 +138,26 @@ Deno.serve(async (req: Request) => {
     return json({ error: String(err) }, 500);
   }
 });
+
+async function uploadDocument(
+  supabase: ReturnType<typeof getServiceClient>,
+  driverId: string,
+  documentName: string,
+  base64: string,
+  mime: string | undefined,
+): Promise<{ path: string } | { error: string }> {
+  const resolvedMime = mime || "image/jpeg";
+  const ext = resolvedMime.split("/")[1] || "jpg";
+  const bytes = base64ToBytes(base64);
+  const storagePath = `${driverId}/${documentName}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("license-photos")
+    .upload(storagePath, bytes, { contentType: resolvedMime, upsert: true });
+
+  if (error) return { error: `${documentName} photo upload failed: ${error.message}` };
+  return { path: storagePath };
+}
 
 function base64ToBytes(base64: string): Uint8Array {
   const binary = atob(base64);

@@ -7,9 +7,9 @@ const ANIMATION_URL = "/animations/steer-wheel-loading.json";
 // spin + fade-out that isn't meant to repeat, so the loop stops just before it.
 const LOOP_SEGMENT = [0, 202];
 
-function LoadingScreen({ message = "Loading…" }) {
+function LoadingScreen({ message = "Loading…", fullScreen = true }) {
   return (
-    <div className="loading-screen">
+    <div className={`loading-screen${fullScreen ? "" : " loading-screen--inline"}`}>
       <div className="loading-screen__crop">
         <Lottie
           src={ANIMATION_URL}

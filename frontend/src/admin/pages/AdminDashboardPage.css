@@ -1,0 +1,604 @@
+.admin-dashboard-page {
+  min-height: 100vh;
+  background: #f5f6f8;
+  padding: 24px 20px 60px;
+}
+
+.admin-dashboard-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1400px;
+  margin: 0 auto 20px;
+}
+
+.admin-dashboard-page__title {
+  margin: 0;
+  font-family: "LL Karatula", "DM Sans", "Segoe UI", sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.admin-dashboard-page__logout-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d8dae0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #4a4f58;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 14px;
+}
+
+.admin-dashboard-page__logout-button:hover {
+  background: #f0f1f4;
+}
+
+.admin-dashboard-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1400px;
+  margin: 0 auto 20px;
+}
+
+.admin-dashboard-page__search-bar {
+  position: relative;
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.admin-dashboard-page__search-icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #9a9fa8;
+  pointer-events: none;
+}
+
+.admin-dashboard-page__search-input {
+  width: 100%;
+  border: 1px solid #d8dae0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 0.84rem;
+  padding: 9px 12px 9px 36px;
+}
+
+.admin-dashboard-page__search-input:focus {
+  outline: none;
+  border-color: #1b3fa0;
+}
+
+.admin-dashboard-page__search-input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.admin-dashboard-page__tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-dashboard-page__tab {
+  border: 1px solid #d8dae0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #6a6f79;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 16px;
+}
+
+.admin-dashboard-page__tab--active {
+  border-color: #1b3fa0;
+  background: #1b3fa0;
+  color: #ffffff;
+}
+
+.admin-dashboard-page__bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1400px;
+  margin: 0 auto 12px;
+}
+
+.admin-dashboard-page__selection-count {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.admin-dashboard-page__bulk-delete-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 10px;
+  background: #c53030;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 8px 14px;
+}
+
+.admin-dashboard-page__bulk-delete-button:hover {
+  background: #a12727;
+}
+
+.admin-dashboard-page__status-message {
+  max-width: 1400px;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #6a6f79;
+  padding: 32px 0;
+}
+
+.admin-dashboard-page__status-message--error {
+  color: #c53030;
+}
+
+.admin-dashboard-page__table-wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  overflow-x: auto;
+  border: 1px solid #d8dae0;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.admin-driver-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.admin-driver-table thead th {
+  position: sticky;
+  top: 0;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6a6f79;
+  background: #f0f1f4;
+  border-bottom: 2px solid #d8dae0;
+  padding: 10px 14px;
+}
+
+.admin-driver-table__checkbox-col,
+.admin-driver-table__actions-col,
+.admin-driver-table__expand-col {
+  white-space: nowrap;
+}
+
+.admin-driver-table__expand-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #6a6f79;
+}
+
+.admin-driver-table__expand-button:hover {
+  background: #e3e5ea;
+  color: #1a1a1a;
+}
+
+.admin-driver-table__detail-row td {
+  padding: 0;
+  border-bottom: 1px solid #ecebe6;
+}
+
+.admin-driver-detail-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 18px 20px;
+  background: #f0f4fd;
+}
+
+.admin-driver-detail-panel__fields {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 190px));
+  gap: 14px 28px;
+  margin: 0;
+  white-space: normal;
+}
+
+.admin-driver-detail-panel__fields dt {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #6a6f79;
+}
+
+.admin-driver-detail-panel__fields dd {
+  margin: 2px 0 0;
+  font-size: 0.86rem;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+/* 5th column: the same Approve/Reject/Delete actions as the collapsed
+   row, just with text labels instead of icon-only buttons, and arranged
+   in a horizontal row rather than the row's compact icon strip. */
+.admin-driver-detail-panel__actions {
+  flex-shrink: 0;
+}
+
+.admin-driver-detail-panel__actions-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #6a6f79;
+  margin-bottom: 8px;
+}
+
+.admin-driver-detail-panel__actions-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-driver-detail-panel__action-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+
+.admin-driver-detail-panel__action-button--approve {
+  background: #e2f3e8;
+  color: #1b8a4a;
+}
+
+.admin-driver-detail-panel__action-button--approve:hover {
+  background: #cdeadb;
+}
+
+.admin-driver-detail-panel__action-button--reject {
+  background: #fbeaea;
+  color: #c53030;
+}
+
+.admin-driver-detail-panel__action-button--reject:hover {
+  background: #f6d8d8;
+}
+
+.admin-driver-detail-panel__action-button--delete {
+  background: #fbeaea;
+  color: #c53030;
+}
+
+.admin-driver-detail-panel__action-button--delete:hover {
+  background: #f6d8d8;
+}
+
+.admin-driver-detail-panel__remarks {
+  padding: 0 20px 18px;
+  background: #f0f4fd;
+}
+
+.admin-driver-detail-panel__remarks-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+}
+
+.admin-driver-detail-panel__remarks-textarea {
+  width: 100%;
+  max-width: 520px;
+  resize: vertical;
+  border: 1px solid #d8dae0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 0.85rem;
+  font-family: inherit;
+  padding: 10px 12px;
+}
+
+.admin-driver-detail-panel__remarks-textarea:focus {
+  outline: none;
+  border-color: #c53030;
+}
+
+.admin-driver-detail-panel__remarks-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.admin-driver-detail-panel__remarks-cancel-button {
+  border: 1px solid #d8dae0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 8px 16px;
+}
+
+.admin-driver-detail-panel__remarks-cancel-button:hover:not(:disabled) {
+  border-color: #1a1a1a;
+}
+
+.admin-driver-detail-panel__remarks-confirm-button {
+  border: none;
+  border-radius: 8px;
+  background: #c53030;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 8px 16px;
+}
+
+.admin-driver-detail-panel__remarks-confirm-button:hover:not(:disabled) {
+  background: #a12727;
+}
+
+.admin-driver-detail-panel__remarks-cancel-button:disabled,
+.admin-driver-detail-panel__remarks-confirm-button:disabled {
+  opacity: 0.6;
+}
+
+.admin-driver-table__header-with-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-driver-table__filter-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #9a9fa8;
+}
+
+.admin-driver-table__filter-trigger:hover {
+  background: #e3e5ea;
+  color: #4a4f58;
+}
+
+.admin-driver-table__filter-trigger--active {
+  color: #1b3fa0;
+  background: #eaf0ff;
+}
+
+.admin-driver-table__sort-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #9a9fa8;
+}
+
+.admin-driver-table__sort-button:hover {
+  background: #e3e5ea;
+  color: #4a4f58;
+}
+
+.admin-driver-table__sort-button--active {
+  color: #1b3fa0;
+  background: #eaf0ff;
+}
+
+.admin-driver-table__filter-menu {
+  position: fixed;
+  z-index: 50;
+  min-width: 160px;
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #ffffff;
+  border: 1px solid #d8dae0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(26, 26, 26, 0.14);
+  padding: 4px;
+}
+
+.admin-driver-table__filter-menu:focus {
+  outline: none;
+}
+
+.admin-driver-table__filter-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #1a1a1a;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 7px 10px;
+  white-space: nowrap;
+}
+
+.admin-driver-table__filter-option:hover {
+  background: #f0f4fd;
+}
+
+.admin-driver-table__filter-option--selected {
+  background: #eaf0ff;
+  color: #1b3fa0;
+  font-weight: 700;
+}
+
+.admin-driver-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #ecebe6;
+  color: #1a1a1a;
+  vertical-align: middle;
+}
+
+.admin-driver-table tbody tr:nth-child(even) {
+  background: #faf9f7;
+}
+
+.admin-driver-table tbody tr:hover {
+  background: #f0f4fd;
+}
+
+.admin-driver-table__row--selected {
+  background: #eaf0ff !important;
+}
+
+.admin-driver-table input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: #1b3fa0;
+}
+
+.admin-driver-table__thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #e5e2da;
+}
+
+.admin-driver-table__name-cell {
+  font-weight: 700;
+}
+
+.admin-driver-table__cell-muted {
+  color: #b5b8bf;
+}
+
+.admin-driver-table__color-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: capitalize;
+}
+
+.admin-driver-table__color-swatch {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.admin-driver-table__status-badge {
+  display: inline-block;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  padding: 3px 10px;
+}
+
+.admin-driver-table__status-badge--pending {
+  background: #fdf2d9;
+  color: #a3760a;
+}
+
+.admin-driver-table__status-badge--approved {
+  background: #e2f3e8;
+  color: #1b8a4a;
+}
+
+.admin-driver-table__status-badge--rejected {
+  background: #fbeaea;
+  color: #c53030;
+}
+
+.admin-driver-table__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-driver-table__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.admin-driver-table__icon-button:disabled {
+  opacity: 0.6;
+}
+
+.admin-driver-table__icon-button--approve {
+  background: #e2f3e8;
+  color: #1b8a4a;
+}
+
+.admin-driver-table__icon-button--approve:hover:not(:disabled) {
+  background: #cdeadb;
+}
+
+.admin-driver-table__icon-button--reject {
+  background: #fbeaea;
+  color: #c53030;
+}
+
+.admin-driver-table__icon-button--reject:hover:not(:disabled) {
+  background: #f6d8d8;
+}
+
+.admin-driver-table__icon-button--edit {
+  background: #eaf0ff;
+  color: #1b3fa0;
+}
+
+.admin-driver-table__icon-button--edit:hover:not(:disabled) {
+  background: #d9e4fb;
+}
+
+.admin-driver-table__icon-button--delete {
+  background: #fbeaea;
+  color: #c53030;
+}
+
+.admin-driver-table__icon-button--delete:hover:not(:disabled) {
+  background: #f6d8d8;
+}
