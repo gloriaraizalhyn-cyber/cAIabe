@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MapView from "../../shared/components/MapView.jsx";
 import NextToGoCard from "../components/NextToGoCard.jsx";
@@ -10,6 +10,8 @@ import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./NextToGoPage.css";
 
+const LOCATION_UPDATE_MIN_INTERVAL_MS = 5000;
+
 function NextToGoPage() {
   const navigate = useNavigate();
   const { driver, loading, session } = useDriverSession();
@@ -19,10 +21,25 @@ function NextToGoPage() {
   const [isUsingDemoPosition, setIsUsingDemoPosition] = useState(false);
   const [isSkippingToDriving, setIsSkippingToDriving] = useState(false);
 
+  const lastUpdateAtRef = useRef(0);
+
+  // Also throttled-reports position to driver-location-update — required
+  // here, not just cosmetic: a driver sitting on this page (status
+  // 'next_to_go') can only ever be promoted to 'driving' once their
+  // geofence_status flips to 'inside' (see queue-advance's promotion gate),
+  // and this watch is the only thing that keeps it current at this stage.
   useEffect(() => {
     if (isUsingDemoPosition || !navigator.geolocation) return undefined;
     const watchId = navigator.geolocation.watchPosition(
-      (position) => setDriverPosition({ lat: position.coords.latitude, lng: position.coords.longitude }),
+      (position) => {
+        const here = { lat: position.coords.latitude, lng: position.coords.longitude };
+        setDriverPosition(here);
+
+        const now = Date.now();
+        if (now - lastUpdateAtRef.current < LOCATION_UPDATE_MIN_INTERVAL_MS) return;
+        lastUpdateAtRef.current = now;
+        supabase.functions.invoke("driver-location-update", { body: here });
+      },
       () => {},
       { enableHighAccuracy: true, maximumAge: 5000 }
     );
@@ -33,11 +50,14 @@ function NextToGoPage() {
   // testing from outside Clark/Angeles, or without granting location at
   // all) by placing the driver at their own terminal's real coordinates.
   // The AI itself is unaffected — only where the driver's position comes
-  // from changes.
+  // from changes. Also reports it immediately so geofence_status flips to
+  // "inside" right away rather than waiting on the next throttled tick.
   const handleUseTerminalLocation = () => {
     if (!driver?.terminal?.position) return;
     setIsUsingDemoPosition(true);
     setDriverPosition(driver.terminal.position);
+    lastUpdateAtRef.current = Date.now();
+    supabase.functions.invoke("driver-location-update", { body: driver.terminal.position });
   };
 
   const refreshQueueEntry = useCallback(async () => {

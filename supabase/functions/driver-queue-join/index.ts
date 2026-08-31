@@ -36,7 +36,7 @@ Deno.serve(async (req: Request) => {
       .from("queue_entries")
       .select("id")
       .eq("driver_id", driverId)
-      .in("status", ["waiting", "next_to_go", "driving"])
+      .in("status", ["waiting", "next_to_go", "driving", "temporarily_away"])
       .maybeSingle();
 
     if (existing) {

@@ -101,7 +101,69 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return json({ updated: true, end_of_route: endOfRoute });
+    // Terminal-geofence tracking for queued drivers — independent of the
+    // terminus check above, and only relevant while a driver holds a queue
+    // slot they haven't been dispatched from yet. Hysteresis (two separate
+    // radii) keeps GPS jitter near the boundary from flapping the status.
+    let geofenceStatus: "inside" | "outside" | null = null;
+
+    const { data: queueEntry } = await supabase
+      .from("queue_entries")
+      .select("id, terminal_id, status, geofence_status")
+      .eq("driver_id", driverId)
+      .in("status", ["waiting", "next_to_go", "temporarily_away"])
+      .maybeSingle();
+
+    if (queueEntry) {
+      const { data: geofenceRows, error: geofenceErr } = await supabase.rpc(
+        "get_terminal_geofence",
+        { p_terminal_id: queueEntry.terminal_id, p_lat: lat, p_lng: lng },
+      );
+      const g = geofenceRows?.[0];
+
+      if (!geofenceErr && g) {
+        const wasInside = queueEntry.geofence_status === "inside";
+        let nowInside = wasInside;
+        if (wasInside && g.distance_meters > g.exit_radius_meters) nowInside = false;
+        else if (!wasInside && g.distance_meters <= g.enter_radius_meters) nowInside = true;
+
+        geofenceStatus = nowInside ? "inside" : "outside";
+
+        if (nowInside !== wasInside) {
+          const now = new Date().toISOString();
+          const geofenceUpdate: Record<string, unknown> = {
+            geofence_status: geofenceStatus,
+            ...(nowInside ? { last_inside_at: now } : { last_outside_at: now }),
+          };
+
+          // Physically returning after "Leave temporarily" rejoins at the
+          // back of the active queue with a fresh timestamp. Returning from
+          // waiting/next_to_go (e.g. after "Lining up") must NOT touch
+          // arrival_at — that's the driver's original FIFO position.
+          if (nowInside && queueEntry.status === "temporarily_away") {
+            geofenceUpdate.status = "waiting";
+            geofenceUpdate.arrival_at = now;
+            geofenceUpdate.notified_at = null;
+            geofenceUpdate.responded_at = null;
+          }
+
+          const { data: updatedEntry } = await supabase
+            .from("queue_entries")
+            .update(geofenceUpdate)
+            .eq("id", queueEntry.id)
+            .select()
+            .single();
+
+          await supabase.channel(`route:${driver.route_id}:queue`).send({
+            type: "broadcast",
+            event: "queue_updated",
+            payload: { queue_entry: updatedEntry },
+          });
+        }
+      }
+    }
+
+    return json({ updated: true, end_of_route: endOfRoute, geofence_status: geofenceStatus });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }

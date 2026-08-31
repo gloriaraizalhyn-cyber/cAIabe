@@ -20,6 +20,8 @@ create table terminals (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   location geography(point, 4326) not null,
+  geofence_radius_meters double precision not null default 100,       -- enter threshold
+  geofence_exit_radius_meters double precision not null default 130,  -- exit threshold (hysteresis vs GPS jitter)
   created_at timestamptz not null default now()
 );
 
@@ -63,10 +65,14 @@ create table queue_entries (
   route_id uuid references routes(id),
   terminal_id uuid references terminals(id),
   status text not null default 'waiting'
-    check (status in ('waiting','next_to_go','driving','done_for_day')),
+    check (status in ('waiting','next_to_go','driving','done_for_day','temporarily_away')),
   arrival_at timestamptz not null default now(),  -- drives queue ordering
-  notified_at timestamptz,                        -- set when next-2 notification fires
+  notified_at timestamptz,                        -- set when next-N notification fires
   responded_at timestamptz,
+  geofence_status text not null default 'outside'  -- physical presence at the terminal, tracked
+    check (geofence_status in ('inside','outside')), -- independently of queue lifecycle (status)
+  last_inside_at timestamptz,
+  last_outside_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

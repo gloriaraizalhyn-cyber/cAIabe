@@ -156,12 +156,15 @@ async function clearWaiting(mode) {
 
 // ---------- interactive controls ----------
 
-function setupDemoControls(routeId) {
+async function setupDemoControls(routeId) {
   if (!process.stdin.isTTY) return; // non-interactive run — just do the initial surge and exit
   console.log('\nDemo controls: "surge", "surge <count>@<km>", "clear", "clear half", "list", then Enter.\n');
 
-  const readline = require("readline");
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  // Dynamic import (not require) so this works whether Node parses this
+  // file as CommonJS or ESM — see mock-fleet-simulator.js's identical fix
+  // for why require() alone isn't safe here.
+  const { createInterface } = await import("node:readline");
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
 
   rl.on("line", async (line) => {
     const trimmed = line.trim();
