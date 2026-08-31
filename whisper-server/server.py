@@ -3,31 +3,33 @@ from fastapi.middleware.cors import CORSMiddleware
 from transformers import pipeline
 import tempfile
 import os
+import subprocess
 
 app = FastAPI()
 
-# Allow the React frontend to communicate with the local Whisper server
+# Allow the React/Vite frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "http://127.0.0.1:5173",
+        "http://localhost:5174",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-MODEL_ID = "rbcurzon/whisper-medium-ph"
+MODEL_ID = "openai/whisper-small"
 
-print("Loading Whisper Medium PH...")
+print("Loading Whisper...")
+print("Model:", MODEL_ID)
 
 transcriber = pipeline(
     "automatic-speech-recognition",
     model=MODEL_ID,
 )
 
-print("Whisper Medium PH loaded!")
+print("Whisper loaded successfully!")
 
 
 @app.get("/")
@@ -42,32 +44,97 @@ def root():
 async def transcribe(file: UploadFile = File(...)):
     audio_bytes = await file.read()
 
-    suffix = os.path.splitext(file.filename or "")[1] or ".webm"
+    print("\n==============================")
+    print("Received audio:")
+    print("Filename:", file.filename)
+    print("Content type:", file.content_type)
+    print("Size:", len(audio_bytes), "bytes")
+    print("==============================")
 
-    with tempfile.NamedTemporaryFile(
-        delete=False,
-        suffix=suffix
-    ) as temp:
-        temp.write(audio_bytes)
-        temp_path = temp.name
+    input_path = None
+    output_path = None
 
     try:
+        # Save browser WebM audio
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".webm"
+        ) as input_file:
+            input_file.write(audio_bytes)
+            input_path = input_file.name
+
+        # WAV output
+        output_path = input_path + ".wav"
+
+        print("Converting audio with FFmpeg...")
+
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                input_path,
+                "-ar",
+                "16000",
+                "-ac",
+                "1",
+                "-c:a",
+                "pcm_s16le",
+                output_path,
+            ],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        print("FFmpeg conversion successful.")
+
+        print("Running Whisper...")
+
         result = transcriber(
-    temp_path,
-    generate_kwargs={
-        "language": "tl",
-        "task": "transcribe",
-    }
-)
+            output_path,
+            generate_kwargs={
+                "task": "transcribe",
+            },
+        )
 
-print("WHISPER RESULT:", result)
+        print("\n==============================")
+        print("RAW WHISPER RESULT:")
+        print(result)
+        print("==============================")
 
-text = result["text"].strip()
+        text = result.get("text", "").strip()
 
-return {
-    "text": text
-}
+        print("FINAL TRANSCRIPT:")
+        print(text)
+        print("==============================\n")
+
+        return {
+            "text": text
+        }
+
+    except subprocess.CalledProcessError as e:
+        error_message = e.stderr.decode(errors="ignore")
+
+        print("FFmpeg ERROR:")
+        print(error_message)
+
+        return {
+            "error": "Audio conversion failed",
+            "details": error_message
+        }
+
+    except Exception as e:
+        print("WHISPER ERROR:")
+        print(repr(e))
+
+        return {
+            "error": str(e)
+        }
 
     finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        if output_path and os.path.exists(output_path):
+            os.remove(output_path)
+
+        if input_path and os.path.exists(input_path):
+            os.remove(input_path)

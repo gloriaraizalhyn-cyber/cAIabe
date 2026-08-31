@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../../shared/lib/supabaseClient.js";
 import { ChevronLeft, Mic, RotateCcw, Check, Square, Quote } from "lucide-react";
-import { mockTranscribeAndParseVoice } from "../utils/mockVoiceParse.js";
+//import { mockTranscribeAndParseVoice } from "../utils/mockVoiceParse.js";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import "./VoiceSearchPage.css";
 
@@ -34,8 +35,31 @@ function VoiceSearchPage() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+    channelCount: 1,
+  },
+});
+
+const audioTrack = stream.getAudioTracks()[0];
+
+console.log("Microphone:", audioTrack.label);
+console.log("Microphone settings:", audioTrack.getSettings());
+console.log("Microphone state:", audioTrack.readyState);
+console.log("Microphone enabled:", audioTrack.enabled);
+
+console.log(
+  "Microphone tracks:",
+  stream.getAudioTracks().map((track) => ({
+    label: track.label,
+    enabled: track.enabled,
+    muted: track.muted,
+    readyState: track.readyState,
+    settings: track.getSettings(),
+  }))
+);
 
       mediaStreamRef.current = stream;
       audioChunksRef.current = [];
@@ -127,15 +151,37 @@ function VoiceSearchPage() {
 
         console.log("Kapampangan transcript:", transcript);
 
-        setParsedResult({
-          transcript: transcript,
-          originQuery: "",
-          destinationQuery: "",
-          originPlace: null,
-          destinationPlace: null,
-        });
+console.log("Sending transcript to Gemini parse-voice...");
 
-        setStage("confirm");
+const { data: parsedData, error: parseError } =
+  await supabase.functions.invoke("parse-voice", {
+    body: {
+      transcript,
+    },
+  });
+
+if (parseError) {
+  console.error("parse-voice error:", parseError);
+  throw new Error(
+    parseError.message || "Failed to parse voice transcript."
+  );
+}
+
+console.log("Gemini parse-voice response:", parsedData);
+
+if (!parsedData) {
+  throw new Error("Gemini returned no parsing result.");
+}
+
+setParsedResult({
+  transcript: parsedData.transcript || transcript,
+  originQuery: parsedData.originQuery || "",
+  destinationQuery: parsedData.destinationQuery || "",
+  originPlace: null,
+  destinationPlace: null,
+});
+
+setStage("confirm");
       } catch (error) {
         console.error("Voice processing error:", error);
 
@@ -261,9 +307,9 @@ function VoiceSearchPage() {
                 From
               </span>
 
-              <span className="voice-search-page__parsed-value">
-                Waiting for Gemini...
-              </span>
+             <span className="voice-search-page__parsed-value">
+              {parsedResult.originQuery || "Not detected"}
+            </span>
             </div>
 
             <div className="voice-search-page__parsed-field">
@@ -272,7 +318,7 @@ function VoiceSearchPage() {
               </span>
 
               <span className="voice-search-page__parsed-value">
-                Waiting for Gemini...
+               {parsedResult.destinationQuery || "Not detected"}
               </span>
             </div>
 
