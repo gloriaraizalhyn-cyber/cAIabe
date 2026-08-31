@@ -48,6 +48,7 @@ function RouteOptionCard({
   onToggleExpanded,
   onTakeRoute,
   onSaveRoute,
+  isSaved = false,
   sortMetric,
   onChangeSortMetric,
 }) {
@@ -207,13 +208,14 @@ function RouteOptionCard({
             </button>
             <button
               type="button"
-              className="route-option-card__save-button"
+              className={`route-option-card__save-button${isSaved ? " route-option-card__save-button--saved" : ""}`}
+              aria-pressed={isSaved}
               onClick={(event) => {
                 event.stopPropagation();
                 onSaveRoute(route);
               }}
             >
-              Save
+              {isSaved ? "Saved" : "Save"}
             </button>
           </div>
         </div>

@@ -24,7 +24,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: entry, error: entryErr } = await supabase
       .from("queue_entries")
-      .select("id, route_id, status")
+      .select("id, route_id, status, notified_at")
       .eq("driver_id", driverId)
       .in("status", ["waiting", "next_to_go", "temporarily_away"])
       .maybeSingle();
@@ -39,6 +39,17 @@ Deno.serve(async (req: Request) => {
     // returning (see driver-location-update, which handles that return).
     if (response !== "skip_done" && entry.status === "temporarily_away") {
       return json({ error: "cannot respond this way while temporarily away" }, 409);
+    }
+
+    // FIFO integrity: "lining up" is only ever valid once queue-advance has
+    // actually notified this driver that their turn is close (see
+    // QUEUE_TURN_ALERT_POSITIONS in queue-advance, which sets notified_at).
+    // Without this check, any waiting driver already inside the terminal
+    // geofence could call this immediately and get promoted to "driving"
+    // ahead of drivers who arrived before them — silently breaking the
+    // arrival_at-ordered FIFO the whole queue is built on.
+    if (response === "lining_up" && !entry.notified_at) {
+      return json({ error: "not yet your turn to line up" }, 409);
     }
 
     let update: Record<string, unknown> = { responded_at: new Date().toISOString() };

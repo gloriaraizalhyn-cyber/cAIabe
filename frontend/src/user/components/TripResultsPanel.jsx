@@ -19,6 +19,7 @@ function TripResultsPanel({
   origin,
   destination,
   routes,
+  savedRouteKeys,
   onEditTrip,
   onTakeRoute,
   onSaveRoute,
@@ -139,6 +140,7 @@ function TripResultsPanel({
             onToggleExpanded={() => handleToggleExpanded(bestPickRoute.cardKey ?? bestPickRoute.id)}
             onTakeRoute={onTakeRoute}
             onSaveRoute={onSaveRoute}
+            isSaved={savedRouteKeys?.has(bestPickRoute.cardKey ?? bestPickRoute.id)}
             sortMetric={sortMetric}
             onChangeSortMetric={setSortMetric}
           />
@@ -158,6 +160,7 @@ function TripResultsPanel({
               onToggleExpanded={() => handleToggleExpanded(route.cardKey ?? route.id)}
               onTakeRoute={onTakeRoute}
               onSaveRoute={onSaveRoute}
+              isSaved={savedRouteKeys?.has(route.cardKey ?? route.id)}
             />
           ))}
         </div>

@@ -1,16 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MapView from "../../shared/components/MapView.jsx";
 import TripSearchCard from "../components/TripSearchCard.jsx";
 import TripResultsPanel from "../components/TripResultsPanel.jsx";
-import { PLACE_SUGGESTIONS_FIXTURE } from "../../shared/constants/tripSearchFixtures.js";
 import { adaptRouteSearchResult } from "../utils/adaptRouteSearchResult.js";
+import { getSavedRoutes, saveRoute, removeSavedRouteByKey } from "../../shared/utils/savedRoutesStorage.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./FindRoutesPage.css";
-
-function findPlaceByLabel(label) {
-  return PLACE_SUGGESTIONS_FIXTURE.find((place) => place.label === label) ?? null;
-}
 
 // supabase-js's FunctionsHttpError.message is just a generic "non-2xx
 // status code" wrapper — the actual { error: "..." } body our edge
@@ -45,6 +41,8 @@ function FindRoutesPage() {
   const [focusedRoute, setFocusedRoute] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
+  const [savedRoutes, setSavedRoutes] = useState(() => getSavedRoutes());
+  const savedRouteKeys = useMemo(() => new Set(savedRoutes.map((route) => route.routeKey)), [savedRoutes]);
 
   const runSearch = async (originForSearch, destinationForSearch) => {
     setIsSearching(true);
@@ -104,8 +102,13 @@ function FindRoutesPage() {
   const handleApplySavedRoute = (savedRoute) => {
     setOrigin(savedRoute.origin);
     setDestination(savedRoute.destination);
-    setOriginPlace(findPlaceByLabel(savedRoute.origin));
-    setDestinationPlace(findPlaceByLabel(savedRoute.destination));
+    setOriginPlace(savedRoute.originPlace);
+    setDestinationPlace(savedRoute.destinationPlace);
+  };
+
+  const handleRemoveSavedRoute = (routeKey) => {
+    removeSavedRouteByKey(routeKey);
+    setSavedRoutes(getSavedRoutes());
   };
 
   const handleFindRoutes = () => {
@@ -134,7 +137,23 @@ function FindRoutesPage() {
       },
     });
   };
-  const handleSaveRoute = () => {};
+  const handleSaveRoute = (route) => {
+    const routeKey = route.cardKey ?? route.id;
+    if (savedRouteKeys.has(routeKey)) {
+      removeSavedRouteByKey(routeKey);
+    } else {
+      saveRoute({
+        routeKey,
+        label: `${origin} → ${destination}`,
+        origin,
+        destination,
+        originPlace,
+        destinationPlace,
+        routeId: route.id,
+      });
+    }
+    setSavedRoutes(getSavedRoutes());
+  };
 
   return (
     <main className="find-routes-page">
@@ -157,7 +176,9 @@ function FindRoutesPage() {
             onSelectOriginPlace={handleSelectOriginPlace}
             onSelectDestinationPlace={handleSelectDestinationPlace}
             onSwapPlaces={handleSwapPlaces}
+            savedRoutes={savedRoutes}
             onApplySavedRoute={handleApplySavedRoute}
+            onRemoveSavedRoute={handleRemoveSavedRoute}
             onOpenVoiceAssistant={handleOpenVoiceAssistant}
             onFindRoutes={handleFindRoutes}
             isSearching={isSearching}
@@ -168,6 +189,7 @@ function FindRoutesPage() {
             origin={origin}
             destination={destination}
             routes={routes}
+            savedRouteKeys={savedRouteKeys}
             onEditTrip={handleEditTrip}
             onTakeRoute={handleTakeRoute}
             onSaveRoute={handleSaveRoute}

@@ -13,6 +13,10 @@ create table routes (
   name text not null,
   color text,                                  -- null => defaults to blue in app logic
   terminus geography(point, 4326) not null,    -- used for end-of-route auto-detection
+  path geography(linestring, 4326),            -- real route polyline; route-search/transfer_functions/
+                                                -- driver-demand-check all read this — was previously only
+                                                -- added by caiabe_seed_routes.sql, so a plain `supabase db
+                                                -- reset` from this file alone would silently break them
   created_at timestamptz not null default now()
 );
 
@@ -49,7 +53,9 @@ create table drivers (
   route_id uuid references routes(id),
   jeep_color text,
   home_terminal_id uuid references terminals(id),
+  license_number text,
   license_photo_url text,
+  franchise_permit_number text,
   verification_status text not null default 'pending'
     check (verification_status in ('pending','approved','rejected')),
   created_at timestamptz not null default now()

@@ -115,9 +115,12 @@ function createJeepneyMarkerIcon(capacityState, routeHexColor = "#CB4747", route
   const statusColor = isFull ? "#dc2626" : "#16a34a";
   const badgeText = isFull ? "FULL" : "SEATS OPEN";
 
-  const pinBorderColor = routeHexColor || "#CB4747";
+  // A full jeep's marker turns red outright (not just the status pill) so
+  // it reads at a glance on a crowded map — reverts to the route's own
+  // color the moment a seat opens up, per the product spec.
+  const pinBorderColor = isFull ? statusColor : routeHexColor || "#CB4747";
   const pinFillColor = "#ffffff";
-  const iconColor = pinBorderColor.toLowerCase() === "#ffffff" ? "#1f2937" : pinBorderColor;
+  const iconColor = isFull ? statusColor : (pinBorderColor.toLowerCase() === "#ffffff" ? "#1f2937" : pinBorderColor);
 
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="64" height="74" viewBox="0 0 64 74">
@@ -147,6 +150,35 @@ function createJeepneyMarkerIcon(capacityState, routeHexColor = "#CB4747", route
   }
 
   return undefined;
+}
+
+// waitingPassengers: [{ id, lat, lng }] — one pin per individual waiting
+// passenger compatible with the driver's route (from driver-demand-check),
+// rendered as a plain yellow dot per the product spec's "waiting status
+// (YELLOW ICON)" — distinct from the clustered demand summary below, which
+// stays for the driver's WAIT/GO scoring context.
+function WaitingPassengerMarkers({ passengers }) {
+  if (!passengers?.length || typeof window === "undefined" || !window.google?.maps) return null;
+
+  return (
+    <>
+      {passengers.map((passenger) => (
+        <Marker
+          key={`waiting-${passenger.id}`}
+          position={{ lat: passenger.lat, lng: passenger.lng }}
+          title="Waiting passenger"
+          icon={{
+            path: window.google.maps.SymbolPath.CIRCLE,
+            fillColor: "#eab308",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+            scale: 7,
+          }}
+        />
+      ))}
+    </>
+  );
 }
 
 // demandClusters: [{ lat, lng, count, distance_km, band, band_label }] —
@@ -292,12 +324,15 @@ function useSmoothPositions(jeepneys) {
 // broadcasting position on a route (see useLiveDriverPositions); unrelated
 // to `routes` and used by the waiting-for-jeep / driving screens, not the
 // route-search results.
+// waitingPassengers: [{ id, lat, lng }] — driver-side only, from
+// driver-demand-check; see WaitingPassengerMarkers above.
 function MapView({
   origin,
   destination,
   routes = [],
   jeepneys = [],
   demandClusters = [],
+  waitingPassengers = [],
   center,
   zoom = 13,
   showDirections = false,
@@ -372,6 +407,10 @@ function MapView({
       bounds.extend({ lat: cluster.lat, lng: cluster.lng });
       hasPoints = true;
     });
+    waitingPassengers.forEach((passenger) => {
+      bounds.extend({ lat: passenger.lat, lng: passenger.lng });
+      hasPoints = true;
+    });
 
     if (!hasPoints) return;
     if (bounds.getNorthEast().equals(bounds.getSouthWest())) {
@@ -382,7 +421,7 @@ function MapView({
       return;
     }
     mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 60, left: 50 });
-  }, [origin, destination, routes, smoothJeepneys.length, demandClusters]);
+  }, [origin, destination, routes, smoothJeepneys.length, demandClusters, waitingPassengers]);
 
   if (!GOOGLE_MAPS_API_KEY) {
     return (
@@ -602,6 +641,9 @@ function MapView({
 
         {/* Sak.AI passenger-demand clusters (driver-side) */}
         <DemandClusterMarkers clusters={demandClusters} />
+
+        {/* Individual waiting-passenger pins (driver-side) */}
+        <WaitingPassengerMarkers passengers={waitingPassengers} />
       </GoogleMap>
     </div>
   );

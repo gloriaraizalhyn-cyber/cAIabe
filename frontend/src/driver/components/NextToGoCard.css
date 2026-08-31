@@ -46,6 +46,11 @@
   background: #142f7e;
 }
 
+.next-to-go-card__wait-button:disabled {
+  background: #94a3b8;
+  cursor: default;
+}
+
 .next-to-go-card__status-pill {
   flex: 1;
   display: flex;

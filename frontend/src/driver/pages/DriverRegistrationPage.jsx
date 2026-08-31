@@ -5,7 +5,7 @@ import DriverVerificationSection from "../components/DriverVerificationSection.j
 import VehicleInformationSection from "../components/VehicleInformationSection.jsx";
 import RouteTerminalAssignmentSection from "../components/RouteTerminalAssignmentSection.jsx";
 import RegistrationSubmittedNotice from "../components/RegistrationSubmittedNotice.jsx";
-import { validateDriverRegistrationForm } from "../utils/validateDriverRegistrationForm.js";
+import { validateDriverRegistrationForm, normalizeIdNumber } from "../utils/validateDriverRegistrationForm.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./DriverRegistrationPage.css";
 
@@ -148,8 +148,10 @@ function DriverRegistrationPage() {
             route_id: formValues.assignedRouteId,
             home_terminal_id: formValues.assignedTerminalId,
             jeep_color: formValues.jeepneyColor,
+            license_number: normalizeIdNumber(formValues.driversLicenseNumber),
             license_photo_base64,
             license_photo_mime: formValues.driversLicensePhotoFile.type,
+            franchise_permit_number: normalizeIdNumber(formValues.franchisePermitNumber),
             franchise_permit_photo_base64,
             franchise_permit_photo_mime: formValues.franchisePermitPhotoFile.type,
             vehicle_registration_photo_base64,

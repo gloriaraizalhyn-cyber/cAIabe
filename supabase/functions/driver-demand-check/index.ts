@@ -291,6 +291,14 @@ Deno.serve(async (req: Request) => {
       compatible_passenger_count: compatiblePassengerCount,
       excluded_behind_count: excludedBehindCount,
       nearest_distance_km: nearestCluster ? round(nearestCluster.distanceMeters / 1000) : null,
+      // Individual passenger points (not just cluster centroids) — the
+      // product spec asks for a per-passenger "waiting status" icon on the
+      // driver's own map, scoped to compatible (ahead-of-driver, same
+      // route) passengers only. Reuses `ahead`, already fetched/filtered
+      // above — no extra query. Coordinates are the same fuzzed_location
+      // already used for clustering, so this exposes nothing more precise
+      // than what the driver already sees via cluster centroids.
+      waiting_passengers: ahead.map((row) => ({ id: row.id, lat: row.lat, lng: row.lng })),
       clusters: clusters.map((c) => ({
         lat: c.lat,
         lng: c.lng,

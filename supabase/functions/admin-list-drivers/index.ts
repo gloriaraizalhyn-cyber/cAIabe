@@ -38,9 +38,9 @@ Deno.serve(async (req: Request) => {
     const { data: drivers, error } = await supabase
       .from("drivers")
       .select(
-        "id, jeep_color, vehicle_type, license_photo_url, franchise_permit_photo_url, " +
-          "vehicle_registration_photo_url, verification_status, rejection_reason, created_at, " +
-          "route:routes(id, name, color), terminal:terminals(id, name)",
+        "id, jeep_color, vehicle_type, license_number, license_photo_url, franchise_permit_number, " +
+          "franchise_permit_photo_url, vehicle_registration_photo_url, verification_status, rejection_reason, " +
+          "created_at, route:routes(id, name, color), terminal:terminals(id, name)",
       )
       .eq("verification_status", filterStatus)
       .order("created_at", { ascending: true });
@@ -68,6 +68,8 @@ Deno.serve(async (req: Request) => {
           vehicleRegistrationNumber: metadata.vehicle_registration_number ?? null,
           jeepColor: driver.jeep_color,
           vehicleType: driver.vehicle_type,
+          licenseNumber: driver.license_number,
+          franchisePermitNumber: driver.franchise_permit_number,
           route: driver.route,
           terminal: driver.terminal,
           licensePhotoSignedUrl,

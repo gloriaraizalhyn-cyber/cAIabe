@@ -7,6 +7,7 @@ import JourneyFareFooter from "../components/JourneyFareFooter.jsx";
 import { ROUTE_OPTIONS_FIXTURE } from "../../shared/constants/tripSearchFixtures.js";
 import { useLiveDriverPositions } from "../../shared/hooks/useLiveDriverPositions.js";
 import { getRouteColorMeta } from "../../shared/utils/routeColorHelpers.js";
+import { saveRoute, removeSavedRouteByKey, isRouteSaved } from "../../shared/utils/savedRoutesStorage.js";
 import "./OnRoutePage.css";
 
 function findRouteWithJourney(routeId) {
@@ -19,6 +20,9 @@ function OnRoutePage() {
 
   const passedRoute = location.state?.route ?? null;
   const realRouteId = location.state?.routeId ?? passedRoute?.id ?? null;
+  const tripSearch = location.state?.tripSearch ?? null;
+  const savedRouteKey = passedRoute?.cardKey ?? realRouteId;
+  const [isSaved, setIsSaved] = useState(() => (savedRouteKey ? isRouteSaved(savedRouteKey) : false));
 
   const selectedRoute =
     findRouteWithJourney(realRouteId) ??
@@ -96,7 +100,23 @@ function OnRoutePage() {
     }
   };
 
-  const handleSaveRoute = () => {};
+  const handleSaveRoute = () => {
+    if (!savedRouteKey) return;
+    if (isSaved) {
+      removeSavedRouteByKey(savedRouteKey);
+    } else {
+      saveRoute({
+        routeKey: savedRouteKey,
+        label: tripSearch ? `${tripSearch.origin} → ${tripSearch.destination}` : routeName,
+        origin: tripSearch?.origin ?? "",
+        destination: tripSearch?.destination ?? "",
+        originPlace: tripSearch?.originPlace ?? null,
+        destinationPlace: tripSearch?.destinationPlace ?? null,
+        routeId: passedRoute?.id ?? realRouteId,
+      });
+    }
+    setIsSaved((previous) => !previous);
+  };
 
   return (
     <main className="on-route-page">
@@ -125,6 +145,7 @@ function OnRoutePage() {
           advanceButtonLabel={currentPhase.advanceButtonLabel}
           onAdvance={handleAdvance}
           onSaveRoute={handleSaveRoute}
+          isRouteSaved={isSaved}
         />
       </div>
     </main>

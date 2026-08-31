@@ -162,6 +162,7 @@ function DrivingPage() {
       <MapView
         jeepneys={ownJeepney}
         demandClusters={demand?.clusters ?? []}
+        waitingPassengers={demand?.waiting_passengers ?? []}
         center={currentPosition ?? undefined}
         zoom={16}
         isOwnJeepneyIdling={localIdleStatus === "idling" || localIdleStatus === "prolonged"}

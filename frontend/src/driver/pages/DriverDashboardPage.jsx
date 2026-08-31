@@ -9,8 +9,10 @@ import LocationPermissionModal from "../components/LocationPermissionModal.jsx";
 import HeadingToTerminalPanel from "../components/HeadingToTerminalPanel.jsx";
 import ArrivedAtTerminalPanel from "../components/ArrivedAtTerminalPanel.jsx";
 import QueueTurnAlert from "../components/QueueTurnAlert.jsx";
+import ParkedDemandCard from "../components/ParkedDemandCard.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
 import { useFcmRegistration } from "../hooks/useFcmRegistration.js";
+import { useDriverDemand } from "../hooks/useDriverDemand.js";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { haversineDistanceMeters } from "../../shared/utils/geo.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
@@ -115,6 +117,16 @@ function DriverDashboardPage() {
     };
   }, [shiftStage, driver?.route?.id, refreshQueueEntry]);
 
+  // Lets a parked/queued driver "check the system for waiting passengers on
+  // his route" (per the product spec) instead of only seeing demand once
+  // promoted to next-to-go — same Sak.AI engine NextToGoPage/DrivingPage
+  // already use, just active earlier in the shift.
+  const { data: parkedDemand, isLoading: isParkedDemandLoading, error: parkedDemandError } = useDriverDemand({
+    routeId: driver?.route?.id,
+    position: driverPosition,
+    isActive: shiftStage === "arrived" && ownQueueEntry?.status !== "temporarily_away",
+  });
+
   const handleStartShift = () => {
     setShiftStage("awaiting_location_permission");
   };
@@ -179,16 +191,26 @@ function DriverDashboardPage() {
     navigate("/driver/next-to-go");
   };
 
-  // Testing/demo bypass — driver-queue-respond doesn't actually require
-  // notified_at to be set (it only checks the entry is waiting/next_to_go),
-  // so this skips waiting on the turn-approaching notification entirely: it
-  // calls the exact same "lining up" response a real notification would
-  // trigger. One click = one stage forward (arrived -> next_to_go), matching
-  // NextToGoPage's own "skip to driving" control for the next stage.
+  // Testing/demo bypass — driver-queue-respond now requires notified_at to
+  // be set before it accepts "lining up" (closes a real FIFO queue-jump
+  // bug: without it, any waiting driver could skip ahead of drivers who
+  // arrived earlier). So this fast-forwards the real notify step instead of
+  // skipping past it: it forces an immediate queue-advance tick (the same
+  // function the cron calls), which sets notified_at for real if this
+  // driver is genuinely within QUEUE_TURN_ALERT_POSITIONS of the front —
+  // then responds through the same path a real notification would use. If
+  // the driver isn't actually close enough yet, the response legitimately
+  // fails and this stays on the current screen, matching NextToGoPage's own
+  // "skip to driving" control for the next stage.
   const handleSkipQueueWait = async () => {
     setIsSkippingQueueWait(true);
-    await supabase.functions.invoke("driver-queue-respond", { body: { response: "lining_up" } });
+    await supabase.functions.invoke("queue-advance", { body: {} });
+    const { error } = await supabase.functions.invoke("driver-queue-respond", { body: { response: "lining_up" } });
     setIsSkippingQueueWait(false);
+    if (error) {
+      await refreshQueueEntry();
+      return;
+    }
     navigate("/driver/next-to-go");
   };
 
@@ -335,17 +357,22 @@ function DriverDashboardPage() {
         )}
 
         {shiftStage === "arrived" && (
-          <ArrivedAtTerminalPanel
-            queuePosition={ownQueueEntry?.position ?? "…"}
-            assignedRouteLabel={assignedRouteLabel}
-            geofenceStatus={ownQueueEntry?.geofenceStatus}
-            isTemporarilyAway={isTemporarilyAway}
-            onViewQueue={handleViewQueue}
-            onSkipQueueWait={handleSkipQueueWait}
-            isSkippingQueueWait={isSkippingQueueWait}
-            onEndShiftForTheDay={handleEndShiftForTheDay}
-            isEndingShift={isRespondingToQueue}
-          />
+          <>
+            <ArrivedAtTerminalPanel
+              queuePosition={ownQueueEntry?.position ?? "…"}
+              assignedRouteLabel={assignedRouteLabel}
+              geofenceStatus={ownQueueEntry?.geofenceStatus}
+              isTemporarilyAway={isTemporarilyAway}
+              onViewQueue={handleViewQueue}
+              onSkipQueueWait={handleSkipQueueWait}
+              isSkippingQueueWait={isSkippingQueueWait}
+              onEndShiftForTheDay={handleEndShiftForTheDay}
+              isEndingShift={isRespondingToQueue}
+            />
+            {!isTemporarilyAway && (
+              <ParkedDemandCard data={parkedDemand} isLoading={isParkedDemandLoading} error={parkedDemandError} />
+            )}
+          </>
         )}
       </div>
 

@@ -20,6 +20,7 @@ function NextToGoPage() {
   const [driverPosition, setDriverPosition] = useState(null);
   const [isUsingDemoPosition, setIsUsingDemoPosition] = useState(false);
   const [isSkippingToDriving, setIsSkippingToDriving] = useState(false);
+  const [waitNoticeSent, setWaitNoticeSent] = useState(false);
 
   const lastUpdateAtRef = useRef(0);
 
@@ -125,9 +126,15 @@ function NextToGoPage() {
     };
   }, [driver?.route?.id, refreshQueueEntry]);
 
-  // "Wait for more" has no backend concept — staying on this page already
-  // is the "wait" behavior, so this stays a no-op as it was before.
-  const handleWaitForMore = () => {};
+  // Staying on this page already IS the "wait" behavior (no separate status
+  // to set) — but the spec also asks that waiting passengers actually be
+  // told this unit likely won't leave soon, without ever learning the
+  // driver's current passenger count. driver-notify-wait broadcasts exactly
+  // that fixed heads-up to everyone waiting on this route.
+  const handleWaitForMore = async () => {
+    setWaitNoticeSent(true);
+    await supabase.functions.invoke("driver-notify-wait", { body: {} });
+  };
 
   // Testing/demo bypass — invokes queue-advance directly (the exact same
   // function the cron calls) instead of waiting for its next tick, so
@@ -154,6 +161,7 @@ function NextToGoPage() {
       <MapView
         jeepneys={ownJeepney}
         demandClusters={demand?.clusters ?? []}
+        waitingPassengers={demand?.waiting_passengers ?? []}
         center={driverPosition ?? undefined}
         zoom={16}
       />
@@ -176,6 +184,7 @@ function NextToGoPage() {
         waitingCount={demand?.compatible_passenger_count ?? waitingCount}
         queuePosition={ownQueueEntry?.position ?? null}
         onWaitForMore={handleWaitForMore}
+        waitNoticeSent={waitNoticeSent}
       />
     </main>
   );
