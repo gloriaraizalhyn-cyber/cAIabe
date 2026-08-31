@@ -301,6 +301,7 @@ function MapView({
   center,
   zoom = 13,
   showDirections = false,
+  isOwnJeepneyIdling = false,
 }) {
   const { isLoaded } = useGoogleMapsLoader();
   const [selectedJeepneyId, setSelectedJeepneyId] = useState(null);
@@ -533,6 +534,25 @@ function MapView({
             />
           );
         })}
+
+        {/* Sak.AI roadside-idling badge on the driver's own marker — mirrors
+            DemandClusterMarkers' OverlayView pattern rather than the marker
+            icon SVG, since useSmoothPositions rebuilds jeepney objects as
+            bare {id,lat,lng,capacityState} every frame and would silently
+            drop any extra field passed via the jeepneys prop. */}
+        {isOwnJeepneyIdling && (() => {
+          const ownJeep = smoothJeepneys.find((jeep) => jeep.id === "self");
+          if (!ownJeep) return null;
+          return (
+            <OverlayView
+              position={{ lat: ownJeep.lat, lng: ownJeep.lng }}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+              getPixelPositionOffset={(width, height) => ({ x: -(width / 2), y: -height - 44 })}
+            >
+              <div className="map-view__idling-badge">⚠️ Idling</div>
+            </OverlayView>
+          );
+        })()}
 
         {/* Interactive Jeepney Status Popup */}
         {selectedJeep && (

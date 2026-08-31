@@ -12,22 +12,30 @@ const REALTIME_DEBOUNCE_MS = 1500;
 // waiting channel (the same channel waiting-start/waiting-clear already
 // publish to) — so GO/WAIT and CONTINUE/GARAGE react live as demand
 // actually changes, not only on the next poll tick.
-export function useDriverDemand({ routeId, position, isActive, trendWindowMinutes }) {
+export function useDriverDemand({ routeId, position, isActive, trendWindowMinutes, roadsideIdleMinutes }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const positionRef = useRef(position);
   positionRef.current = position;
+  // roadsideIdleMinutes ticks every second while idling — kept in a ref
+  // (not a refresh() dependency) for the same reason positionRef exists:
+  // refresh() must always read the latest value without restarting the 12s
+  // poll interval on every tick (see the effect below's own comment).
+  const roadsideIdleMinutesRef = useRef(roadsideIdleMinutes);
+  roadsideIdleMinutesRef.current = roadsideIdleMinutes;
 
   const refresh = useCallback(async () => {
     const pos = positionRef.current;
     if (!pos) return;
     setIsLoading(true);
+    const idleMinutes = roadsideIdleMinutesRef.current;
     const { data: result, error: fnError } = await supabase.functions.invoke("driver-demand-check", {
       body: {
         lat: pos.lat,
         lng: pos.lng,
         ...(trendWindowMinutes ? { trend_window_minutes: trendWindowMinutes } : {}),
+        ...(typeof idleMinutes === "number" ? { roadside_idle_minutes: idleMinutes } : {}),
       },
     });
     setIsLoading(false);

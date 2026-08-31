@@ -6,9 +6,11 @@ import NextPickupCard from "../components/NextPickupCard.jsx";
 import TripCompleteModal from "../components/TripCompleteModal.jsx";
 import TripInfoPanel from "../components/TripInfoPanel.jsx";
 import OperatingStatusCard from "../components/OperatingStatusCard.jsx";
+import RoadsideIdleCard from "../components/RoadsideIdleCard.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
 import { useDriverFuelCheck } from "../hooks/useDriverFuelCheck.js";
 import { useDriverDemand } from "../hooks/useDriverDemand.js";
+import { useRoadsideIdleTracker } from "../hooks/useRoadsideIdleTracker.js";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { COLOR_NAME_TO_HEX } from "../../shared/constants/driverRegistrationFixtures.js";
@@ -40,14 +42,40 @@ function DrivingPage() {
   // needs one already broadcast via driver-location-update.
   const fuelInfo = useDriverFuelCheck(Boolean(currentPosition) && !isTripComplete);
 
+  // Sak.AI roadside-idling detection — outside the terminal, stationary,
+  // past a duration threshold. Reuses the SAME GPS stream (currentPosition)
+  // driven below; no second location tracker. Only ticks a local timer —
+  // the actual verdict/copy/fuel estimate comes back from
+  // driver-demand-check via the minutes reported into useDriverDemand below.
+  const { roadsideIdleMinutes, idleStatus: localIdleStatus } = useRoadsideIdleTracker({
+    position: currentPosition,
+    terminalPosition: driver?.terminal?.position ?? null,
+    isActive: !isTripComplete,
+  });
+
   // Sak.AI "CONTINUE or GARAGE?" — same demand engine as NextToGoPage's
   // WAIT/GO card, weighed here against the real recent-vs-prior request
-  // trend (see driver-demand-check's calculateOperatingDemand()).
-  const { data: demand, isLoading: isDemandLoading } = useDriverDemand({
+  // trend (see driver-demand-check's calculateOperatingDemand()) and, when
+  // relevant, roadside idle duration (see calculateOperatingDemand's
+  // idleEscalated step and the roadside_idle response field).
+  const { data: demand, isLoading: isDemandLoading, refresh: refreshDemand } = useDriverDemand({
     routeId: driver?.route?.id,
     position: currentPosition,
     isActive: !isTripComplete,
+    roadsideIdleMinutes: localIdleStatus !== "none" ? roadsideIdleMinutes : null,
   });
+
+  // Nudge an immediate refresh when the locally-ticking idle severity
+  // crosses a band boundary, rather than waiting up to 12s for the next
+  // poll — mirrors the existing debounced-realtime-refresh precedent this
+  // hook already has for passenger_waiting/passenger_cleared broadcasts.
+  const previousIdleStatusRef = useRef(localIdleStatus);
+  useEffect(() => {
+    if (previousIdleStatusRef.current !== localIdleStatus) {
+      previousIdleStatusRef.current = localIdleStatus;
+      refreshDemand();
+    }
+  }, [localIdleStatus, refreshDemand]);
 
   // Demo/testing bypass — sidesteps real device GPS entirely (useful when
   // testing from outside Clark/Angeles, or without granting location at
@@ -136,6 +164,7 @@ function DrivingPage() {
         demandClusters={demand?.clusters ?? []}
         center={currentPosition ?? undefined}
         zoom={16}
+        isOwnJeepneyIdling={localIdleStatus === "idling" || localIdleStatus === "prolonged"}
       />
       <DrivingStatusBar
         routeColorName={routeColorName}
@@ -148,6 +177,8 @@ function DrivingPage() {
         isLoading={isDemandLoading}
         onUseTerminalLocation={!currentPosition ? handleUseTerminalLocation : null}
       />
+      <RoadsideIdleCard roadsideIdle={demand?.roadside_idle} liveMinutes={roadsideIdleMinutes} />
+
       <NextPickupCard
         nextPickup={NEXT_WAITING_PICKUP_FIXTURE}
         capacityStatus={capacityStatus}

@@ -1,10 +1,17 @@
 // POST /functions/v1/driver-demand-check
 // Auth: required (driver JWT)
-// Body: { lat: number, lng: number, trend_window_minutes?: number }
+// Body: { lat: number, lng: number, trend_window_minutes?: number, roadside_idle_minutes?: number }
 //
-// Sak.AI's driver-side demand engine — powers both:
+// Sak.AI's driver-side demand engine — powers:
 //   - "WAIT or GO?" (driver at the terminal, front of queue)
 //   - "CONTINUE or GARAGE?" (driver mid-shift, deciding whether to keep driving)
+//   - roadside-idling detection (optional, only when roadside_idle_minutes is
+//     sent — see useRoadsideIdleTracker.js): a driver stopped mid-route,
+//     outside the terminal, engine presumably running, waiting for
+//     passengers instead of continuing. Folds into the CONTINUE/GARAGE call
+//     above as an additional input rather than a separate recommendation —
+//     terminal queueing (queue_entries) is a fully separate system and never
+//     sends this field at all, so it's never affected.
 //
 // Both questions are answered from the SAME underlying signal: real
 // passenger_waiting_state rows on the driver's own route_id (which is
@@ -21,6 +28,7 @@
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getAuthedDriverId, getServiceClient } from "../_shared/client.ts";
+import { estimateIdleFuelRange, type FuelRangeEstimate } from "../_shared/fuel.ts";
 
 const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY"); // optional
 
@@ -67,6 +75,18 @@ const MIN_TREND_WINDOW_MINUTES = 1;
 const MAX_TREND_WINDOW_MINUTES = 120;
 const TREND_STABLE_BAND_PCT = 15; // +/- this % change counts as "stable", not a real trend
 
+// ---------- roadside idling (see useRoadsideIdleTracker.js — driver-side,
+// not terminal queueing, which is a fully separate, unrelated system) ----------
+// Client-reported minutes stationary outside the terminal, same trust model
+// as lat/lng (this is an internal driver-only tool). Bands below MUST stay
+// in sync with useRoadsideIdleTracker.js's own copy of these same numbers —
+// no shared-import boundary exists between Deno edge functions and the Vite
+// frontend, so this duplication is deliberate, not an oversight.
+const ROADSIDE_MONITOR_MINUTES = 2;
+const ROADSIDE_WARNING_MINUTES = 5;
+const ROADSIDE_PROLONGED_MINUTES = 10;
+const MAX_ROADSIDE_IDLE_MINUTES = 240; // clamp ceiling for a client-reported value
+
 interface LatLng {
   lat: number;
   lng: number;
@@ -102,6 +122,7 @@ Deno.serve(async (req: Request) => {
       lat?: number;
       lng?: number;
       trend_window_minutes?: number;
+      roadside_idle_minutes?: number;
     };
     if (body.lat === undefined || body.lng === undefined) {
       return json({ error: "lat and lng are required" }, 400);
@@ -112,6 +133,10 @@ Deno.serve(async (req: Request) => {
       MIN_TREND_WINDOW_MINUTES,
       MAX_TREND_WINDOW_MINUTES,
     );
+    const roadsideIdleMinutes =
+      body.roadside_idle_minutes !== undefined
+        ? clamp(body.roadside_idle_minutes, 0, MAX_ROADSIDE_IDLE_MINUTES)
+        : null;
 
     const supabase = getServiceClient();
 
@@ -168,9 +193,29 @@ Deno.serve(async (req: Request) => {
       trendWindowMinutes,
     );
 
-    const operatingRecommendation = calculateOperatingDemand(demandScore, trend.direction);
+    const baseOperatingRecommendation = calculateOperatingDemand(demandScore, trend.direction);
     const confidence = computeConfidence(demandScore, compatiblePassengerCount);
     const timeContext = getTimeContext(new Date());
+
+    // Roadside idling: outside the terminal, stationary, past a duration
+    // threshold (see useRoadsideIdleTracker.js) — a fully separate concern
+    // from terminal queueing, which never sends roadside_idle_minutes at
+    // all. Only genuinely LOW demand + prolonged idling nudges the
+    // CONTINUE/GARAGE call toward GARAGE; moderate/high demand is never
+    // overridden by idle duration, matching "don't warn when demand
+    // justifies waiting."
+    const idleStatus = classifyIdleStatus(roadsideIdleMinutes);
+    const idleEscalated =
+      demandLevel === "low" &&
+      (idleStatus === "idling" || idleStatus === "prolonged") &&
+      baseOperatingRecommendation === "continue_caution";
+    const operatingRecommendation = idleEscalated ? "garage" : baseOperatingRecommendation;
+
+    const fartherStrongCluster = findFartherStrongCluster(clusters);
+    const idleFuel: FuelRangeEstimate | null =
+      idleStatus === "idling" || idleStatus === "prolonged"
+        ? estimateIdleFuelRange("jeepney", roadsideIdleMinutes ?? 0)
+        : null;
 
     const reasons = buildGoWaitReasons({
       compatiblePassengerCount,
@@ -186,6 +231,15 @@ Deno.serve(async (req: Request) => {
       trend,
       trendWindowMinutes,
       operatingRecommendation,
+      idleEscalated,
+      roadsideIdleMinutes,
+    });
+    const roadsideIdleReasons = buildRoadsideIdleReasons({
+      idleStatus,
+      roadsideIdleMinutes,
+      demandLevel,
+      idleFuel,
+      fartherStrongCluster,
     });
 
     const fallbackCopy = buildFallbackCopy({
@@ -194,6 +248,14 @@ Deno.serve(async (req: Request) => {
       compatiblePassengerCount,
       nearestCluster,
       demandLevel,
+      idleEscalated,
+    });
+    const roadsideIdleFallback = buildRoadsideIdleFallbackCopy({
+      idleStatus,
+      roadsideIdleMinutes,
+      demandLevel,
+      idleFuel,
+      fartherStrongCluster,
     });
     const copy = await getPhrasedCopy({
       recommendation,
@@ -206,6 +268,17 @@ Deno.serve(async (req: Request) => {
       trend,
       timeContext,
       fallback: fallbackCopy,
+      roadsideIdle:
+        idleStatus === "none"
+          ? null
+          : {
+              status: idleStatus,
+              minutes: roadsideIdleMinutes ?? 0,
+              demandLevel,
+              fuel: idleFuel,
+              fartherStrongClusterKm: fartherStrongCluster ? round(fartherStrongCluster.distanceMeters / 1000) : null,
+            },
+      roadsideIdleFallback,
     });
 
     return json({
@@ -243,6 +316,19 @@ Deno.serve(async (req: Request) => {
         headline: copy.operatingHeadline,
         body: copy.operatingBody,
       },
+      roadside_idle:
+        idleStatus === "none"
+          ? null
+          : {
+              status: idleStatus,
+              minutes: round(roadsideIdleMinutes ?? 0),
+              demand_level: demandLevel,
+              fuel: idleFuel,
+              farther_cluster_km: fartherStrongCluster ? round(fartherStrongCluster.distanceMeters / 1000) : null,
+              headline: copy.roadsideIdleHeadline ?? roadsideIdleFallback?.headline ?? null,
+              body: copy.roadsideIdleBody ?? roadsideIdleFallback?.body ?? null,
+              reasons: roadsideIdleReasons,
+            },
       generated_at: new Date().toISOString(),
     });
   } catch (err) {
@@ -280,7 +366,11 @@ function classifyDemandLevel(score: number): "low" | "moderate" | "high" {
 
 // ---------- calculateOperatingDemand() ----------
 // GARAGE-or-CONTINUE call: same demand score, but weighed against the real
-// recent-vs-prior request trend rather than an instantaneous snapshot.
+// recent-vs-prior request trend rather than an instantaneous snapshot. This
+// is the demand+trend-only base call — roadside-idle escalation (see
+// idleEscalated in the handler) is applied as a separate, explicit step
+// afterward rather than folded in here, so each concern stays independently
+// readable.
 function calculateOperatingDemand(
   demandScore: number,
   trendDirection: TrendDirection,
@@ -292,6 +382,26 @@ function calculateOperatingDemand(
   // actually climbing back up, rather than telling a driver to garage right
   // as new riders start showing up.
   return trendDirection === "increasing" ? "continue_caution" : "garage";
+}
+
+// ---------- roadside idling ----------
+// outside terminal + stationary + past a duration threshold — see
+// useRoadsideIdleTracker.js for the client side of this. "none" below
+// covers both "not idling" and "no roadside_idle_minutes reported at all"
+// (e.g. the terminal WAIT/GO call, which never sends this field).
+type IdleStatus = "none" | "monitoring" | "idling" | "prolonged";
+
+function classifyIdleStatus(minutes: number | null): IdleStatus {
+  if (minutes === null || minutes < ROADSIDE_MONITOR_MINUTES) return "none";
+  if (minutes < ROADSIDE_WARNING_MINUTES) return "monitoring";
+  if (minutes < ROADSIDE_PROLONGED_MINUTES) return "idling";
+  return "prolonged";
+}
+
+// First cluster BEYOND the nearest one that's still strong demand — powers
+// "low demand right here, but strong demand N km ahead" redirect copy.
+function findFartherStrongCluster(clusters: Cluster[]): Cluster | null {
+  return clusters.slice(1).find((c) => c.bandKey === "high_priority" || c.bandKey === "good_demand") ?? null;
 }
 
 // ---------- clustering ----------
@@ -466,8 +576,18 @@ function buildOperatingReasons(input: {
   trend: { direction: TrendDirection; changePct: number | null };
   trendWindowMinutes: number;
   operatingRecommendation: string;
+  idleEscalated: boolean;
+  roadsideIdleMinutes: number | null;
 }): string[] {
-  const { compatiblePassengerCount, demandLevel, trend, trendWindowMinutes, operatingRecommendation } = input;
+  const {
+    compatiblePassengerCount,
+    demandLevel,
+    trend,
+    trendWindowMinutes,
+    operatingRecommendation,
+    idleEscalated,
+    roadsideIdleMinutes,
+  } = input;
   const reasons: string[] = [];
 
   reasons.push(
@@ -487,7 +607,9 @@ function buildOperatingReasons(input: {
     );
   }
 
-  if (operatingRecommendation === "garage") {
+  if (idleEscalated) {
+    reasons.push(`Stationary roadside for ~${Math.round(roadsideIdleMinutes ?? 0)} min with low demand nearby`);
+  } else if (operatingRecommendation === "garage") {
     reasons.push("Demand has stayed low with no sign of recovering");
   }
 
@@ -500,6 +622,11 @@ interface PhrasedCopy {
   goWaitBody: string;
   operatingHeadline: string;
   operatingBody: string;
+  // Only present when roadside idling is actually relevant (see
+  // getPhrasedCopy) — undefined otherwise, in which case the handler falls
+  // back to roadsideIdleFallback directly.
+  roadsideIdleHeadline?: string;
+  roadsideIdleBody?: string;
 }
 
 function buildFallbackCopy(input: {
@@ -508,8 +635,10 @@ function buildFallbackCopy(input: {
   compatiblePassengerCount: number;
   nearestCluster: Cluster | null;
   demandLevel: string;
+  idleEscalated: boolean;
 }): PhrasedCopy {
-  const { recommendation, operatingRecommendation, compatiblePassengerCount, nearestCluster, demandLevel } = input;
+  const { recommendation, operatingRecommendation, compatiblePassengerCount, nearestCluster, demandLevel, idleEscalated } =
+    input;
 
   const goWaitHeadline = recommendation === "go" ? "GO — strong passenger demand ahead" : "WAIT — demand is low right now";
   const goWaitBody =
@@ -526,7 +655,9 @@ function buildFallbackCopy(input: {
   const operatingBodies: Record<string, string> = {
     continue: `Demand is ${demandLevel.toUpperCase()} with ${compatiblePassengerCount} passengers currently waiting on your route.`,
     continue_caution: `Demand has cooled to ${demandLevel.toUpperCase()}. Worth continuing for now, but keep checking.`,
-    garage: `Demand has stayed low for a while now. You may want to consider heading back — the final call is yours.`,
+    garage: idleEscalated
+      ? `You've been stationary with low demand nearby for a while — continuing your route may be more worthwhile than waiting here. The final call is yours.`
+      : `Demand has stayed low for a while now. You may want to consider heading back — the final call is yours.`,
   };
 
   return {
@@ -534,6 +665,83 @@ function buildFallbackCopy(input: {
     goWaitBody,
     operatingHeadline: operatingHeadlines[operatingRecommendation],
     operatingBody: operatingBodies[operatingRecommendation],
+  };
+}
+
+// ---------- roadside-idle reasons/copy ----------
+// Mirrors buildOperatingReasons/buildFallbackCopy's style exactly: plain
+// deterministic bullets built from real facts, with an optional Gemini pass
+// only phrasing them (see getPhrasedCopy). Never called with status "none"
+// in practice (the handler skips straight to a null roadside_idle in that
+// case), but returns empty/null gracefully regardless.
+function buildRoadsideIdleReasons(input: {
+  idleStatus: IdleStatus;
+  roadsideIdleMinutes: number | null;
+  demandLevel: string;
+  idleFuel: FuelRangeEstimate | null;
+  fartherStrongCluster: Cluster | null;
+}): string[] {
+  const { idleStatus, roadsideIdleMinutes, demandLevel, idleFuel, fartherStrongCluster } = input;
+  if (idleStatus === "none") return [];
+
+  const minutes = Math.round(roadsideIdleMinutes ?? 0);
+  const reasons: string[] = [`Stationary outside the terminal for ~${minutes} min`];
+  reasons.push(`Passenger demand nearby: ${demandLevel.toUpperCase()}`);
+
+  if (idleFuel) {
+    reasons.push(`Estimated fuel used while idling: ${idleFuel.min_liters}-${idleFuel.max_liters} L (₱${idleFuel.min_cost}-₱${idleFuel.max_cost})`);
+  }
+
+  // Farther-cluster redirect only matters when nearby demand is weak —
+  // demand is already good right here otherwise, so it adds nothing.
+  if (demandLevel === "low" && fartherStrongCluster) {
+    reasons.push(`Stronger demand detected ${round(fartherStrongCluster.distanceMeters / 1000)} km ahead along your route`);
+  }
+
+  return reasons;
+}
+
+function buildRoadsideIdleFallbackCopy(input: {
+  idleStatus: IdleStatus;
+  roadsideIdleMinutes: number | null;
+  demandLevel: string;
+  idleFuel: FuelRangeEstimate | null;
+  fartherStrongCluster: Cluster | null;
+}): { headline: string; body: string } | null {
+  const { idleStatus, roadsideIdleMinutes, demandLevel, idleFuel, fartherStrongCluster } = input;
+  if (idleStatus === "none") return null;
+
+  const minutes = Math.round(roadsideIdleMinutes ?? 0);
+
+  if (idleStatus === "monitoring") {
+    // Deliberately no fuel figure yet — spec asks not to show fuel cost
+    // constantly, only once it's actually relevant to a decision.
+    return {
+      headline: "MONITORING — stationary outside the terminal",
+      body: `Vehicle has been stationary for ${minutes} min. Checking passenger demand nearby.`,
+    };
+  }
+
+  const fuelLine = idleFuel
+    ? `Estimated fuel used: ${idleFuel.min_liters}-${idleFuel.max_liters} L (₱${idleFuel.min_cost}-₱${idleFuel.max_cost}).`
+    : "";
+  const statusLabel = idleStatus === "prolonged" ? "PROLONGED IDLING" : "POTENTIAL IDLING";
+
+  if (demandLevel === "low") {
+    const redirect = fartherStrongCluster
+      ? ` ${round(fartherStrongCluster.distanceMeters / 1000)} km ahead has stronger demand — continuing may be more worthwhile than waiting here.`
+      : " Consider continuing along your route instead of waiting here.";
+    return {
+      headline: `⚠️ ${statusLabel}`,
+      body: `Stationary outside the terminal for ${minutes} min with low passenger demand nearby. ${fuelLine}${redirect} If you need to stay stopped, consider turning off the engine if safe.`.trim(),
+    };
+  }
+
+  // Moderate/high demand: reassuring, demand-forward — never alarmist, per
+  // the spec's explicit "don't warn when demand justifies waiting."
+  return {
+    headline: "🟢 PASSENGER DEMAND DETECTED",
+    body: `You've been stationary for ${minutes} min, but demand nearby is ${demandLevel.toUpperCase()} — waiting briefly may be reasonable. ${fuelLine}`.trim(),
   };
 }
 
@@ -548,10 +756,21 @@ async function getPhrasedCopy(input: {
   trend: { direction: TrendDirection; changePct: number | null };
   timeContext: { bucket: string; label: string };
   fallback: PhrasedCopy;
+  // null when roadside idling isn't relevant (status "none") — in that case
+  // the Gemini request is byte-for-byte identical to before this feature
+  // existed: no extra facts, no extra schema fields, no added tokens.
+  roadsideIdle: {
+    status: IdleStatus;
+    minutes: number;
+    demandLevel: string;
+    fuel: FuelRangeEstimate | null;
+    fartherStrongClusterKm: number | null;
+  } | null;
+  roadsideIdleFallback: { headline: string; body: string } | null;
 }): Promise<PhrasedCopy> {
   if (!GEMINI_KEY) return input.fallback;
 
-  const facts = {
+  const facts: Record<string, unknown> = {
     already_decided_go_wait: input.recommendation,
     already_decided_operating: input.operatingRecommendation,
     demand_score: input.demandScore,
@@ -563,6 +782,30 @@ async function getPhrasedCopy(input: {
     trend_change_pct: input.trend.changePct,
     time_of_day: input.timeContext.label,
   };
+
+  const hasRoadsideIdle = input.roadsideIdle !== null;
+  if (input.roadsideIdle) {
+    facts.roadside_idle_status = input.roadsideIdle.status;
+    facts.roadside_idle_minutes = input.roadsideIdle.minutes;
+    facts.roadside_idle_demand_level = input.roadsideIdle.demandLevel;
+    facts.roadside_idle_estimated_fuel_cost_php = input.roadsideIdle.fuel
+      ? `${input.roadsideIdle.fuel.min_cost}-${input.roadsideIdle.fuel.max_cost}`
+      : null;
+    facts.roadside_idle_farther_strong_cluster_km = input.roadsideIdle.fartherStrongClusterKm;
+  }
+
+  const properties: Record<string, { type: string }> = {
+    go_wait_headline: { type: "STRING" },
+    go_wait_body: { type: "STRING" },
+    operating_headline: { type: "STRING" },
+    operating_body: { type: "STRING" },
+  };
+  const required = ["go_wait_headline", "go_wait_body", "operating_headline", "operating_body"];
+  if (hasRoadsideIdle) {
+    properties.roadside_idle_headline = { type: "STRING" };
+    properties.roadside_idle_body = { type: "STRING" };
+    required.push("roadside_idle_headline", "roadside_idle_body");
+  }
 
   try {
     const res = await fetch(
@@ -580,24 +823,23 @@ async function getPhrasedCopy(input: {
                 "go_wait_headline/body explain whether to leave the terminal now (already_decided_go_wait). " +
                 "operating_headline/body explain whether to keep driving or head back to the garage " +
                 "(already_decided_operating) — present it as a suggestion, not a command; the driver decides. " +
+                (hasRoadsideIdle
+                  ? "roadside_idle_headline/body explain the roadside-idling situation described by the " +
+                    "roadside_idle_* facts (the driver is stopped outside the terminal, not queueing) — if " +
+                    "demand there is low, gently suggest continuing along the route instead of idling and " +
+                    "mention the estimated fuel cost; if demand is moderate/high, be reassuring, not alarming, " +
+                    "and note waiting briefly may be reasonable. Never claim to detect the engine directly — " +
+                    "the fuel figure is always an estimate. "
+                  : "") +
                 "Headlines <= 60 characters, bodies <= 140 characters, plain text, no markdown, no exclamation points.",
             }],
           },
           contents: [{ parts: [{ text: `Facts: ${JSON.stringify(facts)}` }] }],
           generationConfig: {
-            maxOutputTokens: 300,
+            maxOutputTokens: hasRoadsideIdle ? 420 : 300,
             temperature: 0.3,
             responseMimeType: "application/json",
-            responseSchema: {
-              type: "OBJECT",
-              properties: {
-                go_wait_headline: { type: "STRING" },
-                go_wait_body: { type: "STRING" },
-                operating_headline: { type: "STRING" },
-                operating_body: { type: "STRING" },
-              },
-              required: ["go_wait_headline", "go_wait_body", "operating_headline", "operating_body"],
-            },
+            responseSchema: { type: "OBJECT", properties, required },
           },
         }),
       },
@@ -620,12 +862,24 @@ async function getPhrasedCopy(input: {
       return input.fallback;
     }
 
-    return {
+    const result: PhrasedCopy = {
       goWaitHeadline: parsed.go_wait_headline,
       goWaitBody: parsed.go_wait_body,
       operatingHeadline: parsed.operating_headline,
       operatingBody: parsed.operating_body,
     };
+
+    if (hasRoadsideIdle) {
+      if (typeof parsed?.roadside_idle_headline === "string" && typeof parsed?.roadside_idle_body === "string") {
+        result.roadsideIdleHeadline = parsed.roadside_idle_headline;
+        result.roadsideIdleBody = parsed.roadside_idle_body;
+      } else if (input.roadsideIdleFallback) {
+        result.roadsideIdleHeadline = input.roadsideIdleFallback.headline;
+        result.roadsideIdleBody = input.roadsideIdleFallback.body;
+      }
+    }
+
+    return result;
   } catch (err) {
     console.error("getPhrasedCopy: Gemini call threw:", err);
     return input.fallback;
