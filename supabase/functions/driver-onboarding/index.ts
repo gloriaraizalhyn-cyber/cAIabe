@@ -4,8 +4,10 @@
 //   route_id: string,
 //   home_terminal_id: string,
 //   jeep_color?: string,
+//   license_number: string,
 //   license_photo_base64: string,             // raw base64, no "data:image/..;base64," prefix
 //   license_photo_mime?: string,               // defaults to "image/jpeg"
+//   franchise_permit_number: string,
 //   franchise_permit_photo_base64: string,
 //   franchise_permit_photo_mime?: string,
 //   vehicle_registration_photo_base64: string,
@@ -33,8 +35,10 @@ Deno.serve(async (req: Request) => {
       route_id,
       home_terminal_id,
       jeep_color,
+      license_number,
       license_photo_base64,
       license_photo_mime,
+      franchise_permit_number,
       franchise_permit_photo_base64,
       franchise_permit_photo_mime,
       vehicle_registration_photo_base64,
@@ -43,23 +47,28 @@ Deno.serve(async (req: Request) => {
       route_id: string;
       home_terminal_id: string;
       jeep_color?: string;
+      license_number: string;
       license_photo_base64: string;
       license_photo_mime?: string;
+      franchise_permit_number: string;
       franchise_permit_photo_base64: string;
       franchise_permit_photo_mime?: string;
       vehicle_registration_photo_base64: string;
       vehicle_registration_photo_mime?: string;
     };
 
+    const normalizedLicenseNumber = license_number?.trim();
+    const normalizedFranchisePermitNumber = franchise_permit_number?.trim();
+
     if (
-      !route_id || !home_terminal_id || !license_photo_base64 ||
-      !franchise_permit_photo_base64 || !vehicle_registration_photo_base64
+      !route_id || !home_terminal_id || !normalizedLicenseNumber || !license_photo_base64 ||
+      !normalizedFranchisePermitNumber || !franchise_permit_photo_base64 || !vehicle_registration_photo_base64
     ) {
       return json(
         {
           error:
-            "route_id, home_terminal_id, license_photo_base64, franchise_permit_photo_base64, " +
-            "and vehicle_registration_photo_base64 are required",
+            "route_id, home_terminal_id, license_number, license_photo_base64, franchise_permit_number, " +
+            "franchise_permit_photo_base64, and vehicle_registration_photo_base64 are required",
         },
         400,
       );
@@ -120,8 +129,10 @@ Deno.serve(async (req: Request) => {
           route_id,
           home_terminal_id,
           jeep_color: jeep_color ?? null,
+          license_number: normalizedLicenseNumber,
           // storage paths, not public URLs — the bucket is private
           license_photo_url: licensePath.path,
+          franchise_permit_number: normalizedFranchisePermitNumber,
           franchise_permit_photo_url: franchisePermitPath.path,
           vehicle_registration_photo_url: vehicleRegistrationPath.path,
           verification_status: "pending",

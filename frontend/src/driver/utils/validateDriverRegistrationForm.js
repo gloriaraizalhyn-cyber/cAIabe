@@ -11,6 +11,12 @@ function hasInvalidFileType(file) {
   return file && !ACCEPTED_DOCUMENT_PHOTO_TYPES.includes(file.type);
 }
 
+// Shared with DriverRegistrationPage.jsx's submit handler so the value that
+// actually gets sent to driver-onboarding is exactly the one validated here.
+export function normalizeIdNumber(value) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
 // Pure frontend validation only — no backend/API calls. Returns a map of
 // fieldName -> error message; a valid form returns an empty object.
 export function validateDriverRegistrationForm(formValues) {
@@ -54,8 +60,16 @@ export function validateDriverRegistrationForm(formValues) {
     errors.confirmPassword = "Passwords do not match.";
   }
 
-  if (!formValues.driversLicenseNumber.trim()) {
+  // "Strictly normalized" per the product spec — trim + collapse whitespace
+  // before checking, same treatment mobile/email already get above. No
+  // rigid LTO/LTFRB format regex here: getting a real license/permit format
+  // wrong would incorrectly block a genuine driver from registering, which
+  // is worse than the light check below.
+  const normalizedLicenseNumber = normalizeIdNumber(formValues.driversLicenseNumber);
+  if (!normalizedLicenseNumber) {
     errors.driversLicenseNumber = "Driver's license number is required.";
+  } else if (normalizedLicenseNumber.length < 5) {
+    errors.driversLicenseNumber = "Enter a complete driver's license number.";
   }
 
   if (isMissingFile(formValues.driversLicensePhotoFile)) {
@@ -64,8 +78,11 @@ export function validateDriverRegistrationForm(formValues) {
     errors.driversLicensePhotoFile = "Only JPG or PNG files are accepted.";
   }
 
-  if (!formValues.franchisePermitNumber.trim()) {
+  const normalizedPermitNumber = normalizeIdNumber(formValues.franchisePermitNumber);
+  if (!normalizedPermitNumber) {
     errors.franchisePermitNumber = "Franchise/permit number is required.";
+  } else if (normalizedPermitNumber.length < 5) {
+    errors.franchisePermitNumber = "Enter a complete franchise/permit number.";
   }
 
   if (isMissingFile(formValues.franchisePermitPhotoFile)) {

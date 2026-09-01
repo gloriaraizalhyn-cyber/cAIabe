@@ -148,3 +148,35 @@
 .waiting-for-jeep-page__eta-text strong {
   color: #0f172a;
 }
+
+.waiting-for-jeep-page__wait-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  font-size: 0.78rem;
+  color: #78350f;
+}
+
+.waiting-for-jeep-page__wait-notice p {
+  flex: 1;
+  margin: 0;
+}
+
+.waiting-for-jeep-page__wait-notice strong {
+  color: #92400e;
+}
+
+.waiting-for-jeep-page__wait-notice-dismiss {
+  border: none;
+  background: transparent;
+  color: #92400e;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+}

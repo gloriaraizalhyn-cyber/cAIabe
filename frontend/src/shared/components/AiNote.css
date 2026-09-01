@@ -57,6 +57,51 @@
   color: #c53030;
 }
 
+.ai-note__comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.ai-note__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ai-note__list li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.ai-note__list--pros li {
+  color: #1a7a45;
+}
+
+.ai-note__list--pros li::before {
+  content: "+";
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+}
+
+.ai-note__list--cons li {
+  color: #9a3b3b;
+}
+
+.ai-note__list--cons li::before {
+  content: "\2212";
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+}
+
 .ai-note__listen-row {
   display: flex;
   align-items: center;

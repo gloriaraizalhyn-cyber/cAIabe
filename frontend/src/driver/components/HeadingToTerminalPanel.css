@@ -72,3 +72,21 @@
   color: #1a1a1a;
   text-align: center;
 }
+
+.heading-to-terminal-panel__demo-button {
+  display: block;
+  width: 100%;
+  margin: 0 0 12px;
+  border: 1px dashed #9a9fa8;
+  border-radius: 8px;
+  background: none;
+  padding: 8px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #6a6f79;
+}
+
+.heading-to-terminal-panel__demo-button:hover {
+  border-color: #1a1a1a;
+  color: #1a1a1a;
+}

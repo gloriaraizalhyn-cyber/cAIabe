@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { Bookmark, ArrowUpDown, LocateFixed, Mic, ChevronRight } from "lucide-react";
 import LocationAutocompleteInput from "./LocationAutocompleteInput.jsx";
 import MascotReveal from "./MascotReveal.jsx";
-import { SAVED_ROUTES_FIXTURE } from "../../shared/constants/tripSearchFixtures.js";
 import "./TripSearchCard.css";
 
 // How much of the sheet's total height stays off-screen (below the
@@ -19,7 +18,9 @@ function TripSearchCard({
   onSelectOriginPlace,
   onSelectDestinationPlace,
   onSwapPlaces,
+  savedRoutes = [],
   onApplySavedRoute,
+  onRemoveSavedRoute,
   onOpenVoiceAssistant,
   onFindRoutes,
   isSearching,
@@ -44,26 +45,6 @@ function TripSearchCard({
       },
       () => setIsLocating(false)
     );
-  };
-
-  // Every saved route starts bookmarked (that's what put it in this list);
-  // the line-code badge doubles as the un-save toggle. Frontend-only for
-  // now — no backend field to persist this yet, so it just flips the
-  // badge's visual state rather than removing the chip.
-  const [bookmarkedRouteIds, setBookmarkedRouteIds] = useState(
-    () => new Set(SAVED_ROUTES_FIXTURE.map((savedRoute) => savedRoute.id))
-  );
-
-  const toggleBookmark = (routeId) => {
-    setBookmarkedRouteIds((current) => {
-      const next = new Set(current);
-      if (next.has(routeId)) {
-        next.delete(routeId);
-      } else {
-        next.add(routeId);
-      }
-      return next;
-    });
   };
 
   // Mobile bottom-sheet drag-to-expand. dragStateRef holds the in-progress
@@ -193,9 +174,12 @@ function TripSearchCard({
             <ChevronRight size={15} strokeWidth={2.5} className="trip-search-card__saved-routes-chevron" />
           </div>
           <div className="trip-search-card__saved-routes">
-            {SAVED_ROUTES_FIXTURE.slice(0, 3).map((savedRoute) => {
-              const isBookmarked = bookmarkedRouteIds.has(savedRoute.id);
-              return (
+            {savedRoutes.length === 0 ? (
+              <p className="trip-search-card__saved-routes-empty">
+                No saved routes yet — tap Save on a route's results to add one here.
+              </p>
+            ) : (
+              savedRoutes.slice(0, 3).map((savedRoute) => (
                 <div key={savedRoute.id} className="trip-search-card__saved-route-chip">
                   <button
                     type="button"
@@ -206,18 +190,16 @@ function TripSearchCard({
                   </button>
                   <button
                     type="button"
-                    className={`trip-search-card__saved-route-bookmark${
-                      isBookmarked ? " trip-search-card__saved-route-bookmark--active" : ""
-                    }`}
-                    aria-pressed={isBookmarked}
-                    aria-label={isBookmarked ? "Remove from saved routes" : "Save this route"}
-                    onClick={() => toggleBookmark(savedRoute.id)}
+                    className="trip-search-card__saved-route-bookmark trip-search-card__saved-route-bookmark--active"
+                    aria-pressed="true"
+                    aria-label="Remove from saved routes"
+                    onClick={() => onRemoveSavedRoute?.(savedRoute.routeKey)}
                   >
-                    <Bookmark size={13} strokeWidth={2.25} fill={isBookmarked ? "currentColor" : "none"} />
+                    <Bookmark size={13} strokeWidth={2.25} fill="currentColor" />
                   </button>
                 </div>
-              );
-            })}
+              ))
+            )}
           </div>
         </div>
       </div>

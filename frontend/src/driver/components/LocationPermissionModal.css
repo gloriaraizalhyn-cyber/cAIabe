@@ -78,3 +78,20 @@
 .location-permission-modal__enable-button:hover {
   background: #333333;
 }
+
+.location-permission-modal__demo-link {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #9a9fa8;
+  text-decoration: underline;
+}
+
+.location-permission-modal__demo-link:hover {
+  color: #6a6f79;
+}

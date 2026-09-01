@@ -55,6 +55,14 @@ function DriverSummaryModal({ driver, onClose }) {
             <dd>{driver.mobileNumber ?? "—"}</dd>
           </div>
           <div className="driver-summary-modal__field">
+            <dt>License number</dt>
+            <dd>{driver.licenseNumber ?? "—"}</dd>
+          </div>
+          <div className="driver-summary-modal__field">
+            <dt>Franchise/permit number</dt>
+            <dd>{driver.franchisePermitNumber ?? "—"}</dd>
+          </div>
+          <div className="driver-summary-modal__field">
             <dt>Plate number</dt>
             <dd>{driver.plateNumber ?? "—"}</dd>
           </div>

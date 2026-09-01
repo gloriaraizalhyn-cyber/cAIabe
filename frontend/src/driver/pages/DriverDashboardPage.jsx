@@ -9,14 +9,17 @@ import LocationPermissionModal from "../components/LocationPermissionModal.jsx";
 import HeadingToTerminalPanel from "../components/HeadingToTerminalPanel.jsx";
 import ArrivedAtTerminalPanel from "../components/ArrivedAtTerminalPanel.jsx";
 import QueueTurnAlert from "../components/QueueTurnAlert.jsx";
+import ParkedDemandCard from "../components/ParkedDemandCard.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
 import { useFcmRegistration } from "../hooks/useFcmRegistration.js";
+import { useDriverDemand } from "../hooks/useDriverDemand.js";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { haversineDistanceMeters } from "../../shared/utils/geo.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./DriverDashboardPage.css";
 
 const TERMINAL_ARRIVAL_RADIUS_METERS = 150;
+const LOCATION_UPDATE_MIN_INTERVAL_MS = 5000;
 
 function DriverDashboardPage() {
   const navigate = useNavigate();
@@ -27,10 +30,12 @@ function DriverDashboardPage() {
   const [shiftStage, setShiftStage] = useState(location.state?.shiftStage ?? "not_started");
   const [ownQueueEntry, setOwnQueueEntry] = useState(null);
   const [isRespondingToQueue, setIsRespondingToQueue] = useState(false);
+  const [isSkippingQueueWait, setIsSkippingQueueWait] = useState(false);
   const [driverPosition, setDriverPosition] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const watchIdRef = useRef(null);
+  const lastUpdateAtRef = useRef(0);
 
   const refreshQueueEntry = useCallback(async () => {
     if (!driver?.route?.id || !session?.user?.id) return;
@@ -48,13 +53,15 @@ function DriverDashboardPage() {
     await refreshQueueEntry();
   }, [driver?.terminal?.id, refreshQueueEntry]);
 
-  // Real geofence, used ONLY to detect arrival at the terminal so the driver
-  // can be auto-joined to the queue. Per the PRD, queue position must NOT
-  // depend on tracked physical presence once a driver is waiting — so unlike
-  // before, this stops watching the instant they arrive rather than also
-  // policing whether they wander off afterward.
+  // Real geofence. While heading to the terminal, detects arrival (auto-
+  // joins the queue). Once arrived/queued, keeps throttled-reporting
+  // position via driver-location-update so the backend can track terminal
+  // geofence status (inside vs outside) even after the driver steps away
+  // and comes back — queue position itself never depends on this (a driver
+  // who wanders off keeps their spot), but geofence_status has to stay
+  // current for the "lining up" prompt and dispatch gate to work.
   useEffect(() => {
-    if (shiftStage !== "heading_to_terminal") return undefined;
+    if (shiftStage !== "heading_to_terminal" && shiftStage !== "arrived") return undefined;
     if (!navigator.geolocation) return undefined;
 
     const terminalPosition = driver?.terminal?.position;
@@ -64,12 +71,20 @@ function DriverDashboardPage() {
         const here = { lat: position.coords.latitude, lng: position.coords.longitude };
         setDriverPosition(here);
 
-        if (!terminalPosition) return;
-        const distance = haversineDistanceMeters(here, terminalPosition);
-        if (distance <= TERMINAL_ARRIVAL_RADIUS_METERS) {
-          setShiftStage("arrived");
-          joinQueue();
+        if (shiftStage === "heading_to_terminal") {
+          if (!terminalPosition) return;
+          const distance = haversineDistanceMeters(here, terminalPosition);
+          if (distance <= TERMINAL_ARRIVAL_RADIUS_METERS) {
+            setShiftStage("arrived");
+            joinQueue();
+          }
+          return;
         }
+
+        const now = Date.now();
+        if (now - lastUpdateAtRef.current < LOCATION_UPDATE_MIN_INTERVAL_MS) return;
+        lastUpdateAtRef.current = now;
+        supabase.functions.invoke("driver-location-update", { body: here });
       },
       () => {},
       { enableHighAccuracy: true, maximumAge: 5000 }
@@ -79,8 +94,9 @@ function DriverDashboardPage() {
   }, [shiftStage, driver?.terminal?.position, joinQueue]);
 
   // Live queue standing: the same broadcast channel driver-queue-respond and
-  // queue-advance already publish to (including the next-2 "driver_notified"
-  // event), plus a fallback poll in case a broadcast is missed.
+  // queue-advance already publish to (including the "driver_notified" event
+  // that fires as a driver's turn approaches), plus a fallback poll in case
+  // a broadcast is missed.
   useEffect(() => {
     if (shiftStage !== "arrived" || !driver?.route?.id) return undefined;
 
@@ -101,12 +117,41 @@ function DriverDashboardPage() {
     };
   }, [shiftStage, driver?.route?.id, refreshQueueEntry]);
 
+  // Lets a parked/queued driver "check the system for waiting passengers on
+  // his route" (per the product spec) instead of only seeing demand once
+  // promoted to next-to-go — same Sak.AI engine NextToGoPage/DrivingPage
+  // already use, just active earlier in the shift.
+  const { data: parkedDemand, isLoading: isParkedDemandLoading, error: parkedDemandError } = useDriverDemand({
+    routeId: driver?.route?.id,
+    position: driverPosition,
+    isActive: shiftStage === "arrived" && ownQueueEntry?.status !== "temporarily_away",
+  });
+
   const handleStartShift = () => {
     setShiftStage("awaiting_location_permission");
   };
 
   const handleCancelLocationPermission = () => {
     setShiftStage("not_started");
+  };
+
+  // Demo/testing bypass — never calls navigator.geolocation, so it never
+  // triggers the browser's location prompt at all. Lets someone test from
+  // anywhere (or with location permission denied/unavailable) by placing
+  // them at their assigned terminal's real, known coordinates instead of
+  // their actual device GPS — the AI reasoning downstream is unaffected,
+  // only the driver's own starting coordinate source changes.
+  const handleUseTerminalLocation = async () => {
+    if (!driver?.terminal?.position) return;
+    setDriverPosition(driver.terminal.position);
+    setShiftStage("arrived");
+    await joinQueue();
+    // Immediately reports the (terminal) position so geofence_status flips
+    // to "inside" right away instead of waiting on the next throttled watch
+    // tick — otherwise this bypass would leave a driver stuck "outside".
+    lastUpdateAtRef.current = Date.now();
+    await supabase.functions.invoke("driver-location-update", { body: driver.terminal.position });
+    await refreshQueueEntry();
   };
 
   const handleEnableLocation = () => {
@@ -143,6 +188,29 @@ function DriverDashboardPage() {
     setIsRespondingToQueue(true);
     await supabase.functions.invoke("driver-queue-respond", { body: { response: "lining_up" } });
     setIsRespondingToQueue(false);
+    navigate("/driver/next-to-go");
+  };
+
+  // Testing/demo bypass — driver-queue-respond now requires notified_at to
+  // be set before it accepts "lining up" (closes a real FIFO queue-jump
+  // bug: without it, any waiting driver could skip ahead of drivers who
+  // arrived earlier). So this fast-forwards the real notify step instead of
+  // skipping past it: it forces an immediate queue-advance tick (the same
+  // function the cron calls), which sets notified_at for real if this
+  // driver is genuinely within QUEUE_TURN_ALERT_POSITIONS of the front —
+  // then responds through the same path a real notification would use. If
+  // the driver isn't actually close enough yet, the response legitimately
+  // fails and this stays on the current screen, matching NextToGoPage's own
+  // "skip to driving" control for the next stage.
+  const handleSkipQueueWait = async () => {
+    setIsSkippingQueueWait(true);
+    await supabase.functions.invoke("queue-advance", { body: {} });
+    const { error } = await supabase.functions.invoke("driver-queue-respond", { body: { response: "lining_up" } });
+    setIsSkippingQueueWait(false);
+    if (error) {
+      await refreshQueueEntry();
+      return;
+    }
     navigate("/driver/next-to-go");
   };
 
@@ -249,6 +317,7 @@ function DriverDashboardPage() {
   const assignedTerminalName = driver.terminal?.name ?? "—";
   const driverName = session?.user?.user_metadata?.full_name?.trim() || "Driver";
   const showShiftSummaryCard = shiftStage === "not_started" || shiftStage === "awaiting_location_permission";
+  const isTemporarilyAway = ownQueueEntry?.status === "temporarily_away";
   const showQueueTurnAlert =
     shiftStage === "arrived" && Boolean(ownQueueEntry?.notifiedAt) && !ownQueueEntry?.respondedAt;
 
@@ -283,15 +352,27 @@ function DriverDashboardPage() {
             driverPosition={driverPosition}
             terminalPosition={driver.terminal?.position}
             terminalName={assignedTerminalName}
+            onUseTerminalLocation={handleUseTerminalLocation}
           />
         )}
 
         {shiftStage === "arrived" && (
-          <ArrivedAtTerminalPanel
-            queuePosition={ownQueueEntry?.position ?? "…"}
-            assignedRouteLabel={assignedRouteLabel}
-            onViewQueue={handleViewQueue}
-          />
+          <>
+            <ArrivedAtTerminalPanel
+              queuePosition={ownQueueEntry?.position ?? "…"}
+              assignedRouteLabel={assignedRouteLabel}
+              geofenceStatus={ownQueueEntry?.geofenceStatus}
+              isTemporarilyAway={isTemporarilyAway}
+              onViewQueue={handleViewQueue}
+              onSkipQueueWait={handleSkipQueueWait}
+              isSkippingQueueWait={isSkippingQueueWait}
+              onEndShiftForTheDay={handleEndShiftForTheDay}
+              isEndingShift={isRespondingToQueue}
+            />
+            {!isTemporarilyAway && (
+              <ParkedDemandCard data={parkedDemand} isLoading={isParkedDemandLoading} error={parkedDemandError} />
+            )}
+          </>
         )}
       </div>
 
@@ -299,12 +380,14 @@ function DriverDashboardPage() {
         <LocationPermissionModal
           onEnableLocation={handleEnableLocation}
           onCancel={handleCancelLocationPermission}
+          onUseTerminalLocation={handleUseTerminalLocation}
         />
       )}
 
       {showQueueTurnAlert && (
         <QueueTurnAlert
           queuePosition={ownQueueEntry?.position ?? null}
+          geofenceStatus={ownQueueEntry?.geofenceStatus}
           isSubmitting={isRespondingToQueue}
           onLiningUp={handleLiningUp}
           onLeaveTemporarily={handleLeaveTemporarily}

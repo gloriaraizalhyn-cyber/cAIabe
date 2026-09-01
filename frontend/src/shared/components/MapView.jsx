@@ -115,9 +115,12 @@ function createJeepneyMarkerIcon(capacityState, routeHexColor = "#CB4747", route
   const statusColor = isFull ? "#dc2626" : "#16a34a";
   const badgeText = isFull ? "FULL" : "SEATS OPEN";
 
-  const pinBorderColor = routeHexColor || "#CB4747";
+  // A full jeep's marker turns red outright (not just the status pill) so
+  // it reads at a glance on a crowded map — reverts to the route's own
+  // color the moment a seat opens up, per the product spec.
+  const pinBorderColor = isFull ? statusColor : routeHexColor || "#CB4747";
   const pinFillColor = "#ffffff";
-  const iconColor = pinBorderColor.toLowerCase() === "#ffffff" ? "#1f2937" : pinBorderColor;
+  const iconColor = isFull ? statusColor : (pinBorderColor.toLowerCase() === "#ffffff" ? "#1f2937" : pinBorderColor);
 
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="64" height="74" viewBox="0 0 64 74">
@@ -147,6 +150,63 @@ function createJeepneyMarkerIcon(capacityState, routeHexColor = "#CB4747", route
   }
 
   return undefined;
+}
+
+// waitingPassengers: [{ id, lat, lng }] — one pin per individual waiting
+// passenger compatible with the driver's route (from driver-demand-check),
+// rendered as a plain yellow dot per the product spec's "waiting status
+// (YELLOW ICON)" — distinct from the clustered demand summary below, which
+// stays for the driver's WAIT/GO scoring context.
+function WaitingPassengerMarkers({ passengers }) {
+  if (!passengers?.length || typeof window === "undefined" || !window.google?.maps) return null;
+
+  return (
+    <>
+      {passengers.map((passenger) => (
+        <Marker
+          key={`waiting-${passenger.id}`}
+          position={{ lat: passenger.lat, lng: passenger.lng }}
+          title="Waiting passenger"
+          icon={{
+            path: window.google.maps.SymbolPath.CIRCLE,
+            fillColor: "#eab308",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+            scale: 7,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+// demandClusters: [{ lat, lng, count, distance_km, band, band_label }] —
+// Sak.AI driver-side passenger-demand clusters from driver-demand-check,
+// rendered as grouped pins distinct from live jeepney markers so a driver
+// can see "there are passengers ahead of me" at a glance.
+function DemandClusterMarkers({ clusters }) {
+  if (!clusters?.length) return null;
+
+  return (
+    <>
+      {clusters.map((cluster, index) => (
+        <OverlayView
+          key={`demand-cluster-${index}`}
+          position={{ lat: cluster.lat, lng: cluster.lng }}
+          mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+          getPixelPositionOffset={(width, height) => ({ x: -(width / 2), y: -height - 6 })}
+        >
+          <div className={`map-view__demand-cluster map-view__demand-cluster--${cluster.band}`}>
+            <span className="map-view__demand-cluster-count">👥 {cluster.count}</span>
+            <span className="map-view__demand-cluster-band">{cluster.band_label}</span>
+            <span className="map-view__demand-cluster-distance">{cluster.distance_km} km</span>
+            <span className="map-view__demand-cluster-stem" />
+          </div>
+        </OverlayView>
+      ))}
+    </>
+  );
 }
 
 // Interpolates vehicle GPS movements smoothly over time at 60 FPS using
@@ -264,14 +324,19 @@ function useSmoothPositions(jeepneys) {
 // broadcasting position on a route (see useLiveDriverPositions); unrelated
 // to `routes` and used by the waiting-for-jeep / driving screens, not the
 // route-search results.
+// waitingPassengers: [{ id, lat, lng }] — driver-side only, from
+// driver-demand-check; see WaitingPassengerMarkers above.
 function MapView({
   origin,
   destination,
   routes = [],
   jeepneys = [],
+  demandClusters = [],
+  waitingPassengers = [],
   center,
   zoom = 13,
   showDirections = false,
+  isOwnJeepneyIdling = false,
 }) {
   const { isLoaded } = useGoogleMapsLoader();
   const [selectedJeepneyId, setSelectedJeepneyId] = useState(null);
@@ -338,6 +403,14 @@ function MapView({
         hasPoints = true;
       });
     });
+    demandClusters.forEach((cluster) => {
+      bounds.extend({ lat: cluster.lat, lng: cluster.lng });
+      hasPoints = true;
+    });
+    waitingPassengers.forEach((passenger) => {
+      bounds.extend({ lat: passenger.lat, lng: passenger.lng });
+      hasPoints = true;
+    });
 
     if (!hasPoints) return;
     if (bounds.getNorthEast().equals(bounds.getSouthWest())) {
@@ -348,7 +421,7 @@ function MapView({
       return;
     }
     mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 60, left: 50 });
-  }, [origin, destination, routes, smoothJeepneys.length]);
+  }, [origin, destination, routes, smoothJeepneys.length, demandClusters, waitingPassengers]);
 
   if (!GOOGLE_MAPS_API_KEY) {
     return (
@@ -501,6 +574,25 @@ function MapView({
           );
         })}
 
+        {/* Sak.AI roadside-idling badge on the driver's own marker — mirrors
+            DemandClusterMarkers' OverlayView pattern rather than the marker
+            icon SVG, since useSmoothPositions rebuilds jeepney objects as
+            bare {id,lat,lng,capacityState} every frame and would silently
+            drop any extra field passed via the jeepneys prop. */}
+        {isOwnJeepneyIdling && (() => {
+          const ownJeep = smoothJeepneys.find((jeep) => jeep.id === "self");
+          if (!ownJeep) return null;
+          return (
+            <OverlayView
+              position={{ lat: ownJeep.lat, lng: ownJeep.lng }}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+              getPixelPositionOffset={(width, height) => ({ x: -(width / 2), y: -height - 44 })}
+            >
+              <div className="map-view__idling-badge">⚠️ Idling</div>
+            </OverlayView>
+          );
+        })()}
+
         {/* Interactive Jeepney Status Popup */}
         {selectedJeep && (
           <InfoWindow
@@ -546,6 +638,12 @@ function MapView({
         {routes.map((route) => (
           <RoutePolylines key={route.cardKey ?? route.id} route={route} />
         ))}
+
+        {/* Sak.AI passenger-demand clusters (driver-side) */}
+        <DemandClusterMarkers clusters={demandClusters} />
+
+        {/* Individual waiting-passenger pins (driver-side) */}
+        <WaitingPassengerMarkers passengers={waitingPassengers} />
       </GoogleMap>
     </div>
   );

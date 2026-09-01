@@ -24,13 +24,32 @@ Deno.serve(async (req: Request) => {
 
     const { data: entry, error: entryErr } = await supabase
       .from("queue_entries")
-      .select("id, route_id, status")
+      .select("id, route_id, status, notified_at")
       .eq("driver_id", driverId)
-      .in("status", ["waiting", "next_to_go"])
+      .in("status", ["waiting", "next_to_go", "temporarily_away"])
       .maybeSingle();
 
     if (entryErr || !entry) {
       return json({ error: "no active queue entry awaiting a response" }, 404);
+    }
+
+    // A driver who already left temporarily can only end their day outright
+    // from here — "lining up"/"skip_temp" stay scoped to waiting/next_to_go
+    // so nobody can reclaim their old arrival_at without physically
+    // returning (see driver-location-update, which handles that return).
+    if (response !== "skip_done" && entry.status === "temporarily_away") {
+      return json({ error: "cannot respond this way while temporarily away" }, 409);
+    }
+
+    // FIFO integrity: "lining up" is only ever valid once queue-advance has
+    // actually notified this driver that their turn is close (see
+    // QUEUE_TURN_ALERT_POSITIONS in queue-advance, which sets notified_at).
+    // Without this check, any waiting driver already inside the terminal
+    // geofence could call this immediately and get promoted to "driving"
+    // ahead of drivers who arrived before them — silently breaking the
+    // arrival_at-ordered FIFO the whole queue is built on.
+    if (response === "lining_up" && !entry.notified_at) {
+      return json({ error: "not yet your turn to line up" }, 409);
     }
 
     let update: Record<string, unknown> = { responded_at: new Date().toISOString() };
@@ -40,9 +59,12 @@ Deno.serve(async (req: Request) => {
     } else if (response === "skip_done") {
       update.status = "done_for_day";
     } else if (response === "skip_temp") {
-      // Drops to the back of that day's queue — does NOT hold the spot.
-      update.status = "waiting";
-      update.arrival_at = new Date().toISOString();
+      // Forfeits the currently-held position without resetting arrival_at
+      // yet — the driver keeps their record but drops out of FIFO/notify/
+      // promote consideration until driver-location-update detects them
+      // physically back inside the terminal geofence, at which point they
+      // rejoin at the back of the active queue with a fresh arrival_at.
+      update.status = "temporarily_away";
       update.notified_at = null;
     }
 

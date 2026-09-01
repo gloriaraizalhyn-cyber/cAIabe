@@ -2,7 +2,7 @@ import useBottomSheetDrag from "../../shared/hooks/useBottomSheetDrag.js";
 import "../../shared/styles/cardShell.css";
 import "./NextToGoCard.css";
 
-function NextToGoCard({ waitingCount, queuePosition, onWaitForMore }) {
+function NextToGoCard({ waitingCount, queuePosition, onWaitForMore, waitNoticeSent = false }) {
   const { isExpanded, liveDragY, handlePointerDown, handlePointerMove, handlePointerUp } = useBottomSheetDrag();
 
   return (
@@ -28,8 +28,13 @@ function NextToGoCard({ waitingCount, queuePosition, onWaitForMore }) {
         never see your passenger count.
       </p>
       <div className="next-to-go-card__actions">
-        <button type="button" className="next-to-go-card__wait-button" onClick={onWaitForMore}>
-          Wait for more
+        <button
+          type="button"
+          className="next-to-go-card__wait-button"
+          onClick={onWaitForMore}
+          disabled={waitNoticeSent}
+        >
+          {waitNoticeSent ? "Waiting passengers notified" : "Wait for more"}
         </button>
         <div className="next-to-go-card__status-pill">Starts automatically when it's your turn</div>
       </div>

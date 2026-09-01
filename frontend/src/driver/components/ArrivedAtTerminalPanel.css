@@ -23,6 +23,28 @@
   background: #1a9e5c;
 }
 
+.arrived-at-terminal-panel__status-dot--away {
+  background: #e0a82e;
+}
+
+.arrived-at-terminal-panel__geofence {
+  margin: 14px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.arrived-at-terminal-panel__geofence--inside {
+  background: rgba(26, 158, 92, 0.12);
+  color: #1a9e5c;
+}
+
+.arrived-at-terminal-panel__geofence--outside {
+  background: rgba(224, 168, 46, 0.14);
+  color: #a87717;
+}
+
 .arrived-at-terminal-panel__message {
   margin: 0 0 18px;
   font-size: 0.88rem;
@@ -79,4 +101,25 @@
 
 .arrived-at-terminal-panel__view-queue-button:hover {
   background: #142f7e;
+}
+
+.arrived-at-terminal-panel__skip-button {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px dashed #9a9fa8;
+  border-radius: 10px;
+  background: none;
+  color: #6a6f79;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 10px;
+}
+
+.arrived-at-terminal-panel__skip-button:hover {
+  border-color: #1a1a1a;
+  color: #1a1a1a;
+}
+
+.arrived-at-terminal-panel__skip-button:disabled {
+  opacity: 0.6;
 }

@@ -1,3 +1,11 @@
+# Python virtual environment
+whisper-env/
+
+# Python cache
+__pycache__/
+*.pycgit fetch origin
+git merge origin/main
+git push origin main
 node_modules/
 supabase/.temp/
 supabase/.branches/

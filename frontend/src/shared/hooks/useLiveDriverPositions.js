@@ -9,7 +9,15 @@ const PRUNE_INTERVAL_MS = 15000;
 // just the most recent one — so a passenger waiting for a route sees every
 // jeepney currently passing it, not only whichever one broadcast last.
 // Entries are dropped if a driver hasn't broadcast in over a minute (no
-// explicit "driver left" event exists on this channel to key off instead).
+// explicit "driver left" event exists on this channel to key off instead),
+// or immediately on a "driver_hidden" broadcast (see driver-location-update).
+//
+// Only ever shows drivers who are "next_to_go" or "driving" — a parked/
+// queued/temporarily-away driver must stay invisible to passengers per the
+// product spec. get_route_visible_drivers (add_route_visible_drivers_rpc.sql)
+// enforces this for the initial fetch; driver-location-update enforces the
+// same rule for what it broadcasts, so the realtime stream never contains a
+// driver this hook shouldn't be showing in the first place.
 export function useLiveDriverPositions(routeId) {
   const [positionsByDriver, setPositionsByDriver] = useState({});
   const [isConnected, setIsConnected] = useState(false);
@@ -19,26 +27,19 @@ export function useLiveDriverPositions(routeId) {
     setIsConnected(false);
     if (!routeId) return undefined;
 
-    // Immediately fetch currently active drivers for this route from database
+    // Immediately fetch currently visible drivers for this route.
     supabase
-      .from("driver_live_state")
-      .select("driver_id, route_id, position, capacity_state, last_updated")
-      .eq("route_id", routeId)
+      .rpc("get_route_visible_drivers", { p_route_id: routeId })
       .then(({ data, error }) => {
         if (!error && data) {
           const initial = {};
           data.forEach((row) => {
-            const match = row.position?.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/i);
-            if (match) {
-              const lng = parseFloat(match[1]);
-              const lat = parseFloat(match[2]);
-              initial[row.driver_id] = {
-                lat,
-                lng,
-                capacityState: row.capacity_state ?? "available",
-                updatedAt: new Date(row.last_updated).getTime(),
-              };
-            }
+            initial[row.driver_id] = {
+              lat: row.lat,
+              lng: row.lng,
+              capacityState: row.capacity_state ?? "available",
+              updatedAt: Date.now(),
+            };
           });
           if (Object.keys(initial).length > 0) {
             setPositionsByDriver((previous) => ({ ...initial, ...previous }));
@@ -66,6 +67,14 @@ export function useLiveDriverPositions(routeId) {
             ? { ...previous, [payload.driver_id]: { ...previous[payload.driver_id], capacityState: payload.state } }
             : previous
         );
+      })
+      .on("broadcast", { event: "driver_hidden" }, ({ payload }) => {
+        setPositionsByDriver((previous) => {
+          if (!(payload.driver_id in previous)) return previous;
+          const next = { ...previous };
+          delete next[payload.driver_id];
+          return next;
+        });
       })
       .subscribe((status) => setIsConnected(status === "SUBSCRIBED"));
 

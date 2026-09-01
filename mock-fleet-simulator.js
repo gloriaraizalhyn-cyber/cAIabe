@@ -8,11 +8,18 @@
 //   node --env-file=.env mock-fleet-simulator.js
 //   node --env-file=.env mock-fleet-simulator.js --jeeps=3
 //   node --env-file=.env mock-fleet-simulator.js --jeeps=2 --route="Marisol"
+//   node --env-file=.env mock-fleet-simulator.js --jeeps=3 --requeue
 //
 // Flags:
 //   --jeeps=N        Number of jeepneys per route (default: 3)
 //   --delay=MS       Delay between steps in ms (default: 800)
 //   --route=NAME     Filter to a single route by name (optional)
+//   --requeue        Units stop and rejoin the real queue on reaching the
+//                     route's terminus instead of driving the circuit
+//                     forever — use this when testing queue/geofence
+//                     behavior; leave it off for the passenger-facing
+//                     ETA/demand demo, which wants continuously-moving
+//                     jeepneys.
 
 const SUPABASE_URL = requireEnv("SUPABASE_URL");
 const ANON_KEY = requireEnv("SUPABASE_ANON_KEY");
@@ -32,6 +39,12 @@ function getCliArg(name, defaultValue) {
 const JEEPS_PER_ROUTE = parseInt(getCliArg("jeeps", "3"), 10) || 3;
 const STEP_DELAY_MS = parseInt(getCliArg("delay", "800"), 10) || 800;
 const ROUTE_FILTER = getCliArg("route", null);
+// Off by default: units drive the circuit forever, which is what the
+// passenger-facing ETA/demand demo wants (always-visible moving jeepneys).
+// On: a unit stops at the terminus, re-enters the real queue, and waits to
+// be redispatched — matching a real jeepney's actual lifecycle, useful when
+// testing the queue/geofence system specifically rather than the live map.
+const REQUEUE_ON_ARRIVAL = process.argv.includes("--requeue");
 
 function requireEnv(name) {
   const value = process.env[name];
@@ -60,6 +73,17 @@ async function restSelect(path) {
   return res.json();
 }
 
+// Same as restSelect, but authenticated as a specific unit's own driver
+// session rather than the anon key — needed for reading queue_entries,
+// whose RLS policy scopes reads to the caller's own route.
+async function restSelectAuthed(path, accessToken) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: ANON_KEY, Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
 async function callRpc(fnName, args) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
     method: "POST",
@@ -76,7 +100,21 @@ async function callFunction(name, accessToken, body, { quiet } = {}) {
     headers: { apikey: ANON_KEY, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await res.json();
+
+  // A gateway hiccup (cold start, brief outage, rate limit) can return an
+  // HTML error page instead of JSON. Every unit's road/queue loop calls
+  // this every few seconds forever, so a single bad response must NOT throw
+  // here — that would permanently kill that unit's simulation (nothing
+  // upstream retries a crashed loop, it just dies silently into the
+  // fleet-level .catch()).
+  const rawText = await res.text();
+  let data;
+  try {
+    data = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    data = { error: `non-JSON response (HTTP ${res.status}): ${rawText.slice(0, 200)}` };
+  }
+
   if (!res.ok && !quiet) console.error(`[${name}] failed:`, data);
   return data;
 }
@@ -252,15 +290,31 @@ async function getRoadPath(origin, destination, label) {
 // label.
 const activeUnits = new Map();
 
-function setupDemoControls() {
+async function setupDemoControls() {
   if (!process.stdin.isTTY) return; // no interactive terminal (e.g. piped/background run) — skip
-  console.log('\nDemo controls: type "slow <unit label>", "resume <unit label>", or "list", then Enter.');
-  console.log('Example: slow Cloudstaff - NU Clark (Direct) (Unit #1)\n');
+  console.log('\nDemo controls (type a command + Enter):');
+  console.log('  slow / resume <driver id>   simulate heavy traffic on a driving unit');
+  console.log('  leave <driver id>           step a queued unit away from the terminal (keeps its slot)');
+  console.log('  return <driver id>          bring a queued unit back to the terminal');
+  console.log('  lining_up <driver id>       respond "lining up" to that unit\'s turn prompt');
+  console.log('  skip_temp <driver id>       respond "leave temporarily" (forfeits current turn)');
+  console.log('  skip_done <driver id>       respond "done for the day" (ends that unit\'s queue session)');
+  console.log('  list                        show active units (label + driver id)');
+  console.log('<driver id> is the short id shown in "list" below AND in the app\'s own queue');
+  console.log('screen ("Driver ca577a15") — the two are the same id, so whichever you\'re looking');
+  console.log('at, that\'s what you type here. A unit label (e.g. "(Unit #1)") also still works.');
+  console.log('Example: leave ca577a15');
+  console.log('Typical "away → skip → return" demo sequence for one unit: leave, skip_temp, (wait), return\n');
 
-  const readline = require("readline");
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  // Dynamic import (not require) so this works whether Node parses this
+  // file as CommonJS or ESM — module type is decided by the nearest
+  // package.json anywhere up the directory tree, which this repo doesn't
+  // control (e.g. an unrelated "type": "module" package.json elsewhere on
+  // a machine's home folder would otherwise break a plain require() here).
+  const { createInterface } = await import("node:readline");
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
 
-  rl.on("line", (line) => {
+  rl.on("line", async (line) => {
     const trimmed = line.trim();
     if (!trimmed) return;
 
@@ -269,20 +323,43 @@ function setupDemoControls() {
         console.log("(no active units yet)");
         return;
       }
-      for (const label of activeUnits.keys()) console.log(`  - ${label}`);
+      for (const [label, state] of activeUnits.entries()) {
+        console.log(`  - ${state.driverId.slice(0, 8)}  (${label})`);
+      }
       return;
     }
 
     const slowMatch = trimmed.match(/^slow\s+(.+)$/i);
     const resumeMatch = trimmed.match(/^resume\s+(.+)$/i);
-    const target = slowMatch?.[1] ?? resumeMatch?.[1];
+    const leaveMatch = trimmed.match(/^leave\s+(.+)$/i);
+    const returnMatch = trimmed.match(/^return\s+(.+)$/i);
+    const liningUpMatch = trimmed.match(/^lining_up\s+(.+)$/i);
+    const skipTempMatch = trimmed.match(/^skip_temp\s+(.+)$/i);
+    const skipDoneMatch = trimmed.match(/^skip_done\s+(.+)$/i);
+
+    const target =
+      slowMatch?.[1] ??
+      resumeMatch?.[1] ??
+      leaveMatch?.[1] ??
+      returnMatch?.[1] ??
+      liningUpMatch?.[1] ??
+      skipTempMatch?.[1] ??
+      skipDoneMatch?.[1];
+
     if (!target) {
-      console.log('Unrecognized command. Use "slow <unit label>", "resume <unit label>", or "list".');
+      console.log(
+        'Unrecognized command. Use "slow/resume/leave/return/lining_up/skip_temp/skip_done <driver id>", or "list".'
+      );
       return;
     }
 
-    const matches = [...activeUnits.entries()].filter(([label]) =>
-      label.toLowerCase().includes(target.toLowerCase())
+    // Matches on the driver id (as shown by "list" and in the app's own
+    // queue screen — same id, that's the point) OR the unit label, so
+    // either works no matter which view you're looking at.
+    const needle = target.toLowerCase();
+    const matches = [...activeUnits.entries()].filter(
+      ([label, state]) =>
+        state.driverId.toLowerCase().includes(needle) || label.toLowerCase().includes(needle)
     );
     if (!matches.length) {
       console.log(`No active unit matches "${target}". Try "list" to see active units.`);
@@ -290,16 +367,75 @@ function setupDemoControls() {
     }
 
     for (const [label, state] of matches) {
+      const tag = `${state.driverId.slice(0, 8)} (${label})`;
       if (slowMatch) {
         state.delayMultiplier = 6;
         state.jumpBackRequested = true;
-        console.log(`🐢 [${label}] simulating heavy traffic — jumped back on its path and slowed down.`);
-      } else {
+        console.log(`🐢 [${tag}] simulating heavy traffic — jumped back on its path and slowed down.`);
+      } else if (resumeMatch) {
         state.delayMultiplier = 1;
-        console.log(`✅ [${label}] back to normal speed.`);
+        console.log(`✅ [${tag}] back to normal speed.`);
+      } else if (leaveMatch) {
+        // ~300m from the terminal — comfortably past the default 130m exit
+        // radius, so the next driver-location-update reports "outside".
+        state.awayOverride = { lat: state.terminalPosition.lat + 0.0027, lng: state.terminalPosition.lng };
+        console.log(`🚶 [${tag}] stepped away from the terminal — still holds its queue slot.`);
+      } else if (returnMatch) {
+        state.awayOverride = null;
+        console.log(`🏠 [${tag}] heading back to the terminal.`);
+      } else if (liningUpMatch) {
+        await callFunction("driver-queue-respond", state.accessToken, { response: "lining_up" }, { quiet: true });
+        console.log(`🙋 [${tag}] responded "lining up" — keeps its FIFO spot, must return to be dispatched.`);
+      } else if (skipTempMatch) {
+        await callFunction("driver-queue-respond", state.accessToken, { response: "skip_temp" }, { quiet: true });
+        console.log(`⏸️  [${tag}] responded "leave temporarily" — queue moves on without it.`);
+      } else if (skipDoneMatch) {
+        await callFunction("driver-queue-respond", state.accessToken, { response: "skip_done" }, { quiet: true });
+        console.log(`🌙 [${tag}] responded "done for the day" — queue session ended.`);
       }
     }
   });
+}
+
+// ---------- queueing phase (runs before a unit starts road-looping) ----------
+//
+// Joins the real terminal queue — the same driver-queue-join a real driver's
+// phone calls — then reports position every QUEUE_POLL_DELAY_MS (terminal
+// coords by default, or the demo-controlled "away" override) until this
+// unit's own queue_entries row reaches 'driving'. This is what makes
+// "leave/return/lining_up/skip_temp/skip_done <unit>" meaningful in
+// setupDemoControls: they mutate real DB state via the exact same edge
+// functions a real driver's app calls, not a faked label.
+const QUEUE_POLL_DELAY_MS = 3000;
+
+async function driveThroughQueue(driverLabel, session, demoState) {
+  await callFunction(
+    "driver-queue-join",
+    session.accessToken,
+    { terminal_id: demoState.terminalId },
+    { quiet: true },
+  );
+
+  while (true) {
+    const pos = demoState.awayOverride ?? demoState.terminalPosition;
+    await callFunction(
+      "driver-location-update",
+      session.accessToken,
+      { lat: pos.lat, lng: pos.lng },
+      { quiet: true },
+    );
+
+    const own = await restSelectAuthed(
+      `queue_entries?driver_id=eq.${session.userId}&status=eq.driving&select=id`,
+      session.accessToken,
+    );
+    if (own?.length) {
+      console.log(`  🚦 [${driverLabel}] dispatched — starting road loop.`);
+      return;
+    }
+
+    await sleep(QUEUE_POLL_DELAY_MS);
+  }
 }
 
 // ---------- driving loop for a single jeepney unit ----------
@@ -324,44 +460,66 @@ async function driveSingleJeep(route, terminal, forwardPath, backwardPath, drive
 
   let currentIdx = startOffset;
 
-  const demoState = { delayMultiplier: 1, jumpBackRequested: false };
+  const demoState = {
+    delayMultiplier: 1,
+    jumpBackRequested: false,
+    accessToken: session.accessToken,
+    driverId: session.userId,
+    terminalId: terminal.id,
+    terminalPosition: { lat: terminal.lat, lng: terminal.lng },
+    awayOverride: null, // set by "leave <unit>", cleared by "return <unit>"
+  };
   activeUnits.set(driverLabel, demoState);
 
-  while (true) {
-    if (demoState.jumpBackRequested) {
-      // Jump back a third of the loop so the next broadcast position is
-      // genuinely farther from wherever this unit already was.
-      currentIdx = (currentIdx - Math.floor(circuitLength / 3) + circuitLength) % circuitLength;
-      demoState.jumpBackRequested = false;
-    }
+  do {
+    await driveThroughQueue(driverLabel, session, demoState);
 
-    const point = circuit[currentIdx];
+    while (true) {
+      if (demoState.jumpBackRequested) {
+        // Jump back a third of the loop so the next broadcast position is
+        // genuinely farther from wherever this unit already was.
+        currentIdx = (currentIdx - Math.floor(circuitLength / 3) + circuitLength) % circuitLength;
+        demoState.jumpBackRequested = false;
+      }
 
-    await callFunction(
-      "driver-location-update",
-      session.accessToken,
-      {
-        lat: point.lat,
-        lng: point.lng,
-        capacity_state: capacityState,
-      },
-      { quiet: true },
-    );
+      const point = circuit[currentIdx];
 
-    step++;
-    if (step % TOGGLE_CAPACITY_EVERY_N_STEPS === 0) {
-      capacityState = capacityState === "available" ? "full" : "available";
-      await callFunction(
-        "driver-capacity-toggle",
+      const result = await callFunction(
+        "driver-location-update",
         session.accessToken,
-        { state: capacityState },
+        {
+          lat: point.lat,
+          lng: point.lng,
+          capacity_state: capacityState,
+        },
         { quiet: true },
       );
-    }
 
-    currentIdx = (currentIdx + 1) % circuitLength;
-    await sleep(baseVehicleDelay * demoState.delayMultiplier);
-  }
+      // driver-location-update itself already auto-requeues this unit to
+      // "waiting" once it's near the route's terminus (see is_near_terminus
+      // in that function) — this just makes the simulator notice and, in
+      // --requeue mode, stop driving and go back through driveThroughQueue
+      // instead of ignoring it and looping the circuit forever.
+      if (REQUEUE_ON_ARRIVAL && result?.end_of_route) {
+        console.log(`  🏁 [${driverLabel}] reached the end of its route — back to the queue.`);
+        break;
+      }
+
+      step++;
+      if (step % TOGGLE_CAPACITY_EVERY_N_STEPS === 0) {
+        capacityState = capacityState === "available" ? "full" : "available";
+        await callFunction(
+          "driver-capacity-toggle",
+          session.accessToken,
+          { state: capacityState },
+          { quiet: true },
+        );
+      }
+
+      currentIdx = (currentIdx + 1) % circuitLength;
+      await sleep(baseVehicleDelay * demoState.delayMultiplier);
+    }
+  } while (REQUEUE_ON_ARRIVAL);
 }
 
 // ---------- per-route fleet orchestrator ----------
@@ -403,8 +561,6 @@ async function main() {
   if (ROUTE_FILTER) console.log(`Route filter       : "${ROUTE_FILTER}"`);
   console.log("Fetching routes and terminals from Supabase...\n");
 
-  setupDemoControls();
-
   const [routes, terminalRoutes, terminals] = await Promise.all([
     restSelect("routes?select=id,name,color"),
     restSelect("terminal_routes?select=terminal_id,route_id"),
@@ -425,6 +581,13 @@ async function main() {
     console.error("No matching routes found — check your database or route filter.");
     process.exit(1);
   }
+
+  // Set up AFTER we know there's actually something to control — starting
+  // an interactive readline interface and then hitting process.exit() above
+  // (bad route filter, no routes at all) crashes Node on Windows
+  // ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)") because
+  // readline leaves an open stdin handle behind.
+  setupDemoControls();
 
   const totalUnits = targetRoutes.length * JEEPS_PER_ROUTE;
   console.log(`🚀 Simulating ${targetRoutes.length} route(s) with ${JEEPS_PER_ROUTE} jeeps each.`);

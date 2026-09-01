@@ -19,6 +19,7 @@ function TripResultsPanel({
   origin,
   destination,
   routes,
+  savedRouteKeys,
   onEditTrip,
   onTakeRoute,
   onSaveRoute,
@@ -30,7 +31,7 @@ function TripResultsPanel({
   const [liveDragY, setLiveDragY] = useState(null);
   const dragStateRef = useRef(null);
 
-  const bestPickRoute = routes.find((route) => route.aiNote) ?? routes[0];
+  const bestPickRoute = routes.find((route) => route.isRecommended) ?? routes[0];
 
   const otherRoutes = useMemo(() => {
     const sortField = SORT_METRIC_TO_FIELD[sortMetric];
@@ -139,6 +140,7 @@ function TripResultsPanel({
             onToggleExpanded={() => handleToggleExpanded(bestPickRoute.cardKey ?? bestPickRoute.id)}
             onTakeRoute={onTakeRoute}
             onSaveRoute={onSaveRoute}
+            isSaved={savedRouteKeys?.has(bestPickRoute.cardKey ?? bestPickRoute.id)}
             sortMetric={sortMetric}
             onChangeSortMetric={setSortMetric}
           />
@@ -158,6 +160,7 @@ function TripResultsPanel({
               onToggleExpanded={() => handleToggleExpanded(route.cardKey ?? route.id)}
               onTakeRoute={onTakeRoute}
               onSaveRoute={onSaveRoute}
+              isSaved={savedRouteKeys?.has(route.cardKey ?? route.id)}
             />
           ))}
         </div>

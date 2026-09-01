@@ -92,3 +92,81 @@
   line-height: 1.3;
 }
 
+/* Sak.AI passenger-demand cluster pins (driver-side, see driver-demand-check) */
+.map-view__demand-cluster {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 5px 9px 6px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 2px solid #9a9fa8;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.map-view__demand-cluster--high_priority {
+  border-color: #c53030;
+}
+
+.map-view__demand-cluster--good_demand {
+  border-color: #1a9e5c;
+}
+
+.map-view__demand-cluster--moderate_demand {
+  border-color: #e0a82e;
+}
+
+.map-view__demand-cluster--low_demand {
+  border-color: #9a9fa8;
+}
+
+.map-view__demand-cluster-count {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.map-view__demand-cluster-band {
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #6a6f79;
+}
+
+.map-view__demand-cluster-distance {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #9a9fa8;
+}
+
+.map-view__demand-cluster-stem {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #9a9fa8;
+}
+
+.map-view__idling-badge {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #c0392b;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+

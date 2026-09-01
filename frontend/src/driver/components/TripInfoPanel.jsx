@@ -1,25 +1,26 @@
 import "./TripInfoPanel.css";
 
-// Demo-only: the schema has no real passenger-count column (capacity is
-// tracked as a plain available/full toggle), so this maps that existing
-// real signal to a representative number and labels it clearly rather than
-// pretending it's a measured count.
-const MAX_CAPACITY_DEMO = 20;
-const AVAILABLE_PASSENGER_COUNT_DEMO = 14;
-
+// The schema has no real passenger-count sensor — capacity is only ever
+// reported as a driver-toggled available/full state (see
+// driver-capacity-toggle) — so this shows that real signal directly rather
+// than fabricating a specific headcount. Same "Full" (red) / "Seats open"
+// (green) convention as the passenger-facing map markers in MapView.jsx.
 function TripInfoPanel({ fuelInfo, capacityStatus }) {
-  const passengerCount = capacityStatus === "full" ? MAX_CAPACITY_DEMO : AVAILABLE_PASSENGER_COUNT_DEMO;
+  const isFull = capacityStatus === "full";
   const fuel = fuelInfo?.fuel;
   const waitingCount = fuelInfo?.waiting_passenger_count;
 
   return (
     <div className="trip-info-panel">
       <div className="trip-info-panel__stat">
-        <span className="trip-info-panel__stat-label">Passengers</span>
-        <span className="trip-info-panel__stat-value">
-          {passengerCount}/{MAX_CAPACITY_DEMO}
+        <span className="trip-info-panel__stat-label">Seats</span>
+        <span
+          className={`trip-info-panel__stat-value${
+            isFull ? " trip-info-panel__stat-value--full" : " trip-info-panel__stat-value--open"
+          }`}
+        >
+          {isFull ? "Full" : "Open"}
         </span>
-        <span className="trip-info-panel__demo-tag">Demo data</span>
       </div>
 
       <div className="trip-info-panel__stat">

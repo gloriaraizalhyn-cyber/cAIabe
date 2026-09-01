@@ -4,7 +4,7 @@ function formatFare(fare) {
   return `₱${fare.toFixed(2)}`;
 }
 
-function JourneyFareFooter({ fareSoFar, totalFare, advanceButtonLabel, onAdvance, onSaveRoute }) {
+function JourneyFareFooter({ fareSoFar, totalFare, advanceButtonLabel, onAdvance, onSaveRoute, isRouteSaved = false }) {
   return (
     <footer className="journey-fare-footer">
       <div className="journey-fare-footer__stats">
@@ -22,7 +22,7 @@ function JourneyFareFooter({ fareSoFar, totalFare, advanceButtonLabel, onAdvance
         {advanceButtonLabel}
       </button>
       <button type="button" className="journey-fare-footer__save-button" onClick={onSaveRoute}>
-        Save this route for next time
+        {isRouteSaved ? "Saved for next time" : "Save this route for next time"}
       </button>
     </footer>
   );

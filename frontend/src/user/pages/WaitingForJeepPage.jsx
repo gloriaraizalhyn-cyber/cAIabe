@@ -126,6 +126,21 @@ function WaitingForJeepPage() {
     };
   }, [waitingPhase, realRouteId, passengerPosition?.lat, passengerPosition?.lng]);
 
+  // Driver-side "Wait for more" notice (see NextToGoPage.jsx / driver-notify-wait) —
+  // tells a waiting passenger this unit likely won't leave soon, without
+  // ever revealing the driver's actual passenger count.
+  const [driverWaitNotice, setDriverWaitNotice] = useState(null);
+  useEffect(() => {
+    if (!realRouteId) return undefined;
+    const channel = supabase
+      .channel(`route:${realRouteId}:waiting`)
+      .on("broadcast", { event: "driver_wait_notice" }, ({ payload }) => {
+        setDriverWaitNotice({ estimatedDelayMinutes: payload.estimated_delay_minutes });
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [realRouteId]);
+
   const clearWaitingState = async () => {
     if (!waitingIdRef.current) return;
     const waitingId = waitingIdRef.current;
@@ -315,6 +330,24 @@ function WaitingForJeepPage() {
             Estimated arrival in <strong>~{travelMinutes} min</strong> ({arrivalTime})
           </span>
         </div>
+
+        {driverWaitNotice && (
+          <div className="waiting-for-jeep-page__wait-notice">
+            <span>⏳</span>
+            <p>
+              This {jeepColorName} unit likely won't leave for about{" "}
+              <strong>{driverWaitNotice.estimatedDelayMinutes} more minutes</strong>.
+            </p>
+            <button
+              type="button"
+              className="waiting-for-jeep-page__wait-notice-dismiss"
+              onClick={() => setDriverWaitNotice(null)}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
       </div>
 
       {realRouteId && jeepneys.length === 0 && (
