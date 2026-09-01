@@ -264,8 +264,17 @@ function WaitingForJeepPage() {
     // Server-side (Gemini-backed) recommendation from the nearby-jeepney-eta
     // poll takes precedence once it lands; this local guess only covers the
     // walking-to-bay phase and the brief window before the first response.
+    // recommendationType follows nearby-jeepney-eta's convention, which is
+    // the opposite of what it sounds like: "wait" is the reassuring case (a
+    // boardable jeep is close, stand by) and "go" is the warning case (this
+    // one's full or too far — consider other options) — see
+    // decideRecommendation() there. NearestJeepCard's tone mapping
+    // (isGoRecommendation → "urgent") is written for that convention, so
+    // getting this backwards here is what made a FULL jeep flash a calm
+    // green note for the instant before the real server recommendation
+    // lands.
     aiWaitRecommendation: aiRecommendation ?? {
-      recommendationType: finalHasSeatsAvailable ? "go" : "wait",
+      recommendationType: finalHasSeatsAvailable ? "wait" : "go",
       headline: finalHasSeatsAvailable
         ? `The jeepney you are waiting for is color ${jeepColorName}`
         : `${jeepColorName} Jeep Approaching — Next Unit Behind`,
