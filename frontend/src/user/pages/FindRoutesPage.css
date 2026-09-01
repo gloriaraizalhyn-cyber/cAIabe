@@ -5,11 +5,35 @@
   overflow: hidden;
 }
 
+/* pointer-events: none here (re-enabled on the actual card/panel child) is
+   the real fix for a mobile-only bug: this wrapper's box was covering
+   nearly the full screen on mobile (see the media query below) while
+   staying invisible, silently swallowing every touch — including drags on
+   the map underneath — before they ever reached it. Desktop never showed
+   this because the wrapper there stays small enough to hug its card. */
 .find-routes-page__overlay {
   position: absolute;
   top: 16px;
   left: 16px;
   z-index: 2;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  /* Both properties are redeclared here (not just the two the old
+     cross-file media query changed) — .find-routes-page__overlay's mobile
+     override used to live in TripResultsPanel.css, a separately-loaded
+     file with no defined load order relative to this one, so top/left kept
+     losing the cascade to this file's unconditional base rule above while
+     right/bottom won only because this rule never set them. Keeping the
+     whole override in the same file as the base rule it's meant to replace
+     removes that ordering hazard entirely. */
+  .find-routes-page__overlay {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
 }
 
 .find-routes-page__status-card {

@@ -1,6 +1,10 @@
 .trip-search-card {
   position: relative;
   z-index: 2;
+  /* Its wrapper (.find-routes-page__overlay) is pointer-events: none so its
+     oversized mobile hitbox doesn't block the map underneath — this opts
+     the actual visible card back in, at every breakpoint. */
+  pointer-events: auto;
   width: 360px;
   max-width: calc(100vw - 32px);
   padding: 24px;
