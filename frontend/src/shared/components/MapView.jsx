@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { GoogleMap, Marker, Polyline, InfoWindow, DirectionsRenderer, OverlayView } from "@react-google-maps/api";
-import { useGoogleMapsLoader, GOOGLE_MAPS_API_KEY } from "../hooks/useGoogleMapsLoader.js";
+import { useGoogleMapsLoader, HAS_GOOGLE_MAPS_API_KEY } from "../hooks/useGoogleMapsLoader.js";
 import { useWalkingLegPaths } from "../hooks/useWalkingLegPaths.js";
 import { getRouteColorMeta } from "../utils/routeColorHelpers.js";
 import "./MapView.css";
@@ -423,15 +423,15 @@ function MapView({
     mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 60, left: 50 });
   }, [origin, destination, routes, smoothJeepneys.length, demandClusters, waitingPassengers]);
 
-  if (!GOOGLE_MAPS_API_KEY) {
+  if (!HAS_GOOGLE_MAPS_API_KEY) {
     return (
       <div className="map-view map-view--placeholder">
         <div className="map-view__placeholder-card">
           <p className="map-view__placeholder-title">Live map not connected yet</p>
           <p className="map-view__placeholder-body">
-            Add <code>VITE_GOOGLE_MAPS_API_KEY</code> to{" "}
-            <code>frontend/.env.local</code> to render the real Google Map
-            here. Route cards and colors are already wired up to it.
+            Add a real <code>VITE_GOOGLE_MAPS_API_KEY</code> value to{" "}
+            <code>frontend/.env.local</code>. The current value is a placeholder,
+            so Google refuses to load the map.
           </p>
         </div>
       </div>

@@ -82,6 +82,150 @@ function FindRoutesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // added additional useEffect from GPT
+
+  useEffect(() => {
+  // Don't overwrite an origin from a restored/saved trip.
+  if (restoredTripSearch?.originPlace) return;
+
+  if (!navigator.geolocation) {
+    setSearchError("Your browser does not support location services.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude, longitude } = position.coords;
+
+      console.log("GPS coordinates:", {
+        latitude,
+        longitude,
+      });
+
+      // Set the coordinates immediately.
+      // Route-search needs these coordinates, not the readable address.
+      const currentLocation = {
+        label: "Current location",
+        lat: latitude,
+        lng: longitude,
+      };
+
+      setOrigin("Current location");
+      setOriginPlace(currentLocation);
+
+      // Now try to get a readable address.
+      try {
+        if (window.google?.maps?.Geocoder) {
+          const geocoder = new window.google.maps.Geocoder();
+
+          const response = await geocoder.geocode({
+            location: {
+              lat: latitude,
+              lng: longitude,
+            },
+          });
+
+          if (response.results?.length > 0) {
+            const readableLocation =
+              response.results[0].formatted_address;
+
+            console.log(
+              "Readable current location:",
+              readableLocation
+            );
+
+            setOrigin(readableLocation);
+
+            // Keep the GPS coordinates while updating only the label.
+            setOriginPlace((previous) => ({
+              ...previous,
+              label: readableLocation,
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Reverse geocoding error:", error);
+      }
+    },
+    (error) => {
+      console.error("Geolocation error:", error);
+
+      setSearchError(
+        "Unable to get your current location. Please allow location access."
+      );
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    }
+  );
+}, [restoredTripSearch?.originPlace]);
+
+// Third useEffect
+
+useEffect(() => {
+  if (!destination || destinationPlace) return;
+
+  let cancelled = false;
+  let retryTimer;
+
+  const geocodeDestination = () => {
+    // Google Maps JavaScript API may still be loading.
+    if (!window.google?.maps?.Geocoder) {
+      retryTimer = setTimeout(geocodeDestination, 500);
+      return;
+    }
+
+    const geocoder = new window.google.maps.Geocoder();
+
+    geocoder.geocode(
+      {
+        address: destination,
+      },
+      (results, status) => {
+        if (cancelled) return;
+
+        if (status === "OK" && results?.length > 0) {
+          const result = results[0];
+          const location = result.geometry.location;
+
+          const place = {
+            label: result.formatted_address || destination,
+            lat: location.lat(),
+            lng: location.lng(),
+          };
+
+          console.log("Destination geocoded:", place);
+
+          setDestination(place.label);
+          setDestinationPlace(place);
+        } else {
+          console.error(
+            "Destination geocoding failed:",
+            status,
+            destination
+          );
+
+          setSearchError(
+            `Could not find the destination "${destination}".`
+          );
+        }
+      }
+    );
+  };
+
+  geocodeDestination();
+
+  return () => {
+    cancelled = true;
+
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+    }
+  };
+}, [destination, destinationPlace]);
+
   const handleSelectOriginPlace = (place) => {
     setOrigin(place.label);
     setOriginPlace(place);
@@ -111,13 +255,33 @@ function FindRoutesPage() {
     setSavedRoutes(getSavedRoutes());
   };
 
-  const handleFindRoutes = () => {
+  /*const handleFindRoutes = () => {
     if (!originPlace || !destinationPlace) {
       setSearchError("Pick an origin and destination from the suggestions first.");
       return;
     }
     runSearch(originPlace, destinationPlace);
-  };
+  };*/
+
+  const handleFindRoutes = () => {
+  console.log("Find Routes clicked");
+  console.log("Origin:", origin);
+  console.log("Origin place:", originPlace);
+  console.log("Destination:", destination);
+  console.log("Destination place:", destinationPlace);
+
+  if (!originPlace) {
+    setSearchError("Still getting your current location. Please wait a moment.");
+    return;
+  }
+
+  if (!destinationPlace) {
+    setSearchError("Still finding your destination. Please wait a moment.");
+    return;
+  }
+
+  runSearch(originPlace, destinationPlace);
+};
 
   const handleOpenVoiceAssistant = () => {
     navigate("/voice-search");
