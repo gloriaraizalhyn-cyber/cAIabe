@@ -9,6 +9,13 @@ import { validateDriverRegistrationForm, normalizeIdNumber } from "../utils/vali
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./DriverRegistrationPage.css";
 
+const REGISTRATION_STEPS = [
+  { stepNumber: 1, title: "Account Information" },
+  { stepNumber: 2, title: "Driver Verification" },
+  { stepNumber: 3, title: "Jeepney / Vehicle Information" },
+  { stepNumber: 4, title: "Route & Terminal Assignment" },
+];
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -192,45 +199,68 @@ function DriverRegistrationPage() {
 
   return (
     <main className="driver-registration-page">
-      <form className="driver-registration-page__form" onSubmit={handleSubmit} noValidate>
-        <header className="driver-registration-page__header">
-          <h1 className="driver-registration-page__title">Driver Registration</h1>
-          <p className="driver-registration-page__subtitle">
-            Fields marked with an asterisk (*) are required.
+      <div className="driver-registration-page__layout">
+        <aside className="driver-registration-page__sidebar" aria-hidden="true">
+          <p className="driver-registration-page__sidebar-eyebrow">Driver Registration</p>
+          <h2 className="driver-registration-page__sidebar-title">
+            A few steps to get you on the road.
+          </h2>
+          <ol className="driver-registration-page__sidebar-steps">
+            {REGISTRATION_STEPS.map((step) => (
+              <li key={step.stepNumber} className="driver-registration-page__sidebar-step">
+                <span className="driver-registration-page__sidebar-step-number">
+                  {step.stepNumber}
+                </span>
+                {step.title}
+              </li>
+            ))}
+          </ol>
+          <p className="driver-registration-page__sidebar-note">
+            Your information will be reviewed by our team before you're granted access to the
+            driver system.
           </p>
-        </header>
+        </aside>
 
-        <AccountInformationSection values={formValues} errors={formErrors} onChange={handleFieldChange} />
-        <DriverVerificationSection values={formValues} errors={formErrors} onChange={handleFieldChange} />
-        <VehicleInformationSection values={formValues} errors={formErrors} onChange={handleFieldChange} />
-        <RouteTerminalAssignmentSection
-          values={formValues}
-          errors={formErrors}
-          onChange={handleFieldChange}
-          onRouteChange={handleAssignedRouteChange}
-          routes={routes}
-        />
+        <form className="driver-registration-page__form" onSubmit={handleSubmit} noValidate>
+          <header className="driver-registration-page__header">
+            <h1 className="driver-registration-page__title">Driver Registration</h1>
+            <p className="driver-registration-page__subtitle">
+              Fields marked with an asterisk (*) are required.
+            </p>
+          </header>
 
-        <p className="driver-registration-page__review-notice">
-          Your information will be reviewed by our team before you're granted access to the
-          driver system.
-        </p>
+          <AccountInformationSection values={formValues} errors={formErrors} onChange={handleFieldChange} />
+          <DriverVerificationSection values={formValues} errors={formErrors} onChange={handleFieldChange} />
+          <VehicleInformationSection values={formValues} errors={formErrors} onChange={handleFieldChange} />
+          <RouteTerminalAssignmentSection
+            values={formValues}
+            errors={formErrors}
+            onChange={handleFieldChange}
+            onRouteChange={handleAssignedRouteChange}
+            routes={routes}
+          />
 
-        {submitError && <p className="driver-registration-page__submit-error">{submitError}</p>}
+          <p className="driver-registration-page__review-notice">
+            Your information will be reviewed by our team before you're granted access to the
+            driver system.
+          </p>
 
-        <div className="driver-registration-page__actions">
-          <button
-            type="submit"
-            className="driver-registration-page__submit-button"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Submitting…" : "Submit for Verification"}
-          </button>
-          <button type="button" className="driver-registration-page__cancel-button" onClick={handleCancel}>
-            Cancel
-          </button>
-        </div>
-      </form>
+          {submitError && <p className="driver-registration-page__submit-error">{submitError}</p>}
+
+          <div className="driver-registration-page__actions">
+            <button
+              type="submit"
+              className="driver-registration-page__submit-button"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Submitting…" : "Submit for Verification"}
+            </button>
+            <button type="button" className="driver-registration-page__cancel-button" onClick={handleCancel}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </main>
   );
 }
