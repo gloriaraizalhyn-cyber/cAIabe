@@ -154,3 +154,42 @@
   color: #1a1a1a;
   white-space: pre-wrap;
 }
+
+.driver-summary-modal__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e2da;
+}
+
+.driver-summary-modal__action-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 10px 14px;
+}
+
+.driver-summary-modal__action-button--edit {
+  background: #eaf0ff;
+  color: #1b3fa0;
+}
+
+.driver-summary-modal__action-button--edit:hover {
+  background: #d9e4fb;
+}
+
+.driver-summary-modal__action-button--delete {
+  background: #fbeaea;
+  color: #c53030;
+}
+
+.driver-summary-modal__action-button--delete:hover {
+  background: #f6d8d8;
+}
