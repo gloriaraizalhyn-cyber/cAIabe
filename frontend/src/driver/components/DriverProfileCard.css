@@ -134,6 +134,24 @@
   color: #1a1a1a;
 }
 
+.driver-profile-card__edit-button {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding-top: 14px;
+  border: none;
+  border-top: 1px solid #edeef1;
+  background: transparent;
+  color: #1b3fa0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.driver-profile-card__edit-button:hover {
+  color: #142f7e;
+  text-decoration: underline;
+}
+
 @media (max-width: 380px) {
   .driver-profile-card__details {
     grid-template-columns: 1fr;

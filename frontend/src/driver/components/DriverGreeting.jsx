@@ -12,13 +12,13 @@ function getGreetingPhrase() {
         : "Mayap a bengi,";
 }
 
-function DriverGreeting({ name }) {
+function DriverGreeting({ name, phrase }) {
   const firstName = name.trim().split(/\s+/)[0] || "Driver";
 
   return (
     <div className="driver-greeting">
       <h1 className="driver-greeting__title">
-        <span className="driver-greeting__phrase">{getGreetingPhrase()}</span>
+        <span className="driver-greeting__phrase">{phrase ?? getGreetingPhrase()}</span>
         <span className="driver-greeting__name">{firstName}!</span>
       </h1>
       <Lottie

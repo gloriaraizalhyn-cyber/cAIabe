@@ -24,6 +24,7 @@
 .driver-greeting__phrase {
   font-size: 0.72em;
   font-weight: 400;
+  color: #6a6f79;
 }
 
 .driver-greeting__name {
@@ -37,6 +38,18 @@
   max-width: 34%;
   height: auto;
   aspect-ratio: 1;
+}
+
+@media (min-width: 900px) {
+  .driver-greeting__title {
+    font-size: 2.7rem;
+  }
+
+  .driver-greeting__animation {
+    flex: 0 0 150px;
+    width: 150px;
+    max-width: 150px;
+  }
 }
 
 @media (max-width: 380px) {
