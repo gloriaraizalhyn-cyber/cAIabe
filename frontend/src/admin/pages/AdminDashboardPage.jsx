@@ -4,29 +4,35 @@ import {
   ArrowDownWideNarrow,
   ArrowUpNarrowWide,
   Check,
+  CheckCircle2,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
+  Clock,
   Filter,
   LogOut,
   Pencil,
   Search,
   Trash2,
+  User,
   X,
+  XCircle,
 } from "lucide-react";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import DriverEditModal from "../components/DriverEditModal.jsx";
 import DeleteDriversConfirmModal from "../components/DeleteDriversConfirmModal.jsx";
 import ApproveDriverConfirmModal from "../components/ApproveDriverConfirmModal.jsx";
 import DriverSummaryModal from "../components/DriverSummaryModal.jsx";
+import LogOutConfirmModal from "../components/LogOutConfirmModal.jsx";
 import DriverAttachments from "../components/DriverAttachments.jsx";
 import JeepColorCell from "../components/JeepColorCell.jsx";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import "./AdminDashboardPage.css";
 
 const STATUS_TABS = [
-  { value: "pending", label: "Pending" },
-  { value: "approved", label: "Approved" },
-  { value: "rejected", label: "Rejected" },
+  { value: "pending", label: "Pending", icon: Clock },
+  { value: "approved", label: "Approved", icon: CheckCircle2 },
+  { value: "rejected", label: "Rejected", icon: XCircle },
 ];
 
 function driverDisplayName(driver) {
@@ -205,6 +211,7 @@ function AdminDashboardPage() {
   const navigate = useNavigate();
 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [statusFilter, setStatusFilter] = useState("pending");
   const [drivers, setDrivers] = useState([]);
   const [isLoadingDrivers, setIsLoadingDrivers] = useState(true);
@@ -214,6 +221,11 @@ function AdminDashboardPage() {
   const [terminals, setTerminals] = useState([]);
 
   const [searchQuery, setSearchQuery] = useState("");
+  // Search is global (all three statuses), independent of whichever tab is
+  // selected — null means "not currently searching" (show the active tab's
+  // normal list); an array means "these are the cross-status matches".
+  const [searchResults, setSearchResults] = useState(null);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [columnFilters, setColumnFilters] = useState({
     jeepColor: "",
     vehicleType: "",
@@ -239,9 +251,32 @@ function AdminDashboardPage() {
   const [approveTarget, setApproveTarget] = useState(null);
   const [isApproving, setIsApproving] = useState(false);
 
+  const [isLogOutConfirmOpen, setIsLogOutConfirmOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   // Approved/Rejected only: the driver whose read-only summary card is
   // currently open (clicking a row).
   const [summaryDriver, setSummaryDriver] = useState(null);
+
+  const [adminUser, setAdminUser] = useState(null);
+  const [statusCounts, setStatusCounts] = useState({ pending: 0, approved: 0, rejected: 0 });
+
+  // Lightweight head-only counts (no rows fetched) so the quick-counter in
+  // the topbar can show all three totals at once without hitting the
+  // heavier admin-list-drivers function (which signs document URLs and
+  // fetches auth.users per row) three times over.
+  const refreshStatusCounts = useCallback(async () => {
+    const [pending, approved, rejected] = await Promise.all(
+      ["pending", "approved", "rejected"].map((status) =>
+        supabase.from("drivers").select("id", { count: "exact", head: true }).eq("verification_status", status)
+      )
+    );
+    setStatusCounts({
+      pending: pending.count ?? 0,
+      approved: approved.count ?? 0,
+      rejected: rejected.count ?? 0,
+    });
+  }, []);
 
   useEffect(() => {
     let isCancelled = false;
@@ -270,7 +305,9 @@ function AdminDashboardPage() {
         return;
       }
 
+      setAdminUser(session.user);
       setIsCheckingAuth(false);
+      refreshStatusCounts();
     })();
 
     return () => {
@@ -324,6 +361,56 @@ function AdminDashboardPage() {
     setIsLoadingDrivers(false);
   }, []);
 
+  // "Find driver" searches across all three statuses at once, not just the
+  // active tab — a name typed while sitting on "Pending" shouldn't come up
+  // empty just because that driver is actually Approved. Debounced so
+  // typing doesn't fire three admin-list-drivers calls per keystroke.
+  useEffect(() => {
+    if (isCheckingAuth) return;
+    const query = searchQuery.trim();
+    if (!query) {
+      setSearchResults(null);
+      setIsSearchLoading(false);
+      return undefined;
+    }
+
+    let isCancelled = false;
+    setIsSearchLoading(true);
+
+    const timeoutId = setTimeout(async () => {
+      const responses = await Promise.all(
+        ["pending", "approved", "rejected"].map((status) =>
+          supabase.functions.invoke("admin-list-drivers", { body: { status } })
+        )
+      );
+      if (isCancelled) return;
+
+      const merged = responses.flatMap((response) => response.data?.drivers ?? []);
+      const lowerQuery = query.toLowerCase();
+      const matches = merged.filter((driver) => {
+        const haystack = [
+          driver.fullName,
+          driver.email,
+          driver.mobileNumber,
+          driver.plateNumber,
+          driver.vehicleRegistrationNumber,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(lowerQuery);
+      });
+
+      setSearchResults(matches);
+      setIsSearchLoading(false);
+    }, 350);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [searchQuery, isCheckingAuth]);
+
   useEffect(() => {
     if (isCheckingAuth) return;
     setSelectedDriverIds(new Set());
@@ -337,22 +424,28 @@ function AdminDashboardPage() {
     loadDrivers(statusFilter);
   }, [isCheckingAuth, statusFilter, loadDrivers]);
 
+  const isSearching = searchQuery.trim().length > 0;
+  // While actively searching, the base list is the cross-status matches
+  // instead of whatever the active tab loaded — search intentionally
+  // ignores the Pending/Approved/Rejected tab selection entirely.
+  const baseDrivers = isSearching ? searchResults ?? [] : drivers;
+
   // Options are derived from the currently loaded drivers, not a fixed
   // list, so a filter dropdown never offers a value with zero matches.
   const columnFilterOptions = useMemo(() => {
     const unique = (mapValue) =>
-      Array.from(new Set(drivers.map(mapValue).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+      Array.from(new Set(baseDrivers.map(mapValue).filter(Boolean))).sort((a, b) => a.localeCompare(b));
     return {
       jeepColor: unique((driver) => driver.jeepColor),
       vehicleType: unique((driver) => driver.vehicleType),
       route: unique((driver) => driver.route?.name),
       terminal: unique((driver) => driver.terminal?.name),
     };
-  }, [drivers]);
+  }, [baseDrivers]);
 
   const visibleDrivers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    const filtered = drivers.filter((driver) => {
+    const filtered = baseDrivers.filter((driver) => {
       if (columnFilters.jeepColor && driver.jeepColor !== columnFilters.jeepColor) return false;
       if (columnFilters.vehicleType && driver.vehicleType !== columnFilters.vehicleType) return false;
       if (columnFilters.route && driver.route?.name !== columnFilters.route) return false;
@@ -386,7 +479,7 @@ function AdminDashboardPage() {
       const comparison = aValue.localeCompare(bValue, undefined, { sensitivity: "base" });
       return sortState.direction === "desc" ? -comparison : comparison;
     });
-  }, [drivers, searchQuery, columnFilters, sortState]);
+  }, [baseDrivers, searchQuery, columnFilters, sortState]);
 
   const submitApprove = async (driver) => {
     setIsApproving(true);
@@ -404,6 +497,7 @@ function AdminDashboardPage() {
     if (expandedDriverId === driver.id) setExpandedDriverId(null);
     setIsApproving(false);
     setApproveTarget(null);
+    refreshStatusCounts();
   };
 
   const startReject = (driver) => {
@@ -437,6 +531,7 @@ function AdminDashboardPage() {
     setIsRejecting(false);
     setRejectDraftId(null);
     setRejectRemarks("");
+    refreshStatusCounts();
   };
 
   const toggleSelected = (driverId) => {
@@ -526,13 +621,19 @@ function AdminDashboardPage() {
 
     setIsDeleting(false);
     setDeleteRequest(null);
+    refreshStatusCounts();
 
     if (failedIds.size > 0) {
       window.alert(`${failedIds.size} account(s) could not be deleted.`);
     }
   };
 
-  const handleLogOut = async () => {
+  const handleLogOut = () => {
+    setIsLogOutConfirmOpen(true);
+  };
+
+  const confirmLogOut = async () => {
+    setIsLoggingOut(true);
     await supabase.auth.signOut();
     navigate("/admin/login", { replace: true });
   };
@@ -541,48 +642,134 @@ function AdminDashboardPage() {
 
   // Pending applications lean on the expand panel for the full detail —
   // the collapsed row only needs enough to identify who's who at a glance.
-  // Approved/Rejected keep every column, unchanged.
-  const isPendingTab = statusFilter === "pending";
+  // Approved/Rejected (and search results, which mix statuses) keep every
+  // column, including Status, so a differently-statused row is still clear.
+  const isPendingTab = !isSearching && statusFilter === "pending";
+
+  const activeTabLabel = STATUS_TABS.find((tab) => tab.value === statusFilter)?.label ?? "Driver";
 
   return (
     <main className="admin-dashboard-page">
-      <header className="admin-dashboard-page__header">
-        <h1 className="admin-dashboard-page__title">Driver Applications</h1>
-        <button type="button" className="admin-dashboard-page__logout-button" onClick={handleLogOut}>
-          <LogOut size={15} strokeWidth={2.25} />
-          Log out
-        </button>
-      </header>
+      <div
+        className="admin-dashboard-page__shell"
+        style={{ "--admin-sidebar-width": isSidebarExpanded ? "224px" : "76px" }}
+      >
+        <div className="admin-dashboard-page__logo-cell">
+          <img src="/images/caiabe-squared.jpg" alt="" className="admin-dashboard-page__logo" />
+          {isSidebarExpanded && (
+            <span className="admin-dashboard-page__logo-text">
+              c<span className="admin-dashboard-page__logo-text-ai">AI</span>abe
+            </span>
+          )}
+        </div>
 
-      <div className="admin-dashboard-page__toolbar">
-        <div className="admin-dashboard-page__tabs">
-          {STATUS_TABS.map((tab) => (
+        <header className="admin-dashboard-page__topbar">
+          <div className="admin-dashboard-page__search-bar">
+            <Search size={16} strokeWidth={2.25} className="admin-dashboard-page__search-icon" />
+            <input
+              type="search"
+              className="admin-dashboard-page__search-input"
+              placeholder="Find driver"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </div>
+
+          <div className="admin-dashboard-page__quick-stats">
+            <div className="admin-dashboard-page__quick-stat" title="Pending applications">
+              <span className="admin-dashboard-page__quick-stat-icon admin-dashboard-page__quick-stat-icon--pending">
+                <Clock size={15} strokeWidth={2.25} />
+              </span>
+              <span className="admin-dashboard-page__quick-stat-count">{statusCounts.pending}</span>
+            </div>
+            <div className="admin-dashboard-page__quick-stat" title="Approved drivers">
+              <span className="admin-dashboard-page__quick-stat-icon admin-dashboard-page__quick-stat-icon--approved">
+                <CheckCircle2 size={15} strokeWidth={2.25} />
+              </span>
+              <span className="admin-dashboard-page__quick-stat-count">{statusCounts.approved}</span>
+            </div>
+            <div className="admin-dashboard-page__quick-stat" title="Rejected applications">
+              <span className="admin-dashboard-page__quick-stat-icon admin-dashboard-page__quick-stat-icon--rejected">
+                <XCircle size={15} strokeWidth={2.25} />
+              </span>
+              <span className="admin-dashboard-page__quick-stat-count">{statusCounts.rejected}</span>
+            </div>
+          </div>
+        </header>
+
+        <nav
+          className={`admin-dashboard-page__sidebar${
+            isSidebarExpanded ? "" : " admin-dashboard-page__sidebar--collapsed"
+          }`}
+          aria-label="Application status"
+        >
+          <div className="admin-dashboard-page__sidebar-nav">
+            {STATUS_TABS.map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                className={`admin-dashboard-page__sidebar-item${
+                  !isSearching && statusFilter === tab.value
+                    ? " admin-dashboard-page__sidebar-item--active"
+                    : ""
+                }`}
+                onClick={() => setStatusFilter(tab.value)}
+                title={tab.label}
+              >
+                <tab.icon size={22} strokeWidth={2.25} />
+                {isSidebarExpanded && <span>{tab.label}</span>}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            className="admin-dashboard-page__sidebar-toggle"
+            onClick={() => setIsSidebarExpanded((expanded) => !expanded)}
+            aria-label={isSidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {isSidebarExpanded ? (
+              <ChevronLeft size={17} strokeWidth={2.5} />
+            ) : (
+              <ChevronRight size={17} strokeWidth={2.5} />
+            )}
+          </button>
+
+          <div className="admin-dashboard-page__sidebar-footer">
+            <div className="admin-dashboard-page__sidebar-profile" title={adminUser?.email ?? "Admin"}>
+              <span className="admin-dashboard-page__sidebar-avatar">
+                <User size={18} strokeWidth={2.25} />
+              </span>
+              {isSidebarExpanded && (
+                <span className="admin-dashboard-page__sidebar-profile-text">
+                  <span className="admin-dashboard-page__sidebar-profile-name">
+                    {adminUser?.user_metadata?.full_name?.trim() || "Admin"}
+                  </span>
+                  <span className="admin-dashboard-page__sidebar-profile-email">
+                    {adminUser?.email ?? "—"}
+                  </span>
+                </span>
+              )}
+            </div>
+
             <button
-              key={tab.value}
               type="button"
-              className={`admin-dashboard-page__tab${
-                statusFilter === tab.value ? " admin-dashboard-page__tab--active" : ""
-              }`}
-              onClick={() => setStatusFilter(tab.value)}
+              className="admin-dashboard-page__sidebar-logout"
+              onClick={handleLogOut}
+              title="Log out"
             >
-              {tab.label}
+              <LogOut size={18} strokeWidth={2.25} />
+              {isSidebarExpanded && <span>Log out</span>}
             </button>
-          ))}
-        </div>
+          </div>
+        </nav>
 
-        <div className="admin-dashboard-page__search-bar">
-          <Search size={16} strokeWidth={2.25} className="admin-dashboard-page__search-icon" />
-          <input
-            type="search"
-            className="admin-dashboard-page__search-input"
-            placeholder="Search by name, email, mobile, plate, or vehicle reg. no."
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-          />
-        </div>
-      </div>
+        <div className="admin-dashboard-page__content">
+          <h1 className="admin-dashboard-page__title">
+            {isSearching ? "Search Results" : `${activeTabLabel} Applications`}
+          </h1>
 
-      {selectedDriverIds.size > 0 && (
+          {selectedDriverIds.size > 0 && (
         <div className="admin-dashboard-page__bulk-bar">
           <span className="admin-dashboard-page__selection-count">
             {selectedDriverIds.size} selected
@@ -593,7 +780,7 @@ function AdminDashboardPage() {
             onClick={() =>
               setDeleteRequest({
                 ids: Array.from(selectedDriverIds),
-                names: drivers
+                names: baseDrivers
                   .filter((driver) => selectedDriverIds.has(driver.id))
                   .map(driverDisplayName),
               })
@@ -605,22 +792,32 @@ function AdminDashboardPage() {
         </div>
       )}
 
-      {isLoadingDrivers && <LoadingScreen message="Loading drivers…" fullScreen={false} />}
-      {!isLoadingDrivers && loadError && (
+      {(isSearching ? isSearchLoading : isLoadingDrivers) && (
+        <LoadingScreen message={isSearching ? "Searching…" : "Loading drivers…"} fullScreen={false} />
+      )}
+      {!isSearching && !isLoadingDrivers && loadError && (
         <p className="admin-dashboard-page__status-message admin-dashboard-page__status-message--error">
           {loadError}
         </p>
       )}
-      {!isLoadingDrivers && !loadError && drivers.length === 0 && (
-        <p className="admin-dashboard-page__status-message">No {statusFilter} applications.</p>
-      )}
-      {!isLoadingDrivers && !loadError && drivers.length > 0 && visibleDrivers.length === 0 && (
+      {isSearching && !isSearchLoading && baseDrivers.length === 0 && (
         <p className="admin-dashboard-page__status-message">
-          No drivers match your search or filters.
+          No drivers match "{searchQuery.trim()}".
         </p>
       )}
+      {!isSearching && !isLoadingDrivers && !loadError && drivers.length === 0 && (
+        <p className="admin-dashboard-page__status-message">No {statusFilter} applications.</p>
+      )}
+      {!(isSearching ? isSearchLoading : isLoadingDrivers) &&
+        (isSearching || !loadError) &&
+        baseDrivers.length > 0 &&
+        visibleDrivers.length === 0 && (
+          <p className="admin-dashboard-page__status-message">
+            No drivers match your search or filters.
+          </p>
+        )}
 
-      {!isLoadingDrivers && !loadError && visibleDrivers.length > 0 && (
+      {!(isSearching ? isSearchLoading : isLoadingDrivers) && visibleDrivers.length > 0 && (
         <div className="admin-dashboard-page__table-wrap">
           <table className="admin-driver-table">
             <thead>
@@ -986,6 +1183,8 @@ function AdminDashboardPage() {
           </table>
         </div>
       )}
+        </div>
+      </div>
 
       {editingDriver && (
         <DriverEditModal
@@ -1017,7 +1216,26 @@ function AdminDashboardPage() {
       )}
 
       {summaryDriver && (
-        <DriverSummaryModal driver={summaryDriver} onClose={() => setSummaryDriver(null)} />
+        <DriverSummaryModal
+          driver={summaryDriver}
+          onClose={() => setSummaryDriver(null)}
+          onEdit={() => {
+            setEditingDriver(summaryDriver);
+            setSummaryDriver(null);
+          }}
+          onDelete={() => {
+            setDeleteRequest({ ids: [summaryDriver.id], names: [driverDisplayName(summaryDriver)] });
+            setSummaryDriver(null);
+          }}
+        />
+      )}
+
+      {isLogOutConfirmOpen && (
+        <LogOutConfirmModal
+          onConfirm={confirmLogOut}
+          onCancel={() => setIsLogOutConfirmOpen(false)}
+          isLoggingOut={isLoggingOut}
+        />
       )}
     </main>
   );
