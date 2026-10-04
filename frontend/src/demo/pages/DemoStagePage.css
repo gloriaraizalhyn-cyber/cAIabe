@@ -1,0 +1,524 @@
+/* Mission Control — built for a projector, not a phone.
+   Dark ground so the two lit phone panes and the map carry the room, and a
+   fixed 100vh three-column body so nothing reflows mid-presentation. */
+
+.demo-stage {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: #0b1020;
+  color: #e8ecf5;
+  overflow: hidden;
+}
+
+/* ---------- header ---------- */
+
+.demo-stage__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #1e2740;
+}
+
+.demo-stage__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  min-width: 0;
+}
+
+.demo-stage__logo {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.demo-stage__journey {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #9fb0d0;
+  white-space: nowrap;
+}
+
+.demo-stage__status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.demo-stage__route-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #141c30;
+  border: 1px solid #222d48;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #b8c5dd;
+}
+
+.demo-stage__route-chip strong {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.demo-stage__route-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.demo-stage__live {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.demo-stage__live--on {
+  color: #34d399;
+}
+
+/* ---------- body: phone | map | phone ---------- */
+
+.demo-stage__body {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr) minmax(240px, 320px);
+  gap: 16px;
+  padding: 16px 20px;
+  min-height: 0;
+}
+
+.demo-stage__map {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #1e2740;
+  background: #0f1526;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.demo-stage__map--focused {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6, 0 18px 48px rgba(59, 130, 246, 0.22);
+}
+
+.demo-stage__caption {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(8, 12, 24, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid #26314d;
+}
+
+.demo-stage__caption-step {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #60a5fa;
+}
+
+.demo-stage__caption-text {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Carbon impact overlay — top-right of the map, clear of the caption
+   (bottom) and the zoom control (bottom-right). */
+.demo-stage__impact {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: min(420px, calc(100% - 32px));
+  z-index: 1;
+}
+
+.demo-stage__error {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(127, 29, 29, 0.94);
+  color: #fee2e2;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.demo-stage__error code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* ---------- phone panes ---------- */
+
+.phone-frame {
+  --phone-accent: #3b82f6;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 10px;
+}
+
+.phone-frame__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.phone-frame__labels {
+  min-width: 0;
+}
+
+.phone-frame__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.phone-frame__subtitle {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: #8496b5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.phone-frame__badge {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+/* The bezel. A focused pane lifts and picks up its side's accent colour so
+   the room knows where to look without the presenter having to say it. */
+.phone-frame__device {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-radius: 26px;
+  padding: 8px;
+  background: #05080f;
+  border: 1px solid #232e49;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.phone-frame--focused .phone-frame__device {
+  transform: translateY(-3px);
+  border-color: var(--phone-accent);
+  box-shadow: 0 0 0 1px var(--phone-accent), 0 20px 52px rgba(0, 0, 0, 0.55);
+}
+
+.phone-frame__notch {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 78px;
+  height: 5px;
+  border-radius: 999px;
+  background: #1b2338;
+  z-index: 2;
+}
+
+.phone-frame__screen {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 20px;
+  background: #ffffff;
+  display: block;
+}
+
+/* ---------- SMS pane (overlays the map on the SMS beat) ---------- */
+
+.sms-pane {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: min(340px, 42%);
+  max-height: calc(100% - 110px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: rgba(8, 12, 24, 0.95);
+  border: 1px solid #2a3654;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.sms-pane__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #1f2942;
+}
+
+.sms-pane__title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.sms-pane__subtitle {
+  margin: 2px 0 0;
+  font-size: 0.7rem;
+  color: #8496b5;
+}
+
+.sms-pane__badge {
+  flex-shrink: 0;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #1f2942;
+  color: #93a7c7;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.sms-pane__thread {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sms-pane__empty {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #6f80a0;
+}
+
+.sms-pane__bubble {
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: #16203a;
+  color: #dbe6f7;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.sms-pane__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-top: 1px solid #1f2942;
+}
+
+.sms-pane__send {
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid #2f3d5e;
+  background: #16203a;
+  color: #cfe0ff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sms-pane__send:hover {
+  background: #1d2a4a;
+}
+
+/* ---------- presenter bar ---------- */
+
+.presenter-bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 20px 14px;
+  border-top: 1px solid #1e2740;
+  background: #080c18;
+}
+
+.presenter-bar__beats {
+  display: flex;
+  gap: 6px;
+}
+
+.presenter-bar__beat {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border-radius: 9px;
+  border: 1px solid #222d48;
+  background: #10182a;
+  color: #8496b5;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.presenter-bar__beat:hover {
+  background: #16203a;
+}
+
+.presenter-bar__beat--done {
+  color: #5f739a;
+}
+
+.presenter-bar__beat--active {
+  background: #1d4ed8;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+.presenter-bar__beat-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.presenter-bar__script {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.presenter-bar__nav {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.presenter-bar__nav-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #222d48;
+  background: #10182a;
+  color: #cfe0ff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.presenter-bar__nav-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* The presenter's line for this beat — sized to be readable from a laptop
+   screen while the room watches the projector. */
+.presenter-bar__narration {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #aebdd8;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.presenter-bar__levers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.presenter-bar__levers-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #5f739a;
+}
+
+.presenter-bar__lever-row {
+  display: flex;
+  gap: 6px;
+}
+
+.presenter-bar__lever {
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid #2f3d5e;
+  background: #16203a;
+  color: #cfe0ff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.presenter-bar__lever:hover {
+  background: #1d2a4a;
+  border-color: #3b82f6;
+}
+
+.presenter-bar__activity {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #34d399;
+  animation: demo-stage-flash 2.4s ease-out;
+}
+
+@keyframes demo-stage-flash {
+  0% { opacity: 0; transform: translateY(-2px); }
+  12% { opacity: 1; transform: none; }
+  100% { opacity: 0.75; }
+}
+
+/* Below a projector's width the side panes stop being readable, so drop to
+   map-plus-controls rather than crushing all three columns. */
+@media (max-width: 1180px) {
+  .demo-stage__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .phone-frame {
+    display: none;
+  }
+}

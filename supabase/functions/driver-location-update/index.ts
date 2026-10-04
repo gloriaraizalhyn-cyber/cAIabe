@@ -15,6 +15,10 @@ import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getAuthedDriverId, getServiceClient } from "../_shared/client.ts";
 
 const END_OF_ROUTE_RADIUS_METERS = 100;
+// Temporary egress guard: keep the stored geofence status and queue promotion
+// gate intact, but stop recalculating terminal distance on every GPS update.
+// Restore to true when terminal geofencing is needed again.
+const GEOFENCE_ENABLED = false;
 
 Deno.serve(async (req: Request) => {
   const preflight = handleOptions(req);
@@ -108,7 +112,7 @@ Deno.serve(async (req: Request) => {
     // jitter near the boundary from flapping the status.
     let geofenceStatus: "inside" | "outside" | null = null;
 
-    if (queueEntry && currentStatus !== "driving") {
+    if (GEOFENCE_ENABLED && queueEntry && currentStatus !== "driving") {
       const { data: geofenceRows, error: geofenceErr } = await supabase.rpc(
         "get_terminal_geofence",
         { p_terminal_id: queueEntry.terminal_id, p_lat: lat, p_lng: lng },

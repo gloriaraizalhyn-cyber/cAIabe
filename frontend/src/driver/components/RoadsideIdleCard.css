@@ -74,6 +74,16 @@
   text-align: right;
 }
 
+.roadside-idle-card__fuel--co2 {
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.roadside-idle-card__co2-value {
+  color: #b45309;
+}
+
 @media (max-width: 640px) {
   .roadside-idle-card {
     top: 240px;

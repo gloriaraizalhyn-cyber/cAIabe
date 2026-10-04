@@ -28,6 +28,9 @@ function TripInfoPanel({ fuelInfo, capacityStatus }) {
         <span className="trip-info-panel__stat-value">
           {fuel ? `${fuel.liters} L · ₱${fuel.cost}` : "…"}
         </span>
+        {fuel?.co2_kg !== undefined && (
+          <span className="trip-info-panel__co2">~{fuel.co2_kg} kg CO₂</span>
+        )}
         {fuelInfo?.warning && (
           <span className="trip-info-panel__warning-tag">Heavy traffic</span>
         )}

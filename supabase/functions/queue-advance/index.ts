@@ -1,6 +1,7 @@
 // POST /functions/v1/queue-advance
-// Not called by drivers directly — meant to run on a schedule (every ~15s)
-// via pg_cron + pg_net, or manually in Postman while you're testing.
+// Not called by drivers directly — meant to run on a schedule (every minute,
+// only while a queue entry is active — see sql/queue_advance_cron.sql) via
+// pg_cron + pg_net, or manually in Postman while you're testing.
 //
 // Per route, this function:
 //  0. Force-closes any entry abandoned for STALE_ENTRY_HOURS+ (app closed
@@ -32,15 +33,21 @@ Deno.serve(async (req: Request) => {
   try {
     const supabase = getServiceClient();
 
-    const { data: routes, error: routesErr } = await supabase
-      .from("routes")
-      .select("id");
-    if (routesErr) return json({ error: routesErr.message }, 500);
+    // Only routes with an active entry have anything to advance — every step
+    // in advanceRoute filters on these statuses. Sweeping all routes cost 4
+    // REST calls per route per run even with an empty queue, which was the
+    // bulk of the project's idle egress.
+    const { data: activeEntries, error: activeErr } = await supabase
+      .from("queue_entries")
+      .select("route_id")
+      .in("status", ["waiting", "next_to_go", "temporarily_away"]);
+    if (activeErr) return json({ error: activeErr.message }, 500);
 
+    const routeIds = [...new Set((activeEntries ?? []).map((e) => e.route_id))];
     const results: Record<string, unknown> = {};
 
-    for (const route of routes ?? []) {
-      results[route.id] = await advanceRoute(supabase, route.id);
+    for (const routeId of routeIds) {
+      results[routeId] = await advanceRoute(supabase, routeId);
     }
 
     return json({ results });

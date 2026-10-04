@@ -21,6 +21,7 @@ import DriverSummaryModal from "../components/DriverSummaryModal.jsx";
 import DriverAttachments from "../components/DriverAttachments.jsx";
 import JeepColorCell from "../components/JeepColorCell.jsx";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
+import CarbonImpactPanel from "../../shared/components/CarbonImpactPanel.jsx";
 import "./AdminDashboardPage.css";
 
 const STATUS_TABS = [
@@ -553,6 +554,10 @@ function AdminDashboardPage() {
           Log out
         </button>
       </header>
+
+      <div className="admin-dashboard-page__impact">
+        <CarbonImpactPanel />
+      </div>
 
       <div className="admin-dashboard-page__toolbar">
         <div className="admin-dashboard-page__tabs">

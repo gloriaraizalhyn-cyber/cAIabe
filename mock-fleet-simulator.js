@@ -12,14 +12,18 @@
 //
 // Flags:
 //   --jeeps=N        Number of jeepneys per route (default: 3)
-//   --delay=MS       Delay between steps in ms (default: 800)
+//   --delay=MS       Delay between steps in ms (default: 5000)
 //   --route=NAME     Filter to a single route by name (optional)
-//   --requeue        Units stop and rejoin the real queue on reaching the
-//                     route's terminus instead of driving the circuit
-//                     forever — use this when testing queue/geofence
-//                     behavior; leave it off for the passenger-facing
-//                     ETA/demand demo, which wants continuously-moving
-//                     jeepneys.
+//   --requeue        Accepted for backwards compatibility; now a no-op.
+//                     Units ALWAYS rejoin the queue on reaching the route's
+//                     terminus. The old default (keep driving instead) was
+//                     based on a wrong assumption: driver-location-update
+//                     flips the unit back to "waiting" the moment it passes
+//                     the terminus, and both the realtime broadcast gate and
+//                     get_route_visible_drivers hide anything that isn't
+//                     next_to_go/driving — so "keep driving" actually meant
+//                     "keep driving where no passenger can see you". Staggered
+//                     start offsets are what keep units continuously visible.
 
 const SUPABASE_URL = requireEnv("SUPABASE_URL");
 const ANON_KEY = requireEnv("SUPABASE_ANON_KEY");
@@ -37,14 +41,11 @@ function getCliArg(name, defaultValue) {
 }
 
 const JEEPS_PER_ROUTE = parseInt(getCliArg("jeeps", "3"), 10) || 3;
-const STEP_DELAY_MS = parseInt(getCliArg("delay", "800"), 10) || 800;
+// Location updates fan out through the Edge Function, queue lookups, geofence
+// RPCs, and realtime broadcasts. Five seconds is enough for a convincing demo
+// without turning the simulator into a high-volume database workload.
+const STEP_DELAY_MS = parseInt(getCliArg("delay", "5000"), 10) || 5000;
 const ROUTE_FILTER = getCliArg("route", null);
-// Off by default: units drive the circuit forever, which is what the
-// passenger-facing ETA/demand demo wants (always-visible moving jeepneys).
-// On: a unit stops at the terminus, re-enters the real queue, and waits to
-// be redispatched — matching a real jeepney's actual lifecycle, useful when
-// testing the queue/geofence system specifically rather than the live map.
-const REQUEUE_ON_ARRIVAL = process.argv.includes("--requeue");
 
 function requireEnv(name) {
   const value = process.env[name];
@@ -259,6 +260,58 @@ function densifyPath(points, maxSegmentMeters = 15) {
   return result;
 }
 
+// Builds the circuit a unit drives from the route's OWN stored polyline
+// (routes.path, via get_route_subpath_points over the whole 0..1 span)
+// rather than a Google Directions path between the terminal and the
+// terminus, which is what this used to do. Two reasons:
+//
+//  1) Most seeded routes are loops whose terminal and terminus nearly
+//     coincide, so the old approach produced a stub instead of a route:
+//     "Checkpoint - Holy Angel University - Balibago" has 290m between them
+//     against a 10,530m real path, and "Pampang - SM Telabastagan" has 3m
+//     against 4,815m. Units shuttled on the spot.
+//  2) routes.path is the hand-verified geometry — see fix_balibago_route.sql,
+//     which replaced a path that deviated from the real road by up to ~2.8km.
+//     Following it is strictly more accurate than re-deriving one, and it
+//     drops a paid Directions call from the demo's hot path.
+//
+// Returns { circuit, isLoop }. A closed route cycles forward forever (going
+// back along it would drive units the wrong way down a one-way loop); an
+// open route still runs out-and-back the way it always did.
+const LOOP_CLOSE_METERS = 60;
+
+async function getRouteCircuit(route, terminal, label) {
+  const stored = await callRpc("get_route_subpath_points", {
+    p_route_id: route.id,
+    p_fraction_a: 0,
+    p_fraction_b: 1,
+  });
+
+  if (Array.isArray(stored) && stored.length >= 2) {
+    const path = densifyPath(stored, 15);
+    const isLoop = haversineDistanceMeters(path[0], path[path.length - 1]) <= LOOP_CLOSE_METERS;
+    const circuit = isLoop ? path : [...path, ...[...path].reverse()];
+    console.log(
+      `📍 [${label}] Using stored route path — ${stored.length} pts → ${circuit.length} steps ` +
+        `(${isLoop ? "closed loop" : "out-and-back"}).`,
+    );
+    return { circuit, isLoop };
+  }
+
+  // No stored polyline — the pathless Florida/Porac/San Fernando rows from
+  // schema.sql. Fall back to the original terminal→terminus Directions path
+  // so those keep behaving exactly as before.
+  console.warn(`[${label}] No stored routes.path — falling back to a Directions path from the terminal.`);
+  const [terminus] = await callRpc("get_route_terminus_coords", { p_route_id: route.id });
+  if (!terminus) throw new Error(`[${label}] no stored path and no terminus found`);
+  const forward = await getRoadPath(
+    { lat: terminal.lat, lng: terminal.lng },
+    { lat: terminus.lat, lng: terminus.lng },
+    label,
+  );
+  return { circuit: [...forward, ...[...forward].reverse()], isLoop: false };
+}
+
 async function getRoadPath(origin, destination, label) {
   const url = new URL("https://maps.googleapis.com/maps/api/directions/json");
   url.searchParams.set("origin", `${origin.lat},${origin.lng}`);
@@ -289,6 +342,64 @@ async function getRoadPath(origin, destination, label) {
 // (nearby-jeepney-eta) reacts to real, changed data rather than a faked
 // label.
 const activeUnits = new Map();
+
+// The single implementation behind BOTH presenter surfaces: the stdin
+// commands below, and the /demo/stage presenter bar (which reaches this
+// process through the demo_commands table — see pollDemoCommands). Keeping
+// one implementation means the stage can't drift into faking something the
+// typed command does for real.
+//
+// `target` matches on the driver id (as shown by "list" and in the app's own
+// queue screen — same id, that's the point) OR the unit label, so either
+// works no matter which view you're looking at. "all" hits every active unit.
+async function applyDemoAction(action, target) {
+  const needle = String(target ?? "").trim().toLowerCase();
+  if (!needle) return 0;
+
+  const matches =
+    needle === "all"
+      ? [...activeUnits.entries()]
+      : [...activeUnits.entries()].filter(
+          ([label, state]) =>
+            state.driverId.toLowerCase().includes(needle) || label.toLowerCase().includes(needle)
+        );
+
+  if (!matches.length) {
+    console.log(`No active unit matches "${target}". Try "list" to see active units.`);
+    return 0;
+  }
+
+  for (const [label, state] of matches) {
+    const tag = `${state.driverId.slice(0, 8)} (${label})`;
+    if (action === "slow") {
+      state.delayMultiplier = 6;
+      state.jumpBackRequested = true;
+      console.log(`🐢 [${tag}] simulating heavy traffic — jumped back on its path and slowed down.`);
+    } else if (action === "resume") {
+      state.delayMultiplier = 1;
+      console.log(`✅ [${tag}] back to normal speed.`);
+    } else if (action === "leave") {
+      // ~300m from the terminal — comfortably past the default 130m exit
+      // radius, so the next driver-location-update reports "outside".
+      state.awayOverride = { lat: state.terminalPosition.lat + 0.0027, lng: state.terminalPosition.lng };
+      console.log(`🚶 [${tag}] stepped away from the terminal — still holds its queue slot.`);
+    } else if (action === "return") {
+      state.awayOverride = null;
+      console.log(`🏠 [${tag}] heading back to the terminal.`);
+    } else if (action === "lining_up") {
+      await callFunction("driver-queue-respond", state.accessToken, { response: "lining_up" }, { quiet: true });
+      console.log(`🙋 [${tag}] responded "lining up" — keeps its FIFO spot, must return to be dispatched.`);
+    } else if (action === "skip_temp") {
+      await callFunction("driver-queue-respond", state.accessToken, { response: "skip_temp" }, { quiet: true });
+      console.log(`⏸️  [${tag}] responded "leave temporarily" — queue moves on without it.`);
+    } else if (action === "skip_done") {
+      await callFunction("driver-queue-respond", state.accessToken, { response: "skip_done" }, { quiet: true });
+      console.log(`🌙 [${tag}] responded "done for the day" — queue session ended.`);
+    }
+  }
+
+  return matches.length;
+}
 
 async function setupDemoControls() {
   if (!process.stdin.isTTY) return; // no interactive terminal (e.g. piped/background run) — skip
@@ -329,72 +440,122 @@ async function setupDemoControls() {
       return;
     }
 
-    const slowMatch = trimmed.match(/^slow\s+(.+)$/i);
-    const resumeMatch = trimmed.match(/^resume\s+(.+)$/i);
-    const leaveMatch = trimmed.match(/^leave\s+(.+)$/i);
-    const returnMatch = trimmed.match(/^return\s+(.+)$/i);
-    const liningUpMatch = trimmed.match(/^lining_up\s+(.+)$/i);
-    const skipTempMatch = trimmed.match(/^skip_temp\s+(.+)$/i);
-    const skipDoneMatch = trimmed.match(/^skip_done\s+(.+)$/i);
+    const parsed = trimmed.match(
+      /^(slow|resume|leave|return|lining_up|skip_temp|skip_done)\s+(.+)$/i
+    );
 
-    const target =
-      slowMatch?.[1] ??
-      resumeMatch?.[1] ??
-      leaveMatch?.[1] ??
-      returnMatch?.[1] ??
-      liningUpMatch?.[1] ??
-      skipTempMatch?.[1] ??
-      skipDoneMatch?.[1];
-
-    if (!target) {
+    if (!parsed) {
       console.log(
         'Unrecognized command. Use "slow/resume/leave/return/lining_up/skip_temp/skip_done <driver id>", or "list".'
       );
       return;
     }
 
-    // Matches on the driver id (as shown by "list" and in the app's own
-    // queue screen — same id, that's the point) OR the unit label, so
-    // either works no matter which view you're looking at.
-    const needle = target.toLowerCase();
-    const matches = [...activeUnits.entries()].filter(
-      ([label, state]) =>
-        state.driverId.toLowerCase().includes(needle) || label.toLowerCase().includes(needle)
-    );
-    if (!matches.length) {
-      console.log(`No active unit matches "${target}". Try "list" to see active units.`);
-      return;
-    }
+    await applyDemoAction(parsed[1].toLowerCase(), parsed[2]);
+  });
+}
 
-    for (const [label, state] of matches) {
-      const tag = `${state.driverId.slice(0, 8)} (${label})`;
-      if (slowMatch) {
-        state.delayMultiplier = 6;
-        state.jumpBackRequested = true;
-        console.log(`🐢 [${tag}] simulating heavy traffic — jumped back on its path and slowed down.`);
-      } else if (resumeMatch) {
-        state.delayMultiplier = 1;
-        console.log(`✅ [${tag}] back to normal speed.`);
-      } else if (leaveMatch) {
-        // ~300m from the terminal — comfortably past the default 130m exit
-        // radius, so the next driver-location-update reports "outside".
-        state.awayOverride = { lat: state.terminalPosition.lat + 0.0027, lng: state.terminalPosition.lng };
-        console.log(`🚶 [${tag}] stepped away from the terminal — still holds its queue slot.`);
-      } else if (returnMatch) {
-        state.awayOverride = null;
-        console.log(`🏠 [${tag}] heading back to the terminal.`);
-      } else if (liningUpMatch) {
-        await callFunction("driver-queue-respond", state.accessToken, { response: "lining_up" }, { quiet: true });
-        console.log(`🙋 [${tag}] responded "lining up" — keeps its FIFO spot, must return to be dispatched.`);
-      } else if (skipTempMatch) {
-        await callFunction("driver-queue-respond", state.accessToken, { response: "skip_temp" }, { quiet: true });
-        console.log(`⏸️  [${tag}] responded "leave temporarily" — queue moves on without it.`);
-      } else if (skipDoneMatch) {
-        await callFunction("driver-queue-respond", state.accessToken, { response: "skip_done" }, { quiet: true });
-        console.log(`🌙 [${tag}] responded "done for the day" — queue session ended.`);
+// ---------- demo_commands bridge (drives the /demo/stage presenter bar) ----------
+//
+// The stage's presenter bar runs in a browser, but two of its levers can't:
+// "throw traffic at a unit" has to move a driver, which only the process
+// holding that driver's session can do, and "send the demo SMS" has to sign
+// an HMAC with TEXTBEE_WEBHOOK_SECRET, which must never ship to a client.
+// Both are enqueued into demo_commands (see supabase/sql/add_demo_control.sql)
+// and consumed here. Every other lever on the stage — surge, clear, capacity
+// toggle — calls its edge function directly and never comes through here.
+const DEMO_COMMAND_POLL_MS = 1000;
+
+async function restService(path, init = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...init,
+    headers: {
+      apikey: SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+      ...(init.headers ?? {}),
+    },
+  });
+  if (!res.ok) throw new Error(`${init.method ?? "GET"} ${path} failed: ${res.status} ${await res.text()}`);
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// Posts a message to sms-webhook exactly the way TextBee really does: a flat
+// {webhookEvent, sender, message} body, with a lowercase hex HMAC-SHA256 of
+// the RAW body in X-Signature. The body string is signed and sent byte-for-byte
+// identical — re-serializing between signing and sending would change the
+// bytes and fail verification.
+async function sendDemoSms({ from, text }) {
+  const secret = process.env.TEXTBEE_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error("⚠️  TEXTBEE_WEBHOOK_SECRET is not set — sms-webhook will reject this with a 401.");
+    return;
+  }
+
+  const { createHmac } = await import("node:crypto");
+  const rawBody = JSON.stringify({
+    webhookEvent: "MESSAGE_RECEIVED",
+    sender: from,
+    message: text,
+  });
+  const signature = createHmac("sha256", secret).update(rawBody).digest("hex");
+
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/sms-webhook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Signature": signature },
+    body: rawBody,
+  });
+  console.log(
+    res.ok
+      ? `📱 [SMS] delivered "${text}" from ${from} (HTTP ${res.status}) — reply lands in sms_log.`
+      : `❌ [SMS] sms-webhook returned HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`,
+  );
+}
+
+async function handleDemoCommand(row) {
+  const payload = row.payload ?? {};
+  if (row.type === "send_sms") {
+    await sendDemoSms({ from: payload.from, text: payload.text });
+    return;
+  }
+  await applyDemoAction(row.type, payload.target);
+}
+
+async function pollDemoCommands() {
+  console.log("🎛️  Listening for /demo/stage presenter commands (demo_commands table).\n");
+
+  while (true) {
+    try {
+      const rows = await restService(
+        "demo_commands?consumed_at=is.null&order=created_at.asc&limit=10&select=id,type,payload",
+      );
+
+      for (const row of rows ?? []) {
+        // Mark consumed FIRST: a command that throws must not be retried on
+        // every poll forever, which would wedge the queue mid-demo.
+        await restService(`demo_commands?id=eq.${row.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ consumed_at: new Date().toISOString() }),
+        });
+
+        try {
+          await handleDemoCommand(row);
+        } catch (err) {
+          console.error(`demo command ${row.type} failed:`, err.message ?? err);
+        }
+      }
+    } catch (err) {
+      // The table may not exist yet (add_demo_control.sql not run). Warn once
+      // and keep the fleet driving — the stage's other levers still work.
+      if (!pollDemoCommands.warned) {
+        console.warn(`⚠️  demo_commands poll failed (${err.message ?? err}). Have you run supabase/sql/add_demo_control.sql?`);
+        pollDemoCommands.warned = true;
       }
     }
-  });
+
+    await sleep(DEMO_COMMAND_POLL_MS);
+  }
 }
 
 // ---------- queueing phase (runs before a unit starts road-looping) ----------
@@ -426,12 +587,34 @@ async function driveThroughQueue(driverLabel, session, demoState) {
     );
 
     const own = await restSelectAuthed(
-      `queue_entries?driver_id=eq.${session.userId}&status=eq.driving&select=id`,
+      `queue_entries?driver_id=eq.${session.userId}` +
+        `&status=in.(waiting,next_to_go,driving)` +
+        `&select=id,status,notified_at,responded_at&order=arrival_at.desc&limit=1`,
       session.accessToken,
     );
-    if (own?.length) {
+    const entry = own?.[0];
+
+    if (entry?.status === "driving") {
       console.log(`  🚦 [${driverLabel}] dispatched — starting road loop.`);
       return;
+    }
+
+    // Answer the turn prompt the way a real driver does by tapping "Lining
+    // up" in QueueTurnAlert. Without this a unit never leaves the terminal:
+    // queue-advance only ever promotes next_to_go -> driving, and the only
+    // way into next_to_go is driver-queue-respond, so an unanswered unit
+    // just cycles between notified and the 90s soft-skip forever.
+    //
+    // Skipped while a unit is deliberately "away" (the leave/skip_temp demo
+    // sequence), so that still plays out exactly as scripted.
+    if (
+      entry?.status === "waiting" &&
+      entry.notified_at &&
+      !entry.responded_at &&
+      !demoState.awayOverride
+    ) {
+      await callFunction("driver-queue-respond", session.accessToken, { response: "lining_up" }, { quiet: true });
+      console.log(`  🙋 [${driverLabel}] its turn came up — lining up.`);
     }
 
     await sleep(QUEUE_POLL_DELAY_MS);
@@ -440,16 +623,18 @@ async function driveThroughQueue(driverLabel, session, demoState) {
 
 // ---------- driving loop for a single jeepney unit ----------
 
-async function driveSingleJeep(route, terminal, forwardPath, backwardPath, driverIndex, totalJeeps) {
+async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps) {
   const session = await ensureMockDriver(route, terminal.id, driverIndex);
   const driverLabel = `${route.name} (Unit #${driverIndex})`;
   console.log(`  🚐 [${driverLabel}] active (${session.userId.slice(0, 8)}…)`);
 
-  const circuit = [...forwardPath, ...backwardPath];
   const circuitLength = circuit.length;
 
-  // Evenly distribute initial positions around the full loop
-  const startOffset = Math.floor(((driverIndex - 1) / totalJeeps) * circuitLength);
+  // Evenly distribute initial positions around the full loop, offset by half
+  // a slot so no unit starts ON index 0. On a closed route index 0 IS the
+  // terminus, and starting there trips is_near_terminus on the very first
+  // location update — the unit would be requeued before it had moved.
+  const startOffset = Math.floor(((driverIndex - 0.5) / totalJeeps) * circuitLength);
 
   // Stagger initial capacity: alternate available and full
   let capacityState = driverIndex % 2 === 1 ? "available" : "full";
@@ -495,13 +680,16 @@ async function driveSingleJeep(route, terminal, forwardPath, backwardPath, drive
         { quiet: true },
       );
 
-      // driver-location-update itself already auto-requeues this unit to
-      // "waiting" once it's near the route's terminus (see is_near_terminus
-      // in that function) — this just makes the simulator notice and, in
-      // --requeue mode, stop driving and go back through driveThroughQueue
-      // instead of ignoring it and looping the circuit forever.
-      if (REQUEUE_ON_ARRIVAL && result?.end_of_route) {
-        console.log(`  🏁 [${driverLabel}] reached the end of its route — back to the queue.`);
+      // driver-location-update auto-requeues this unit to "waiting" as soon
+      // as it passes within 100m of the route's terminus (is_near_terminus).
+      // Once that happens the unit is INVISIBLE to passengers — the realtime
+      // broadcast gate and get_route_visible_drivers both only ever show
+      // next_to_go/driving — so it must go back through the queue and get
+      // redispatched rather than keep driving. Ignoring this (which is what
+      // the old --requeue=off mode did) left the unit circling the route
+      // forever with nobody able to see it.
+      if (result?.end_of_route) {
+        console.log(`  🏁 [${driverLabel}] completed its route — rejoining the queue.`);
         break;
       }
 
@@ -519,7 +707,7 @@ async function driveSingleJeep(route, terminal, forwardPath, backwardPath, drive
       currentIdx = (currentIdx + 1) % circuitLength;
       await sleep(baseVehicleDelay * demoState.delayMultiplier);
     }
-  } while (REQUEUE_ON_ARRIVAL);
+  } while (true);
 }
 
 // ---------- per-route fleet orchestrator ----------
@@ -527,21 +715,13 @@ async function driveSingleJeep(route, terminal, forwardPath, backwardPath, drive
 async function driveRouteFleet(route, terminal) {
   const label = route.name;
 
-  const [terminus] = await callRpc("get_route_terminus_coords", { p_route_id: route.id });
-  if (!terminus) throw new Error(`[${label}] no terminus found`);
-
-  const forwardPath = await getRoadPath(
-    { lat: terminal.lat, lng: terminal.lng },
-    { lat: terminus.lat, lng: terminus.lng },
-    label,
-  );
-  const backwardPath = [...forwardPath].reverse();
-  console.log(`📍 [${label}] Road path computed (${forwardPath.length} steps). Deploying ${JEEPS_PER_ROUTE} units...`);
+  const { circuit } = await getRouteCircuit(route, terminal, label);
+  console.log(`🚦 [${label}] Deploying ${JEEPS_PER_ROUTE} units...`);
 
   const jeepPromises = [];
   for (let i = 1; i <= JEEPS_PER_ROUTE; i++) {
     jeepPromises.push(
-      driveSingleJeep(route, terminal, forwardPath, backwardPath, i, JEEPS_PER_ROUTE).catch((err) => {
+      driveSingleJeep(route, terminal, circuit, i, JEEPS_PER_ROUTE).catch((err) => {
         console.error(`❌ [${label} Unit #${i}] crashed:`, err);
       }),
     );
@@ -588,6 +768,10 @@ async function main() {
   // ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)") because
   // readline leaves an open stdin handle behind.
   setupDemoControls();
+
+  // Runs forever alongside the fleet; never awaited, and never allowed to
+  // take the process down if the table is missing.
+  pollDemoCommands().catch((err) => console.error("demo command poller stopped:", err));
 
   const totalUnits = targetRoutes.length * JEEPS_PER_ROUTE;
   console.log(`🚀 Simulating ${targetRoutes.length} route(s) with ${JEEPS_PER_ROUTE} jeeps each.`);

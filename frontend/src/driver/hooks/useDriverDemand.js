@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 
-const POLL_INTERVAL_MS = 12000;
+// Realtime waiting events trigger a debounced refresh immediately. This poll
+// is only a missed-event fallback, so it does not need to run frequently.
+const POLL_INTERVAL_MS = 30000;
 const REALTIME_DEBOUNCE_MS = 1500;
 
 // Drives Sak.AI's driver demand engine (driver-demand-check) — real

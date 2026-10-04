@@ -1,4 +1,4 @@
-import { Plus, Minus, Footprints, Clock, ArrowRightLeft, Bus } from "lucide-react";
+import { Plus, Minus, Footprints, Clock, ArrowRightLeft, Bus, Leaf } from "lucide-react";
 import AiNote from "../../shared/components/AiNote.jsx";
 import "./RouteOptionCard.css";
 
@@ -187,6 +187,20 @@ function RouteOptionCard({
               <span className="route-option-card__timing-label">ARRIVE</span>
             </span>
           </div>
+
+          {route.carbon && route.carbon.car_co2_kg > 0 && (
+            <div className="route-option-card__carbon">
+              <Leaf size={14} strokeWidth={2.25} className="route-option-card__carbon-icon" />
+              <span className="route-option-card__carbon-text">
+                <span className="route-option-card__carbon-headline">
+                  ~{route.carbon.jeepney_co2_kg} kg CO₂ for your seat
+                </span>
+                <span className="route-option-card__carbon-subline">
+                  vs ~{route.carbon.car_co2_kg} kg driving alone · Estimated
+                </span>
+              </span>
+            </div>
+          )}
 
           {route.availabilityNote && (
             <p className="route-option-card__availability">

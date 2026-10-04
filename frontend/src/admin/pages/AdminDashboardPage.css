@@ -38,6 +38,11 @@
   background: #f0f1f4;
 }
 
+.admin-dashboard-page__impact {
+  max-width: 1400px;
+  margin: 0 auto 20px;
+}
+
 .admin-dashboard-page__toolbar {
   display: flex;
   align-items: center;

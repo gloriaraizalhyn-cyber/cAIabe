@@ -45,6 +45,13 @@
   color: #dc2626;
 }
 
+.trip-info-panel__co2 {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #6a6f79;
+  white-space: nowrap;
+}
+
 .trip-info-panel__warning-tag {
   align-self: flex-start;
   font-size: 0.58rem;

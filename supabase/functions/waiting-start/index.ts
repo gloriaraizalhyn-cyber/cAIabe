@@ -1,14 +1,19 @@
 // POST /functions/v1/waiting-start
-// Body: { route_id: string, lat: number, lng: number }
+// Body: { route_id: string, lat: number, lng: number, discount_type?, ride_distance_km? }
 // Fuzzes the passenger's coordinate SERVER-SIDE (never trust a client-fuzzed
 // value) and inserts a waiting row, then broadcasts it to drivers on that
 // route only.
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
+import { estimateTripCarbon } from "../_shared/fuel.ts";
 
 const FUZZ_RADIUS_METERS_MIN = 80;
 const FUZZ_RADIUS_METERS_MAX = 150;
+
+// Longest plausible jeepney ride in the app's coverage area — anything
+// beyond it is a bad client value, not a real trip, and is skipped.
+const MAX_RIDE_DISTANCE_KM = 60;
 
 const VALID_DISCOUNT_TYPES = [
   "regular",
@@ -22,11 +27,12 @@ Deno.serve(async (req: Request) => {
   if (preflight) return preflight;
 
   try {
-    const { route_id, lat, lng, discount_type } = await req.json() as {
+    const { route_id, lat, lng, discount_type, ride_distance_km } = await req.json() as {
       route_id: string;
       lat: number;
       lng: number;
       discount_type?: string;
+      ride_distance_km?: number;
     };
 
     if (!route_id || lat === undefined || lng === undefined) {
@@ -70,6 +76,20 @@ Deno.serve(async (req: Request) => {
         location: fuzzed,
       },
     });
+
+    // A rider committing to a jeepney trip is the carbon panel's "rider
+    // trip" signal (see add_carbon_impact.sql). Only the ride distance and
+    // route are kept — no location. Best-effort: never fails the request.
+    if (typeof ride_distance_km === "number" && ride_distance_km > 0 && ride_distance_km <= MAX_RIDE_DISTANCE_KM) {
+      const carbon = estimateTripCarbon(ride_distance_km);
+      const { error: logError } = await supabase.from("carbon_impact_events").insert({
+        kind: "rider_trip",
+        route_id,
+        distance_km: carbon.ride_distance_km,
+        co2_kg: carbon.saved_co2_kg,
+      });
+      if (logError) console.error("carbon impact log failed:", logError.message);
+    }
 
     return json({ waiting_id: data.id, fuzzed_location: fuzzed, discount_type: discountType });
   } catch (err) {

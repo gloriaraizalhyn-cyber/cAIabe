@@ -119,7 +119,7 @@ function WaitingForJeepPage() {
     };
 
     fetchEta();
-    const intervalId = setInterval(fetchEta, 15000);
+    const intervalId = setInterval(fetchEta, 30000);
     return () => {
       cancelled = true;
       clearInterval(intervalId);
@@ -183,6 +183,9 @@ function WaitingForJeepPage() {
         lat: passengerPosition.lat,
         lng: passengerPosition.lng,
         discount_type: passengerType,
+        // Feeds the carbon impact panel's "rider trips" count — distance
+        // only, never location. Absent for fixture routes (no carbon).
+        ride_distance_km: passedRoute?.carbon?.ride_distance_km,
       },
     });
     if (!error && data?.waiting_id) {

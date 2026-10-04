@@ -10,7 +10,7 @@ import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./NextToGoPage.css";
 
-const LOCATION_UPDATE_MIN_INTERVAL_MS = 5000;
+const LOCATION_UPDATE_MIN_INTERVAL_MS = 10000;
 
 function NextToGoPage() {
   const navigate = useNavigate();
@@ -117,7 +117,7 @@ function NextToGoPage() {
       .on("broadcast", { event: "driver_departed" }, refreshQueueEntry)
       .subscribe();
 
-    const pollId = setInterval(refreshQueueEntry, 15000);
+    const pollId = setInterval(refreshQueueEntry, 30000);
 
     return () => {
       supabase.removeChannel(channel);

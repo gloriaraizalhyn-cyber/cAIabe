@@ -6,6 +6,7 @@ import TripResultsPanel from "../components/TripResultsPanel.jsx";
 import { adaptRouteSearchResult } from "../utils/adaptRouteSearchResult.js";
 import { getSavedRoutes, saveRoute, removeSavedRouteByKey } from "../../shared/utils/savedRoutesStorage.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
+import { readDemoTripSearch, readDemoPassengerType } from "../../demo/demoTripParams.js";
 import "./FindRoutesPage.css";
 
 // supabase-js's FunctionsHttpError.message is just a generic "non-2xx
@@ -26,8 +27,12 @@ async function extractFunctionErrorMessage(error) {
 function FindRoutesPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const restoredTripSearch = location.state?.tripSearch ?? null;
-  const passengerType = location.state?.passengerType ?? "regular";
+  // The demo stage runs this page in an iframe, which can only be handed a
+  // URL — never router state. readDemoTripSearch rebuilds the same shape
+  // from query params; both helpers return null when those params are
+  // absent, so normal navigation is unaffected.
+  const restoredTripSearch = location.state?.tripSearch ?? readDemoTripSearch();
+  const passengerType = location.state?.passengerType ?? readDemoPassengerType() ?? "regular";
 
   // Always start on "search" — even when restoring a previous trip, so the
   // pre-filled fields + "Finding routes…" state show while the replay

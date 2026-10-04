@@ -22,7 +22,7 @@ import "./DrivingPage.css";
 // pickup-assignment concept server-side, only fuzzed passenger_waiting_state
 // rows broadcast per route. Everything else on this page (GPS tracking,
 // end-of-route detection, capacity toggle, and the map itself) is real.
-const LOCATION_UPDATE_MIN_INTERVAL_MS = 5000;
+const LOCATION_UPDATE_MIN_INTERVAL_MS = 10000;
 
 function DrivingPage() {
   const navigate = useNavigate();

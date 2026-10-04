@@ -110,6 +110,9 @@ function adaptOneRoute(result, isRecommended) {
     // pick, with pros/cons computed from real deltas vs the recommended
     // route (see route-search's explainAlternative).
     comparison: result.comparison ?? null,
+    // Per-rider jeepney CO2 vs driving alone (estimated, see route-search /
+    // fuel.ts estimateTripCarbon). Null for fixture routes.
+    carbon: result.carbon ?? null,
     legs: result.legs.map((leg, index) => adaptLeg(leg, index, result.legs)),
     path: result.legs.flatMap(legPathPoints),
     // One entry per leg, so the map can draw walk legs as dashed and ride

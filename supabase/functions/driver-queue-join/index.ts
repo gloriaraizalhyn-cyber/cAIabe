@@ -11,6 +11,15 @@ Deno.serve(async (req: Request) => {
   const preflight = handleOptions(req);
   if (preflight) return preflight;
 
+  // Off switch for the whole queue while the system isn't being worked on.
+  // Checked before auth so a paused join costs no database calls. Pair with
+  // pausing the queue-advance cron job — see sql/queue_advance_cron.sql.
+  //   pause:  supabase secrets set QUEUE_PAUSED=true
+  //   resume: supabase secrets unset QUEUE_PAUSED
+  if (Deno.env.get("QUEUE_PAUSED") === "true") {
+    return json({ error: "driver queue is paused" }, 503);
+  }
+
   try {
     const driverId = await getAuthedDriverId(req.headers.get("Authorization"));
     if (!driverId) return json({ error: "not authenticated" }, 401);
