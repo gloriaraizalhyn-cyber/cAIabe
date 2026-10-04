@@ -55,7 +55,7 @@ function DriverQueueListPage() {
     };
   }, [driver?.route?.id, refreshQueue]);
 
-  const handleBack = () => navigate("/driver/dashboard");
+  const handleBack = () => navigate("/driver/dashboard", { state: { shiftStage: "arrived" } });
 
   // Same three responses QueueTurnAlert triggers from the dashboard — see
   // driver-queue-respond for what each one actually does server-side.

@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Pencil, Trash2, X } from "lucide-react";
 import JeepColorCell from "./JeepColorCell.jsx";
 import DriverAttachments from "./DriverAttachments.jsx";
 import "./DriverSummaryModal.css";
@@ -7,7 +7,7 @@ function driverDisplayName(driver) {
   return driver.fullName ?? driver.email ?? "Unnamed driver";
 }
 
-function DriverSummaryModal({ driver, onClose }) {
+function DriverSummaryModal({ driver, onClose, onEdit, onDelete }) {
   return (
     <div className="driver-summary-modal__backdrop" onClick={onClose}>
       <div
@@ -98,6 +98,25 @@ function DriverSummaryModal({ driver, onClose }) {
             <p className="driver-summary-modal__remarks-text">{driver.rejectionReason}</p>
           </div>
         )}
+
+        <div className="driver-summary-modal__actions">
+          <button
+            type="button"
+            className="driver-summary-modal__action-button driver-summary-modal__action-button--edit"
+            onClick={onEdit}
+          >
+            <Pencil size={14} strokeWidth={2.5} />
+            Edit
+          </button>
+          <button
+            type="button"
+            className="driver-summary-modal__action-button driver-summary-modal__action-button--delete"
+            onClick={onDelete}
+          >
+            <Trash2 size={14} strokeWidth={2.5} />
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   );

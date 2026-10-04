@@ -11,11 +11,15 @@
 }
 
 .driver-edit-modal {
+  position: relative;
   width: 100%;
   max-width: 420px;
   max-height: calc(100vh - 32px);
   overflow-y: auto;
-  background: #ffffff;
+  background: #faf6f0;
+  border: 1px solid #000000;
+  border-left: 5px solid #1b3fa0;
+  border-top: 5px solid #d71920;
   border-radius: 14px;
   padding: 22px;
 }
@@ -24,12 +28,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e5e2da;
 }
 
 .driver-edit-modal__title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: #1a1a1a;
 }

@@ -107,3 +107,26 @@
   color: #9a9fa8;
   text-transform: uppercase;
 }
+
+@media (min-width: 900px) {
+  .driver-queue-list-page {
+    padding: 48px 16px 60px;
+  }
+
+  .driver-queue-list-page__header,
+  .driver-queue-list-page__list {
+    max-width: 620px;
+  }
+
+  .driver-queue-list-page__title {
+    font-size: 1.7rem;
+  }
+
+  .driver-queue-list-page__item {
+    padding: 15px 18px;
+  }
+
+  .driver-queue-list-page__name {
+    font-size: 1rem;
+  }
+}

@@ -18,6 +18,7 @@ function DriverProfileCard({
   vehicleRegistrationNumber,
   jeepColor,
   shiftStarted = false,
+  onEditProfile = () => {},
 }) {
   const avatarColor = COLOR_NAME_TO_HEX[jeepColor?.toLowerCase()] ?? "#1b3fa0";
 
@@ -85,6 +86,14 @@ function DriverProfileCard({
               <span className="driver-profile-card__field-value">{vehicleRegistrationNumber || "—"}</span>
             </span>
           </div>
+
+          <button
+            type="button"
+            className="driver-profile-card__edit-button"
+            onClick={onEditProfile}
+          >
+            Edit Profile
+          </button>
         </div>
       )}
     </section>

@@ -4,6 +4,7 @@
   border-radius: 16px;
   background: #faf6f0;
   padding: 20px;
+  margin-bottom: 14px;
 }
 
 .shift-summary-card__field {
@@ -31,7 +32,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 14px 0 16px;
+  margin: 14px 0 0;
   font-size: 0.88rem;
   font-weight: 700;
   color: #6a6f79;

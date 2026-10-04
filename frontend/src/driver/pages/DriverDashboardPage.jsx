@@ -10,6 +10,7 @@ import HeadingToTerminalPanel from "../components/HeadingToTerminalPanel.jsx";
 import ArrivedAtTerminalPanel from "../components/ArrivedAtTerminalPanel.jsx";
 import QueueTurnAlert from "../components/QueueTurnAlert.jsx";
 import ParkedDemandCard from "../components/ParkedDemandCard.jsx";
+import LogOutConfirmModal from "../components/LogOutConfirmModal.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
 import { useFcmRegistration } from "../hooks/useFcmRegistration.js";
 import { useDriverDemand } from "../hooks/useDriverDemand.js";
@@ -33,6 +34,8 @@ function DriverDashboardPage() {
   const [isSkippingQueueWait, setIsSkippingQueueWait] = useState(false);
   const [driverPosition, setDriverPosition] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLogOutConfirmOpen, setIsLogOutConfirmOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const watchIdRef = useRef(null);
   const lastUpdateAtRef = useRef(0);
@@ -235,13 +238,21 @@ function DriverDashboardPage() {
     document.querySelector(".driver-profile-card")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleEditProfile = () => {};
+
   const handleReportProblem = () => {
     setIsMenuOpen(false);
     window.location.href = "mailto:support@caiabe.app?subject=Driver dashboard problem";
   };
 
-  const handleLogOut = async () => {
+  const handleLogOut = () => {
     setIsMenuOpen(false);
+    setIsLogOutConfirmOpen(true);
+  };
+
+  const confirmLogOut = async () => {
+    setIsLoggingOut(true);
+    if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
     await supabase.auth.signOut();
     navigate("/driver/login");
   };
@@ -281,6 +292,15 @@ function DriverDashboardPage() {
     </>
   );
 
+  const renderDashboardFooter = () => (
+    <footer className="driver-dashboard-page__footer">
+      <span className="driver-dashboard-page__footer-copyright">© 2026 cAIabe.</span>
+      <span className="driver-dashboard-page__footer-disclaimer">
+        A fully working system, built for hackathon purposes.
+      </span>
+    </footer>
+  );
+
   if (loading) {
     return <LoadingScreen message="Waking up dispatch…" />;
   }
@@ -299,16 +319,27 @@ function DriverDashboardPage() {
     const driverName = session?.user?.user_metadata?.full_name?.trim() || "Driver";
     return (
       <main className="driver-dashboard-page">
-        <div className="driver-dashboard-page__panel">
-          {renderDashboardHeader()}
-          <header className="driver-dashboard-page__header">
-            <DriverGreeting name={driverName} />
-          </header>
-          <p className="driver-dashboard-page__loading">
-            Your application is still {driver.verificationStatus}. You'll get access to the
-            dashboard once it's approved.
-          </p>
+        {renderDashboardHeader()}
+        <div className="driver-dashboard-page__content">
+          <div className="driver-dashboard-page__panel">
+            <header className="driver-dashboard-page__header">
+              <DriverGreeting name={driverName} />
+            </header>
+            <p className="driver-dashboard-page__loading">
+              Your application is still {driver.verificationStatus}. You'll get access to the
+              dashboard once it's approved.
+            </p>
+          </div>
+          {renderDashboardFooter()}
         </div>
+        {isLogOutConfirmOpen && (
+          <LogOutConfirmModal
+            onConfirm={confirmLogOut}
+            onCancel={() => setIsLogOutConfirmOpen(false)}
+            isLoggingOut={isLoggingOut}
+            isOnShift={false}
+          />
+        )}
       </main>
     );
   }
@@ -323,57 +354,72 @@ function DriverDashboardPage() {
 
   return (
     <main className="driver-dashboard-page">
+      {renderDashboardHeader()}
+      <div className="driver-dashboard-page__content">
       <div className="driver-dashboard-page__panel">
-        {renderDashboardHeader()}
         <header className="driver-dashboard-page__header">
-          <DriverGreeting name={driverName} />
+          <DriverGreeting
+            name={driverName}
+            phrase={shiftStage === "heading_to_terminal" ? "Mimingat," : undefined}
+          />
         </header>
 
-        <DriverProfileCard
-          fullName={driverName}
-          mobileNumber={session?.user?.user_metadata?.mobile_number}
-          emailAddress={session?.user?.email}
-          plateNumber={session?.user?.user_metadata?.plate_number}
-          vehicleRegistrationNumber={session?.user?.user_metadata?.vehicle_registration_number}
-          jeepColor={driver.jeepColor}
-          shiftStarted={!showShiftSummaryCard}
-        />
+        <div className="driver-dashboard-page__grid">
+          {showShiftSummaryCard && (
+            <div className="driver-dashboard-page__column driver-dashboard-page__column--profile">
+              <DriverProfileCard
+                fullName={driverName}
+                mobileNumber={session?.user?.user_metadata?.mobile_number}
+                emailAddress={session?.user?.email}
+                plateNumber={session?.user?.user_metadata?.plate_number}
+                vehicleRegistrationNumber={session?.user?.user_metadata?.vehicle_registration_number}
+                jeepColor={driver.jeepColor}
+                shiftStarted={!showShiftSummaryCard}
+                onEditProfile={handleEditProfile}
+              />
+            </div>
+          )}
 
-        {showShiftSummaryCard && (
-          <ShiftSummaryCard
-            assignedRouteLabel={assignedRouteLabel}
-            assignedTerminalName={assignedTerminalName}
-            onStartShift={handleStartShift}
-          />
-        )}
-
-        {shiftStage === "heading_to_terminal" && (
-          <HeadingToTerminalPanel
-            driverPosition={driverPosition}
-            terminalPosition={driver.terminal?.position}
-            terminalName={assignedTerminalName}
-            onUseTerminalLocation={handleUseTerminalLocation}
-          />
-        )}
-
-        {shiftStage === "arrived" && (
-          <>
-            <ArrivedAtTerminalPanel
-              queuePosition={ownQueueEntry?.position ?? "…"}
-              assignedRouteLabel={assignedRouteLabel}
-              geofenceStatus={ownQueueEntry?.geofenceStatus}
-              isTemporarilyAway={isTemporarilyAway}
-              onViewQueue={handleViewQueue}
-              onSkipQueueWait={handleSkipQueueWait}
-              isSkippingQueueWait={isSkippingQueueWait}
-              onEndShiftForTheDay={handleEndShiftForTheDay}
-              isEndingShift={isRespondingToQueue}
-            />
-            {!isTemporarilyAway && (
-              <ParkedDemandCard data={parkedDemand} isLoading={isParkedDemandLoading} error={parkedDemandError} />
+          <div className="driver-dashboard-page__column driver-dashboard-page__column--main">
+            {showShiftSummaryCard && (
+              <ShiftSummaryCard
+                assignedRouteLabel={assignedRouteLabel}
+                assignedTerminalName={assignedTerminalName}
+                onStartShift={handleStartShift}
+              />
             )}
-          </>
-        )}
+
+            {shiftStage === "heading_to_terminal" && (
+              <HeadingToTerminalPanel
+                driverPosition={driverPosition}
+                terminalPosition={driver.terminal?.position}
+                terminalName={assignedTerminalName}
+                onUseTerminalLocation={handleUseTerminalLocation}
+              />
+            )}
+
+            {shiftStage === "arrived" && (
+              <>
+                <ArrivedAtTerminalPanel
+                  queuePosition={ownQueueEntry?.position ?? "…"}
+                  assignedRouteLabel={assignedRouteLabel}
+                  geofenceStatus={ownQueueEntry?.geofenceStatus}
+                  isTemporarilyAway={isTemporarilyAway}
+                  onViewQueue={handleViewQueue}
+                  onSkipQueueWait={handleSkipQueueWait}
+                  isSkippingQueueWait={isSkippingQueueWait}
+                  onEndShiftForTheDay={handleEndShiftForTheDay}
+                  isEndingShift={isRespondingToQueue}
+                />
+                {!isTemporarilyAway && (
+                  <ParkedDemandCard data={parkedDemand} isLoading={isParkedDemandLoading} error={parkedDemandError} />
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+      {renderDashboardFooter()}
       </div>
 
       {shiftStage === "awaiting_location_permission" && (
@@ -392,6 +438,15 @@ function DriverDashboardPage() {
           onLiningUp={handleLiningUp}
           onLeaveTemporarily={handleLeaveTemporarily}
           onEndShiftForTheDay={handleEndShiftForTheDay}
+        />
+      )}
+
+      {isLogOutConfirmOpen && (
+        <LogOutConfirmModal
+          onConfirm={confirmLogOut}
+          onCancel={() => setIsLogOutConfirmOpen(false)}
+          isLoggingOut={isLoggingOut}
+          isOnShift={shiftStage !== "not_started"}
         />
       )}
     </main>

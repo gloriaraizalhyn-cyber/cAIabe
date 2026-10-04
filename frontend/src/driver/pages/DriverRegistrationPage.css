@@ -4,9 +4,108 @@
   padding: 32px 16px 60px;
 }
 
+.driver-registration-page__layout {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.driver-registration-page__sidebar {
+  display: none;
+}
+
 .driver-registration-page__form {
   max-width: 720px;
   margin: 0 auto;
+}
+
+@media (min-width: 900px) {
+  .driver-registration-page {
+    padding: 56px 40px 80px;
+  }
+
+  .driver-registration-page__layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 40px;
+    max-width: 1040px;
+  }
+
+  .driver-registration-page__sidebar {
+    display: block;
+    position: sticky;
+    top: 40px;
+    flex: 0 0 260px;
+    padding: 24px 20px;
+    border: 2px solid #000000;
+    border-top: 5px solid #1b3fa0;
+    border-radius: 16px;
+    background: #eef2fb;
+  }
+
+  .driver-registration-page__sidebar-eyebrow {
+    margin: 0 0 6px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #d71920;
+  }
+
+  .driver-registration-page__sidebar-title {
+    margin: 0;
+    font-family: "LL Karatula", "DM Sans", sans-serif;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.3;
+  }
+
+  .driver-registration-page__sidebar-steps {
+    list-style: none;
+    margin: 20px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .driver-registration-page__sidebar-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  .driver-registration-page__sidebar-step-number {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #1b3fa0;
+    color: #ffffff;
+    font-size: 0.74rem;
+    font-weight: 800;
+  }
+
+  .driver-registration-page__sidebar-note {
+    margin: 20px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid #d7deef;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: #4a4f58;
+  }
+
+  .driver-registration-page__form {
+    flex: 1 1 auto;
+    max-width: 620px;
+    margin: 0;
+  }
 }
 
 .driver-registration-page__header {
