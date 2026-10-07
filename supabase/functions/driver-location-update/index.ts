@@ -18,7 +18,7 @@ const END_OF_ROUTE_RADIUS_METERS = 100;
 // Temporary egress guard: keep the stored geofence status and queue promotion
 // gate intact, but stop recalculating terminal distance on every GPS update.
 // Restore to true when terminal geofencing is needed again.
-const GEOFENCE_ENABLED = false;
+const GEOFENCE_ENABLED = true;
 
 Deno.serve(async (req: Request) => {
   const preflight = handleOptions(req);

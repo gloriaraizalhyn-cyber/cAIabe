@@ -31,7 +31,7 @@ function PhoneFrame({ title, subtitle, accent, src, isFocused, badge }) {
           // so with GPS granted, "I'm here!" would register her at the
           // presenter's actual laptop — hundreds of km from Angeles City —
           // and driver-demand-check would filter her out. Blocked, it falls
-          // back to the searched origin, which is SM City Clark.
+          // back to the searched origin, which is Astro Park.
           //
           // Driver: NextToGoPage would otherwise watchPosition and POST
           // driver-location-update for a driver the fleet simulator may also

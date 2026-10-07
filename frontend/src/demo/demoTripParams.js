@@ -47,6 +47,22 @@ export function readDemoTripSearch(search = window.location.search) {
   };
 }
 
+// Which stage pane this page is running in ("passenger" | "driver" | null).
+// Captured once at module load — i.e. from the iframe's first URL — because
+// in-app navigation (react-router) drops the query string while the iframe
+// keeps living, and later pages (/waiting, /driver/driving, …) still need to
+// know they are on the stage. The stage's panes have geolocation blocked, so
+// those pages use this to run scripted stand-ins for real GPS.
+const DEMO_FRAME = new URLSearchParams(window.location.search).get("demoFrame");
+
+export function isDemoDriverFrame() {
+  return DEMO_FRAME === "driver";
+}
+
+export function isDemoPassengerFrame() {
+  return DEMO_FRAME === "passenger";
+}
+
 export function readDemoPassengerType(search = window.location.search) {
   return new URLSearchParams(search).get("demoType");
 }

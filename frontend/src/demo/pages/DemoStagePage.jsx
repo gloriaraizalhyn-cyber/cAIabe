@@ -12,6 +12,7 @@ import {
   DEMO_LEAD_ROUTE,
   DEMO_PANE_DRIVER_UNIT,
   DEMO_ROUTES,
+  DEMO_YELLOW_PANE_DRIVER_UNIT,
   simDriverEmail,
 } from "../constants/demoScript.js";
 import "./DemoStagePage.css";
@@ -22,6 +23,13 @@ import "./DemoStagePage.css";
 // is tapped, so it can't fight the fleet simulator for a driver's position.
 const DRIVER_FRAME_URL = `/driver/next-to-go?demoFrame=driver&demoAs=${encodeURIComponent(
   simDriverEmail(DEMO_LEAD_ROUTE.name, DEMO_PANE_DRIVER_UNIT)
+)}`;
+
+// The yellow (Telabastagan) driver's phone — same page, signed in as the
+// yellow route's spare simulated unit.
+const YELLOW_DRIVER_ROUTE = DEMO_ROUTES[1];
+const YELLOW_DRIVER_FRAME_URL = `/driver/next-to-go?demoFrame=driver&demoAs=${encodeURIComponent(
+  simDriverEmail(YELLOW_DRIVER_ROUTE.name, DEMO_YELLOW_PANE_DRIVER_UNIT)
 )}`;
 
 const PASSENGER_FRAME_URL = buildPassengerFrameUrl({
@@ -178,6 +186,14 @@ function DemoStagePage() {
           src={DRIVER_FRAME_URL}
           isFocused={isFocused("driver")}
           badge={demand?.recommendation ? demand.recommendation.toUpperCase() : null}
+        />
+
+        <PhoneFrame
+          title="Driver"
+          subtitle={`Mang Dodong · ${YELLOW_DRIVER_ROUTE.shortName}`}
+          accent={YELLOW_DRIVER_ROUTE.color}
+          src={YELLOW_DRIVER_FRAME_URL}
+          isFocused={beat.id === "board"}
         />
       </div>
 

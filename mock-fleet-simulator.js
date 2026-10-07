@@ -78,11 +78,32 @@ async function restSelect(path) {
 // session rather than the anon key — needed for reading queue_entries,
 // whose RLS policy scopes reads to the caller's own route.
 async function restSelectAuthed(path, accessToken) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: { apikey: ANON_KEY, Authorization: `Bearer ${accessToken}` },
-  });
+  const doFetch = () =>
+    fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${liveToken(accessToken)}` },
+    });
+  let res = await doFetch();
+  if (res.status === 401 && (await refreshSession(accessToken))) res = await doFetch();
   if (!res.ok) throw new Error(`GET ${path} failed: ${res.status} ${await res.text()}`);
   return res.json();
+}
+
+// Updates the caller's own rows (drivers may update their own queue entry
+// under RLS), authenticated as that unit's driver session.
+async function restPatchAuthed(path, accessToken, body) {
+  const doFetch = () =>
+    fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      method: "PATCH",
+      headers: {
+        apikey: ANON_KEY,
+        Authorization: `Bearer ${liveToken(accessToken)}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  let res = await doFetch();
+  if (res.status === 401 && (await refreshSession(accessToken))) res = await doFetch();
+  if (!res.ok) throw new Error(`PATCH ${path} failed: ${res.status} ${await res.text()}`);
 }
 
 async function callRpc(fnName, args) {
@@ -96,11 +117,14 @@ async function callRpc(fnName, args) {
 }
 
 async function callFunction(name, accessToken, body, { quiet } = {}) {
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
-    method: "POST",
-    headers: { apikey: ANON_KEY, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const doFetch = () =>
+    fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
+      method: "POST",
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${liveToken(accessToken)}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  let res = await doFetch();
+  if (res.status === 401 && (await refreshSession(accessToken))) res = await doFetch();
 
   // A gateway hiccup (cold start, brief outage, rate limit) can return an
   // HTML error page instead of JSON. Every unit's road/queue loop calls
@@ -128,7 +152,36 @@ async function signIn(email, password) {
   });
   const data = await res.json();
   if (!data.access_token) return null;
-  return { accessToken: data.access_token, userId: data.user.id };
+  const session = { accessToken: data.access_token, refreshToken: data.refresh_token, userId: data.user.id };
+  sessionsByToken.set(session.accessToken, session);
+  return session;
+}
+
+// Access tokens last about an hour, but every unit's loop runs for as long as
+// the demo does and passes the token around as a plain string. Every token
+// ever issued maps back to its session, so a stale copy still resolves to the
+// live token, and a 401 triggers one refresh + retry (see callFunction /
+// restSelectAuthed) instead of the unit crashing with "JWT expired".
+const sessionsByToken = new Map();
+
+function liveToken(token) {
+  return sessionsByToken.get(token)?.accessToken ?? token;
+}
+
+async function refreshSession(token) {
+  const session = sessionsByToken.get(token);
+  if (!session?.refreshToken) return false;
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: "POST",
+    headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: session.refreshToken }),
+  });
+  const data = await res.json();
+  if (!data.access_token) return false;
+  session.accessToken = data.access_token;
+  session.refreshToken = data.refresh_token ?? session.refreshToken;
+  sessionsByToken.set(session.accessToken, session);
+  return true;
 }
 
 async function adminCreateUser(email, password) {
@@ -352,7 +405,7 @@ const activeUnits = new Map();
 // `target` matches on the driver id (as shown by "list" and in the app's own
 // queue screen — same id, that's the point) OR the unit label, so either
 // works no matter which view you're looking at. "all" hits every active unit.
-async function applyDemoAction(action, target) {
+async function applyDemoAction(action, target, payload = {}) {
   const needle = String(target ?? "").trim().toLowerCase();
   if (!needle) return 0;
 
@@ -376,8 +429,18 @@ async function applyDemoAction(action, target) {
       state.jumpBackRequested = true;
       console.log(`🐢 [${tag}] simulating heavy traffic — jumped back on its path and slowed down.`);
     } else if (action === "resume") {
-      state.delayMultiplier = 1;
-      console.log(`✅ [${tag}] back to normal speed.`);
+      // `multiplier` < 1 fast-forwards (the passenger demo's "demo speed"
+      // control sends 1/8 for x8); `capacity` pins the unit's seats open/full
+      // until the next resume without one. Sent through the existing "resume"
+      // type because demo_commands only accepts a fixed list of types.
+      const multiplier = Number(payload.multiplier);
+      state.delayMultiplier = multiplier > 0 ? multiplier : 1;
+      state.lockCapacity = payload.capacity === "available" || payload.capacity === "full" ? payload.capacity : null;
+      console.log(
+        state.delayMultiplier === 1 && !state.lockCapacity
+          ? `✅ [${tag}] back to normal speed.`
+          : `⏩ [${tag}] speed x${(1 / state.delayMultiplier).toFixed(1)}${state.lockCapacity ? `, seats pinned ${state.lockCapacity}` : ""}.`,
+      );
     } else if (action === "leave") {
       // ~300m from the terminal — comfortably past the default 130m exit
       // radius, so the next driver-location-update reports "outside".
@@ -519,7 +582,7 @@ async function handleDemoCommand(row) {
     await sendDemoSms({ from: payload.from, text: payload.text });
     return;
   }
-  await applyDemoAction(row.type, payload.target);
+  await applyDemoAction(row.type, payload.target, payload);
 }
 
 async function pollDemoCommands() {
@@ -577,26 +640,82 @@ async function driveThroughQueue(driverLabel, session, demoState) {
     { quiet: true },
   );
 
-  while (true) {
-    const pos = demoState.awayOverride ?? demoState.terminalPosition;
-    await callFunction(
-      "driver-location-update",
-      session.accessToken,
-      { lat: pos.lat, lng: pos.lng },
-      { quiet: true },
-    );
+  const readEntry = async () =>
+    (
+      await restSelectAuthed(
+        `queue_entries?driver_id=eq.${session.userId}` +
+          `&status=in.(waiting,next_to_go,driving)` +
+          `&select=id,status,notified_at,responded_at,geofence_status&order=arrival_at.desc&limit=1`,
+        session.accessToken,
+      )
+    )?.[0];
 
-    const own = await restSelectAuthed(
-      `queue_entries?driver_id=eq.${session.userId}` +
-        `&status=in.(waiting,next_to_go,driving)` +
-        `&select=id,status,notified_at,responded_at&order=arrival_at.desc&limit=1`,
-      session.accessToken,
-    );
-    const entry = own?.[0];
+  let hasReportedPosition = false;
+
+  while (true) {
+    // Status first, position second. Another unit's dispatch tick can promote
+    // this one at any moment, and a driving unit that then reports the
+    // terminal's coordinates is treated as having finished its trip when the
+    // terminal doubles as the route's end point (the grey route's does) — it
+    // would be requeued straight away, forever. So never report the terminal
+    // position for a unit that is already dispatched.
+    let entry = await readEntry();
 
     if (entry?.status === "driving") {
       console.log(`  🚦 [${driverLabel}] dispatched — starting road loop.`);
       return;
+    }
+
+    // Report the terminal (or the demo-controlled "away" spot) only when it
+    // changes something: first report, an away override, or the geofence
+    // status not yet confirmed inside. Steady-state repeats added nothing but
+    // egress and that end-of-route race.
+    if (!hasReportedPosition || demoState.awayOverride || entry?.geofence_status !== "inside") {
+      const pos = demoState.awayOverride ?? demoState.terminalPosition;
+      await callFunction(
+        "driver-location-update",
+        session.accessToken,
+        { lat: pos.lat, lng: pos.lng },
+        { quiet: true },
+      );
+      hasReportedPosition = true;
+      entry = (await readEntry()) ?? entry;
+      if (entry?.status === "driving") {
+        console.log(`  🚦 [${driverLabel}] dispatched — starting road loop.`);
+        return;
+      }
+    }
+
+    // queue-advance only dispatches a unit whose geofence_status is "inside".
+    // The backend normally maintains that from driver-location-update, but its
+    // geofence check can be switched off (GEOFENCE_ENABLED, an egress guard),
+    // which would leave every simulated unit stuck at the terminal forever.
+    // These units ARE reporting the terminal's coordinates, so state it
+    // directly — except while a demo "leave" has deliberately moved one away.
+    if (entry && entry.geofence_status !== "inside" && !demoState.awayOverride) {
+      await restPatchAuthed(`queue_entries?id=eq.${entry.id}`, session.accessToken, {
+        geofence_status: "inside",
+        last_inside_at: new Date().toISOString(),
+      }).catch(() => {});
+    }
+
+    // Lined up and ready (or waiting to be notified): run the dispatch tick
+    // ourselves — queue-advance is the exact function the pg_cron job calls,
+    // and the "Skip wait" button on the driver app invokes it the same way.
+    // Keeps the demo moving even when the cron job is paused or disabled.
+    // Re-read straight after: a unit promoted here must be recognised as
+    // dispatched BEFORE the next loop reports the terminal's coordinates
+    // again, because a driving unit at a terminal that doubles as its route's
+    // end point is (correctly) treated as having finished and is requeued.
+    const needsTick =
+      entry?.status === "next_to_go" || (entry?.status === "waiting" && !entry.notified_at);
+    if (needsTick && !demoState.awayOverride) {
+      await callFunction("queue-advance", session.accessToken, {}, { quiet: true });
+      entry = await readEntry();
+      if (entry?.status === "driving") {
+        console.log(`  🚦 [${driverLabel}] dispatched — starting road loop.`);
+        return;
+      }
     }
 
     // Answer the turn prompt the way a real driver does by tapping "Lining
@@ -623,6 +742,21 @@ async function driveThroughQueue(driverLabel, session, demoState) {
 
 // ---------- driving loop for a single jeepney unit ----------
 
+// End-of-route guard (see the loop in driveSingleJeep): the server's own
+// radius is 100 m; the last 1.5% of the circuit (~150 m on a ~10 km loop) is
+// where a genuine finish happens.
+const END_OF_ROUTE_GUARD_METERS = 105;
+const END_OF_ROUTE_ZONE_FRACTION = 0.985;
+
+function haversineMeters(a, b) {
+  const R = 6371000;
+  const rad = (d) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat);
+  const dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
 async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps) {
   const session = await ensureMockDriver(route, terminal.id, driverIndex);
   const driverLabel = `${route.name} (Unit #${driverIndex})`;
@@ -647,6 +781,7 @@ async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps
 
   const demoState = {
     delayMultiplier: 1,
+    lockCapacity: null, // "available" | "full" while pinned by the passenger demo
     jumpBackRequested: false,
     accessToken: session.accessToken,
     driverId: session.userId,
@@ -669,6 +804,30 @@ async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps
 
       const point = circuit[currentIdx];
 
+      // Fast-forward (the passenger demo's "demo speed", see applyDemoAction's
+      // "resume"): every update waits on a server round trip (~1 s), so
+      // shortening the delay alone tops out around 2-3x. Instead cover
+      // several route points per update — x8 moves 8 points at a time — and
+      // pace the updates so the unit really does cover 1/multiplier times the
+      // ground per second. Real time (multiplier 1) is untouched.
+      const tickStartedAt = Date.now();
+      const stride = demoState.delayMultiplier < 1 ? Math.max(1, Math.round(1 / demoState.delayMultiplier)) : 1;
+
+      // driver-location-update requeues a driving unit the moment it is within
+      // 100 m of the route's terminus, but a loop route can pass back near its
+      // own start part-way round (the grey route does, around SM City Clark,
+      // ~1 km in) — that is not a finished trip. Only the last stretch of the
+      // circuit is the real end, so skip the report anywhere else near the
+      // terminus; the unit simply carries on (it isn't requeued mid-lap).
+      const terminus = circuit[circuitLength - 1];
+      const isNearTerminus = haversineMeters(point, terminus) <= END_OF_ROUTE_GUARD_METERS;
+      const isRealEnd = currentIdx >= circuitLength * END_OF_ROUTE_ZONE_FRACTION;
+      if (isNearTerminus && !isRealEnd) {
+        currentIdx = (currentIdx + stride) % circuitLength;
+        await sleep(baseVehicleDelay * demoState.delayMultiplier * stride);
+        continue;
+      }
+
       const result = await callFunction(
         "driver-location-update",
         session.accessToken,
@@ -690,11 +849,30 @@ async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps
       // forever with nobody able to see it.
       if (result?.end_of_route) {
         console.log(`  🏁 [${driverLabel}] completed its route — rejoining the queue.`);
+        // Next lap starts from the beginning. Left where it finished, the
+        // unit's very first report after being redispatched would be at the
+        // route's end again, finishing it instantly — an endless
+        // requeue/dispatch loop in which it never leaves the terminal. (The
+        // start stretch is within the end-of-route radius, but the guard
+        // above skips reporting there until the unit has moved clear.)
+        currentIdx = 0;
         break;
       }
 
       step++;
-      if (step % TOGGLE_CAPACITY_EVERY_N_STEPS === 0) {
+      if (demoState.lockCapacity) {
+        // Pinned by the passenger demo (so the unit she is waiting for isn't
+        // randomly "full" when it reaches her). Skips the random toggle below.
+        if (capacityState !== demoState.lockCapacity) {
+          capacityState = demoState.lockCapacity;
+          await callFunction(
+            "driver-capacity-toggle",
+            session.accessToken,
+            { state: capacityState },
+            { quiet: true },
+          );
+        }
+      } else if (step % TOGGLE_CAPACITY_EVERY_N_STEPS === 0) {
         capacityState = capacityState === "available" ? "full" : "available";
         await callFunction(
           "driver-capacity-toggle",
@@ -704,8 +882,11 @@ async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps
         );
       }
 
-      currentIdx = (currentIdx + 1) % circuitLength;
-      await sleep(baseVehicleDelay * demoState.delayMultiplier);
+      currentIdx = (currentIdx + stride) % circuitLength;
+      // Pace by the wall-clock the whole tick should take, minus what the
+      // server call already used, so fast-forward isn't capped by latency.
+      const tickBudgetMs = baseVehicleDelay * demoState.delayMultiplier * stride;
+      await sleep(Math.max(stride > 1 ? 150 : 0, tickBudgetMs - (stride > 1 ? Date.now() - tickStartedAt : 0)));
     }
   } while (true);
 }

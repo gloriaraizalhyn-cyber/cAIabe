@@ -8,11 +8,11 @@
 //   node --env-file=.env demo-prep.js
 //
 // What it does, all idempotent (safe to re-run between rehearsals):
-//   1. Checks the SM City Clark landmark exists and its coordinate is right.
+//   1. Checks the Astro Park landmark exists and its coordinate is right.
 //   2. Creates/approves the simulated driver accounts for both demo routes,
 //      using the same account naming mock-fleet-simulator.js uses, so the
 //      stage's driver pane can sign straight in.
-//   3. Confirms route-search actually plans SM City Clark -> SM City
+//   3. Confirms route-search actually plans Astro Park -> SM City
 //      Telabastagan on the seeded data, and prints the itinerary.
 //   4. Prints the exact commands and URL for the run.
 //
@@ -28,10 +28,17 @@ const JEEPS_PER_ROUTE = parseInt(getCliArg("jeeps", "3"), 10) || 3;
 // Must match DEMO_PANE_DRIVER_UNIT / DEMO_LEAD_TERMINAL in
 // frontend/src/demo/constants/demoScript.js.
 const PANE_DRIVER_UNIT = 4;
-const PANE_DRIVER_TERMINAL = "Friendship Highway";
+// The yellow route's driver pane (DEMO_YELLOW_PANE_DRIVER_UNIT): a spare unit on
+// the Pampang route that the fleet simulator must not drive (--jeeps=2).
+const YELLOW_PANE_DRIVER_UNIT = 3;
+const PANE_DRIVER_TERMINAL = "Public Transport Terminal (SM Clark)";
+// Where that terminal must sit: the grey route's own start/terminus (its
+// routes.terminus), right beside SM City Clark. The seeded row was ~456 m
+// away from it. Must match DEMO_LEAD_TERMINAL in demoScript.js.
+const PANE_DRIVER_TERMINAL_POSITION = { lat: 15.1682564, lng: 120.5823745 };
 
 // Must match frontend/src/demo/constants/demoScript.js.
-const ORIGIN = { label: "SM City Clark", lat: 15.16845, lng: 120.58018 };
+const ORIGIN = { label: "Astro Park", landmark: "Bayanihan Park (Astro Park)", lat: 15.1695, lng: 120.588 };
 const DESTINATION = { label: "SM City Telabastagan", lat: 15.120246, lng: 120.6018769 };
 const DEMO_ROUTE_NAMES = [
   "Checkpoint - Holy Angel University - Balibago",
@@ -115,17 +122,17 @@ async function upsertDriverRow({ id, routeId, jeepColor, homeTerminalId }) {
 async function checkLandmarks() {
   console.log("① Landmarks");
   const rows = await restSelect(
-    "landmarks?label=in.(%22SM%20City%20Clark%22,%22SM%20City%20Telabastagan%22)&select=label,lat,lng",
+    "landmarks?label=in.(%22Bayanihan%20Park%20(Astro%20Park)%22,%22SM%20City%20Telabastagan%22)&select=label,lat,lng",
   );
 
-  const clark = rows.find((r) => r.label === "SM City Clark");
+  const clark = rows.find((r) => r.label === ORIGIN.landmark);
   const tela = rows.find((r) => r.label === "SM City Telabastagan");
 
   if (!clark) {
-    console.log("   ❌ SM City Clark is missing — run supabase/sql/add_demo_sm_clark_landmark.sql");
+    console.log("   ❌ Astro Park landmark is missing — run supabase/sql/add_landmarks.sql");
     return false;
   }
-  console.log(`   ✅ SM City Clark  ${clark.lat}, ${clark.lng}`);
+  console.log(`   ✅ ${ORIGIN.label}  ${clark.lat}, ${clark.lng}`);
 
   if (!tela) {
     console.log("   ❌ SM City Telabastagan is missing — run supabase/sql/add_landmarks.sql");
@@ -151,6 +158,31 @@ async function checkDemoControl() {
     console.log("      Without it the Throw-traffic and SMS levers do nothing; everything else still works.");
     return false;
   }
+}
+
+async function ensureTerminalLocation() {
+  console.log("\n②b Grey route terminal");
+  const name = encodeURIComponent(PANE_DRIVER_TERMINAL);
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/terminals?name=eq.${name}`, {
+    method: "PATCH",
+    headers: {
+      apikey: SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify({
+      location: `SRID=4326;POINT(${PANE_DRIVER_TERMINAL_POSITION.lng} ${PANE_DRIVER_TERMINAL_POSITION.lat})`,
+    }),
+  });
+  const rows = await res.json();
+  if (!res.ok || !rows.length) {
+    console.log(`   ❌ Could not move "${PANE_DRIVER_TERMINAL}": ${JSON.stringify(rows)}`);
+    return;
+  }
+  console.log(
+    `   ✅ ${PANE_DRIVER_TERMINAL} at ${PANE_DRIVER_TERMINAL_POSITION.lat}, ${PANE_DRIVER_TERMINAL_POSITION.lng} (the grey route's own start)`,
+  );
 }
 
 async function ensureDrivers() {
@@ -196,11 +228,8 @@ async function ensureDrivers() {
         console.log(`   ❌ Could not sign in ${email}`);
         continue;
       }
-      // The pane driver parks at Friendship Highway rather than the route's
-      // own terminal. See DEMO_LEAD_TERMINAL in demoScript.js: from SMC
-      // Checkpoint the SM Clark passenger projects 823 m BEHIND the driver
-      // and driver-demand-check filters her out, so the hero beat — her tap
-      // appearing on his screen — would silently show nothing.
+      // The pane driver parks at the grey route's SM Clark terminal, where
+      // the grey jeepneys start. See DEMO_LEAD_TERMINAL in demoScript.js.
       const isPaneDriver = isLeadRoute && i === PANE_DRIVER_UNIT;
       await upsertDriverRow({
         id: session.userId,
@@ -209,7 +238,12 @@ async function ensureDrivers() {
         homeTerminalId: isPaneDriver && paneTerminalId ? paneTerminalId : terminalId,
       });
       if (i === 1) console.log(`   ✅ ${routeName}`);
-      const role = isPaneDriver ? `  ← driver pane, parks at ${PANE_DRIVER_TERMINAL}` : "";
+      const isYellowPaneDriver = !isLeadRoute && i === YELLOW_PANE_DRIVER_UNIT;
+      const role = isPaneDriver
+        ? `  ← grey driver pane, parks at ${PANE_DRIVER_TERMINAL}`
+        : isYellowPaneDriver
+          ? "  ← yellow driver pane (leave undriven: run its fleet with --jeeps=2)"
+          : "";
       console.log(`      unit #${i}  ${email}  (${session.userId.slice(0, 8)}…)${role}`);
     }
   }
@@ -306,6 +340,7 @@ async function main() {
 
   const landmarksOk = await checkLandmarks();
   const controlOk = await checkDemoControl();
+  await ensureTerminalLocation();
   await ensureDrivers();
   await checkJourney();
   await resetWaitingPassengers();

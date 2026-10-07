@@ -180,3 +180,52 @@
   padding: 0 2px;
   flex-shrink: 0;
 }
+
+.waiting-for-jeep-page__pickup-banner {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: calc(100% - 32px);
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #1a9e5c;
+  color: #ffffff;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  font-size: 0.82rem;
+  animation: waiting-for-jeep-pickup-in 0.3s ease-out;
+}
+
+.waiting-for-jeep-page__pickup-banner > span {
+  font-size: 1.6rem;
+}
+
+.waiting-for-jeep-page__pickup-banner div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.waiting-for-jeep-page__pickup-banner strong {
+  font-size: 0.95rem;
+}
+
+@keyframes waiting-for-jeep-pickup-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.waiting-for-jeep-page__pickup-banner--transfer {
+  background: #1b3fa0;
+}

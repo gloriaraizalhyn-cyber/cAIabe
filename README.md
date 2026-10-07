@@ -218,11 +218,19 @@ Create a root `.env` file (gitignored) with `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
 
 ```bash
 node --env-file=.env demo-prep.js                    # once: demo drivers, landmark, sanity checks
-node --env-file=.env mock-fleet-simulator.js --jeeps=3
+node --env-file=.env mock-fleet-simulator.js --jeeps=3 --delay=2000 --route="Checkpoint - Holy Angel University - Balibago"
+node --env-file=.env mock-fleet-simulator.js --jeeps=2 --delay=2000 --route="Pampang - SM Telabastagan"
 node --env-file=.env mock-passenger-simulator.js --route="Florida"   # optional; type surge / clear / list
 ```
 
 Open **`/demo/stage`**. Use **Space** or **→** to go to the next step and **←** to go back.
+
+**The passenger's whole trip plays out on its own** (Astro Park → SM City Telabastagan, grey jeep, transfer, yellow jeep). After she taps **"I'm here"**:
+1. The first jeep with open seats that reaches her picks her up, and her screen switches to **ON BOARD**. A full jeep drives past.
+2. Her screen follows that jeep to the transfer stop with a progress bar, then shows **TRANSFER**, walks her to the yellow stop and waits there.
+3. The next open yellow jeep picks her up. She rides to the end, walks the last stretch, and sees **You've arrived** with the fare and the CO₂ she saved.
+
+To keep it short, the jeeps are **fast-forwarded** (default ×8; tap the **Demo speed** chip to switch between ×1, ×4 and ×8). The passenger screen sends the speed to the fleet simulator through the `demo_commands` table (as a `resume` command with a `multiplier`), so the simulator must be running. A **Skip ahead (demo)** button on the riding screen moves to the next step if a jeep ever stalls.
 
 The Carbon Impact overlay starts at zero each day (Philippine time). Before presenting:
 - Take one passenger trip through to "I'm at the bay".

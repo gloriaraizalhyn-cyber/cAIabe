@@ -8,13 +8,15 @@ import { ROUTE_OPTIONS_FIXTURE } from "../../shared/constants/tripSearchFixtures
 import { useLiveDriverPositions } from "../../shared/hooks/useLiveDriverPositions.js";
 import { getRouteColorMeta } from "../../shared/utils/routeColorHelpers.js";
 import { saveRoute, removeSavedRouteByKey, isRouteSaved } from "../../shared/utils/savedRoutesStorage.js";
+import { isDemoPassengerFrame } from "../../demo/demoTripParams.js";
+import DemoOnRoute from "./DemoOnRoute.jsx";
 import "./OnRoutePage.css";
 
 function findRouteWithJourney(routeId) {
   return ROUTE_OPTIONS_FIXTURE.find((route) => route.id === routeId && route.onRouteJourney);
 }
 
-function OnRoutePage() {
+function OnRouteClassic() {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -90,7 +92,23 @@ function OnRoutePage() {
   const [currentPhaseKey, setCurrentPhaseKey] = useState(
     location.state?.initialPhaseKey ?? phaseOrder[0]
   );
-  const currentPhase = phases[currentPhaseKey] || phases[phaseOrder[0]];
+  const basePhase = phases[currentPhaseKey] || phases[phaseOrder[0]];
+
+  // Arrived here because a jeep picked the passenger up (demo stage's
+  // automatic pickup — see WaitingForJeepPage): say so plainly instead of the
+  // generic riding copy, so it's obvious on screen that she is on the jeepney.
+  const wasPickedUp = Boolean(location.state?.pickedUpBy);
+  const currentPhase =
+    wasPickedUp && currentPhaseKey === phaseOrder[0]
+      ? {
+          ...basePhase,
+          statusLabel: "ON BOARD",
+          heading: `You're on the ${routeMeta.name} jeep`,
+          subtext: `Picked up by the driver — riding ${routeName}${
+            tripSearch?.destination ? ` toward ${tripSearch.destination}` : ""
+          }`,
+        }
+      : basePhase;
 
   const handleAdvance = () => {
     if (currentPhase.nextPhaseKey) {
@@ -150,6 +168,17 @@ function OnRoutePage() {
       </div>
     </main>
   );
+}
+
+// The demo stage's passenger pane gets the scripted, multi-leg ride (follows the
+// jeep that picked her up, transfers, arrives); everything else — including a
+// real passenger using the app — keeps the manual OnRouteClassic above.
+function OnRoutePage() {
+  const location = useLocation();
+  if (isDemoPassengerFrame() && location.state?.pickedUpBy && location.state?.route?.itinerary) {
+    return <DemoOnRoute />;
+  }
+  return <OnRouteClassic />;
 }
 
 export default OnRoutePage;

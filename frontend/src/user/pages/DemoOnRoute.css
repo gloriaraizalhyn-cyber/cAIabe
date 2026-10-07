@@ -1,0 +1,60 @@
+.demo-ride-progress {
+  padding: 0 20px 12px;
+}
+
+.demo-ride-progress__track {
+  height: 8px;
+  border-radius: 999px;
+  background: #e7e0d4;
+  overflow: hidden;
+}
+
+.demo-ride-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #1a9e5c;
+  transition: width 0.4s linear;
+}
+
+.demo-ride-progress__label {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #6a6f79;
+  text-transform: uppercase;
+}
+
+.demo-ride-summary {
+  flex: 1;
+  margin: 0;
+  padding: 4px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.demo-ride-summary > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.demo-ride-summary dt {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6a6f79;
+}
+
+.demo-ride-summary dd {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}

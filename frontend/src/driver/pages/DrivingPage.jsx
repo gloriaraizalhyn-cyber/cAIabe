@@ -16,6 +16,15 @@ import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { COLOR_NAME_TO_HEX } from "../../shared/constants/driverRegistrationFixtures.js";
 import { NEXT_WAITING_PICKUP_FIXTURE } from "../../shared/constants/driverDashboardFixtures.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
+import { isDemoDriverFrame } from "../../demo/demoTripParams.js";
+import {
+  DEMO_DRIVE_STEP_INTERVAL_MS,
+  DEMO_DRIVE_STEP_METERS,
+  DEMO_DRIVE_ROUTES,
+  DEMO_ROUTE_END_ZONE_METERS,
+  DEMO_TERMINUS_RADIUS_METERS,
+} from "../../demo/constants/demoScript.js";
+import { haversineDistanceMeters } from "../../shared/utils/geo.js";
 import "./DrivingPage.css";
 
 // NEXT_WAITING_PICKUP_FIXTURE stays as-is here — there's no per-driver
@@ -32,7 +41,10 @@ function DrivingPage() {
   const [isTripComplete, setIsTripComplete] = useState(false);
   const [newQueuePosition, setNewQueuePosition] = useState(null);
   const [tripTimeMinutes, setTripTimeMinutes] = useState(null);
-  const [isUsingDemoPosition, setIsUsingDemoPosition] = useState(false);
+  // The stage's driver iframe has geolocation blocked, so it drives itself
+  // along the route instead (see the demo drive loop below).
+  const isDemoDrive = isDemoDriverFrame();
+  const [isUsingDemoPosition, setIsUsingDemoPosition] = useState(isDemoDrive);
 
   const lastUpdateAtRef = useRef(0);
   const watchIdRef = useRef(null);
@@ -123,6 +135,69 @@ function DrivingPage() {
     return () => navigator.geolocation.clearWatch(id);
   }, [driver?.route?.id, session?.user?.id, isUsingDemoPosition]);
 
+  // Demo drive loop — only in the stage's driver iframe. Walks the driver
+  // down its route's real polyline from the terminal, a fixed step at a time,
+  // and reports every position through driver-location-update (the same call
+  // a real GPS tick makes), so the jeepney visibly moves here, on the live
+  // map, and on the passenger's screen. Stops at end-of-route like a real trip.
+  useEffect(() => {
+    if (!isDemoDrive || !driver?.route?.id || isTripComplete) return undefined;
+    let isMounted = true;
+    // Without known geometry for this route there is nothing safe to script.
+    const geometry = DEMO_DRIVE_ROUTES[driver.route.id];
+    if (!geometry) return undefined;
+    let distance = geometry.startAlongMeters;
+    let inFlight = false;
+
+    const tick = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      distance += DEMO_DRIVE_STEP_METERS;
+      const { data: points } = await supabase.rpc("get_route_point_at_distance", {
+        p_route_id: driver.route.id,
+        p_distance_meters: distance,
+      });
+      const point = points?.[0];
+      if (!isMounted || !point) {
+        inFlight = false;
+        return;
+      }
+      const here = { lat: point.lat, lng: point.lng };
+      setCurrentPosition(here);
+
+      // The server treats "within 100 m of the route's end point" as a
+      // finished trip. This route passes that point twice before it really
+      // ends (leaving the terminal, and a small loop around SM City Clark), so
+      // don't report those stretches — only the true end of the loop counts.
+      const isNearTerminus =
+        haversineDistanceMeters(here, geometry.terminal) <= DEMO_TERMINUS_RADIUS_METERS;
+      const isRealEnd = distance >= geometry.lengthMeters - DEMO_ROUTE_END_ZONE_METERS;
+      if (isNearTerminus && !isRealEnd) {
+        inFlight = false;
+        return;
+      }
+
+      const { data } = await supabase.functions.invoke("driver-location-update", { body: here });
+      inFlight = false;
+      if (!isMounted || !data?.end_of_route) return;
+
+      const entry =
+        driver?.route?.id && session?.user?.id
+          ? await fetchOwnQueueEntry(driver.route.id, session.user.id)
+          : null;
+      setNewQueuePosition(entry?.position ?? null);
+      setTripTimeMinutes(Math.round((Date.now() - startedAtRef.current) / 60000));
+      setIsTripComplete(true);
+    };
+
+    tick();
+    const id = setInterval(tick, DEMO_DRIVE_STEP_INTERVAL_MS);
+    return () => {
+      isMounted = false;
+      clearInterval(id);
+    };
+  }, [isDemoDrive, driver?.route?.id, session?.user?.id, isTripComplete]);
+
   const handleSetCapacityStatus = (state) => {
     setCapacityStatus(state);
     // The UI's "seats_open" doesn't match the backend/DB's "available" —
@@ -134,7 +209,7 @@ function DrivingPage() {
 
   const handleCloseTripComplete = () => {
     if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
-    navigate("/driver/dashboard", { state: { shiftStage: "arrived" } });
+    navigate({ pathname: "/driver/dashboard", search: window.location.search }, { state: { shiftStage: "arrived" } });
   };
 
   if (loading || !driver) {

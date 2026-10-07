@@ -86,11 +86,11 @@
   color: #34d399;
 }
 
-/* ---------- body: phone | map | phone ---------- */
+/* ---------- body: passenger | map | grey driver | yellow driver ---------- */
 
 .demo-stage__body {
   display: grid;
-  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr) minmax(240px, 320px);
+  grid-template-columns: minmax(230px, 300px) minmax(0, 1fr) minmax(230px, 300px) minmax(230px, 300px);
   gap: 16px;
   padding: 16px 20px;
   min-height: 0;
