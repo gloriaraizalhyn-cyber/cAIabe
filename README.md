@@ -137,7 +137,7 @@ In the Supabase SQL Editor, run the files in [`supabase/sql/`](supabase/sql) in 
 
 | # | Files |
 |---|---|
-| 1 | `schema.sql` (needs the `postgis` and `pg_cron` extensions) |
+| 1 | `schema.sql` (needs the `postgis` and `pg_cron` extensions), then `fix_spatial_ref_sys_grants.sql` to stop the public API from writing to PostGIS's reference table |
 | 2 | `caiabe_seed_routes.sql`, then `fix_balibago_route.sql` |
 | 3 | `rpc_functions.sql`, `lookup_functions.sql`, `transfer_functions.sql` |
 | 4 | `add_terminal_geofence_queue.sql` |
@@ -149,6 +149,7 @@ In the Supabase SQL Editor, run the files in [`supabase/sql/`](supabase/sql) in 
 | 10 | `add_admins.sql`, `add_admin_driver_delete_policy.sql` |
 | 11 | `add_performance_indexes.sql`, `storage_setup.sql`, `add_carbon_impact.sql` |
 | 12 | `queue_advance_cron.sql`, **after** step 2 below. First change the project URL and anon key inside it to your own. |
+| 13 | `add_cron_history_cleanup.sql`: nightly cleanup of pg_cron's run history, which otherwise grows until it fills the free plan's database space |
 
 > **New Supabase projects don't give the API roles access to new tables automatically.** If a page loads but its queries come back empty or with permission errors, grant `select` (and anything else the page needs) to `anon` / `authenticated` on the affected tables.
 >
