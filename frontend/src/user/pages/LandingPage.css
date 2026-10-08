@@ -1,21 +1,39 @@
 .landing-page {
+  --lp-red: #ce1126;
+  --lp-blue: #0038a8;
+  --lp-navy: #00227a;
+  --lp-ink: #0a1f66;
+  --lp-text: #3d4663;
+  --lp-muted: #8a909b;
+  --lp-cream: #f1ebdd;
+  --lp-yellow: #fcd116;
+  --lp-paper: #fbf8f1;
+  --lp-line: rgba(20, 23, 31, 0.08);
+  --lp-header-h: 64px;
+  --lp-shadow-sm: 0 1px 2px rgba(20, 23, 31, 0.04), 0 4px 14px rgba(20, 23, 31, 0.06);
+  --lp-shadow-md: 0 2px 4px rgba(20, 23, 31, 0.04), 0 14px 36px rgba(0, 56, 168, 0.12);
   background: #ffffff;
+  color: var(--lp-ink);
 }
 
 /* ===== Header ===== */
 
 .landing-page__header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 10;
+  transition: transform 0.28s ease;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 14px 24px;
-  background: rgba(250, 246, 240, 0.92);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid #ece6d8;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid var(--lp-line);
 }
 
 .landing-page__brand {
@@ -26,10 +44,10 @@
 }
 
 .landing-page__brand-logo {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .landing-page__brand-text {
@@ -39,7 +57,7 @@
   font-size: 1.3rem;
   font-weight: 400;
   letter-spacing: -0.02em;
-  color: #d71920;
+  color: var(--lp-red);
   -webkit-text-stroke: 0.3px currentColor;
   transform: scaleX(1.5);
   transform-origin: left;
@@ -47,30 +65,34 @@
 
 .landing-page__brand-ai,
 .landing-page__wordmark-ai {
-  color: #1b3fa0;
+  color: var(--lp-blue);
 }
 
 .landing-page__header-right {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
 }
 
 .landing-page__nav {
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 4px;
 }
 
 .landing-page__nav a {
+  padding: 8px 14px;
+  border-radius: 999px;
   font-size: 0.86rem;
   font-weight: 700;
-  color: #4a4f58;
+  color: var(--lp-text);
   text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .landing-page__nav a:hover {
-  color: #1b3fa0;
+  background: #eef2fb;
+  color: var(--lp-blue);
 }
 
 .landing-page__menu-wrap {
@@ -82,49 +104,53 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border: 2px solid #000000;
-  border-top: 4px solid #1b3fa0;
-  border-left: 4px solid #d71920;
-  border-radius: 10px;
-  background: #faf6f0;
-  color: #1b3fa0;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--lp-line);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--lp-blue);
+  box-shadow: var(--lp-shadow-sm);
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .landing-page__menu-button:hover {
-  background: #eef0f3;
+  background: #eef2fb;
+}
+
+.landing-page__menu-button:active {
+  transform: scale(0.95);
 }
 
 .landing-page__menu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 10px);
   right: 0;
   z-index: 20;
   display: flex;
   flex-direction: column;
-  min-width: 190px;
+  min-width: 200px;
   padding: 6px;
-  border: 2px solid #000000;
-  border-radius: 12px;
-  background: #faf6f0;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+  border: 1px solid var(--lp-line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(20, 23, 31, 0.16);
 }
 
 .landing-page__menu button {
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   background: transparent;
-  color: #1a1a1a;
+  color: var(--lp-ink);
   font-size: 0.86rem;
   font-weight: 700;
-  padding: 10px 12px;
+  padding: 11px 12px;
   text-align: left;
 }
 
 .landing-page__menu button:hover {
-  background: #e8ecf9;
-  color: #1b3fa0;
+  background: #eef2fb;
+  color: var(--lp-blue);
 }
 
 @media (max-width: 460px) {
@@ -140,17 +166,22 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 48px 28px 40px;
+  justify-content: center;
+  overflow: hidden;
+  min-height: calc(100svh - var(--roof));
+  padding: calc(var(--lp-header-h) + 24px) 20px 40px;
   background:
-    radial-gradient(circle, #ece6d8 1.4px, transparent 1.4px) 0 0 / 22px 22px,
-    #faf6f0;
+    radial-gradient(60% 50% at 88% 8%, rgba(206, 17, 38, 0.1), transparent 70%),
+    radial-gradient(55% 55% at 6% 28%, rgba(0, 56, 168, 0.14), transparent 70%),
+    linear-gradient(180deg, #fbf8f3 0%, #ffffff 100%);
 }
 
 .landing-page__hero-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 420px;
+  width: 100%;
+  max-width: 560px;
   margin: 0 auto;
 }
 
@@ -161,44 +192,96 @@
   text-align: center;
 }
 
-.landing-page__mascot {
+.landing-page__poster {
   order: -1;
-  width: min(200px, 46vw);
-  aspect-ratio: 583 / 905;
-  margin-bottom: -8px;
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  margin: 0 auto 8px;
+  object-fit: contain;
+  filter: drop-shadow(0 28px 34px rgba(0, 56, 168, 0.2));
 }
 
-/* Below this, the hero stops behaving like a scaled-up phone screen: text
-   moves to its own left column (left-aligned, proper desktop type scale)
-   with the mascot as a fixed-size companion on the right, instead of
-   everything staying centered in one narrow stack. */
+/* Desktop: the whole hero (text + full poster) is sized to exactly one
+   viewport, so nothing is cut off on first load. Poster height is capped by
+   the viewport; width follows from its aspect ratio. */
 @media (min-width: 860px) {
   .landing-page__hero {
-    padding: 88px 48px;
+    padding: calc(var(--lp-header-h) + 20px) 40px 20px;
   }
 
   .landing-page__hero-content {
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
     align-items: center;
-    justify-content: center;
-    gap: 72px;
-    max-width: 1080px;
+    gap: 32px;
+    max-width: 1320px;
   }
 
   .landing-page__hero-text {
     align-items: flex-start;
     text-align: left;
-    flex: 1;
     max-width: 480px;
   }
 
-  .landing-page__mascot {
+  .landing-page__poster {
     order: 0;
-    flex-shrink: 0;
-    width: 300px;
-    margin-bottom: 0;
+    justify-self: center;
+    width: auto;
+    max-width: 100%;
+    max-height: calc(100svh - var(--lp-header-h) - 48px);
+    margin: 0;
   }
+}
 
+.landing-page__hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0 0;
+  padding: 6px 14px;
+  border: 1px solid var(--lp-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: var(--lp-shadow-sm);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--lp-navy);
+}
+
+.landing-page__hero-pill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lp-red);
+  box-shadow: 0 0 0 4px rgba(206, 17, 38, 0.16);
+}
+
+.landing-page__hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-page__hero-chips li {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eef2fb;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--lp-blue);
+}
+
+@media (min-width: 860px) {
+  .landing-page__hero-chips {
+    justify-content: flex-start;
+  }
 }
 
 .landing-page__wordmark {
@@ -209,7 +292,7 @@
   font-size: clamp(2.4rem, 11vw, 3.2rem);
   line-height: 1;
   letter-spacing: -0.02em;
-  color: #d71920;
+  color: var(--lp-red);
   -webkit-text-stroke: 0.5px currentColor;
   transform: scaleX(1.5);
   transform-origin: center;
@@ -222,19 +305,19 @@
 }
 
 .landing-page__tagline {
-  margin: 16px 0 0;
+  margin: 18px 0 0;
   font-family: "LL Karatula", "DM Sans", sans-serif;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--lp-ink);
   line-height: 1.3;
 }
 
 .landing-page__subtext {
-  margin: 10px 0 0;
-  font-size: 0.92rem;
-  color: #4a4f58;
-  line-height: 1.6;
+  margin: 12px 0 0;
+  font-size: 0.95rem;
+  color: var(--lp-text);
+  line-height: 1.65;
 }
 
 .landing-page__start-button {
@@ -244,44 +327,52 @@
   margin-top: 28px;
   border: none;
   border-radius: 999px;
-  background: #1b3fa0;
+  background: linear-gradient(135deg, #1a56d6 0%, var(--lp-blue) 55%, #00267f 100%);
   color: #ffffff;
   font-size: 1.02rem;
   font-weight: 700;
   padding: 15px 30px;
-  transition: background 0.15s ease;
+  box-shadow: 0 10px 24px rgba(0, 56, 168, 0.32);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.landing-page__start-button svg {
+  transition: transform 0.15s ease;
 }
 
 .landing-page__start-button:hover {
-  background: #142f7e;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(0, 56, 168, 0.4);
+}
+
+.landing-page__start-button:hover svg {
+  transform: translateX(3px);
 }
 
 .landing-page__start-button:active {
-  background: #0f265f;
-}
-
-.landing-page__hero-note {
-  margin: 12px 0 0;
-  font-size: 0.76rem;
-  color: #9a9fa8;
+  transform: translateY(0);
+  box-shadow: 0 6px 14px rgba(0, 56, 168, 0.3);
 }
 
 .landing-page__sms-teaser {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 36px;
+  gap: 10px;
+  margin-top: 24px;
   max-width: 480px;
-  padding: 10px 18px;
-  border-radius: 999px;
-  border: 1px solid #cddcfb;
-  background: #eaf0ff;
-  color: #1b3fa0;
-  font-size: 0.78rem;
+  padding: 11px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 56, 168, 0.14);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  color: var(--lp-blue);
+  font-size: 0.8rem;
   font-weight: 700;
   line-height: 1.4;
+  text-align: left;
   text-decoration: none;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  box-shadow: var(--lp-shadow-sm);
+  transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
 .landing-page__sms-teaser svg {
@@ -289,25 +380,27 @@
 }
 
 .landing-page__sms-teaser strong {
-  color: #12275e;
+  color: var(--lp-navy);
 }
 
 .landing-page__sms-teaser:hover {
-  background: #dce6fb;
-  border-color: #a9c0f5;
+  transform: translateY(-1px);
+  border-color: rgba(0, 56, 168, 0.35);
 }
 
 /* ===== Generic section scaffolding ===== */
 
 .landing-page__section {
-  padding: 56px 28px;
+  padding: 72px 24px;
   max-width: 760px;
   margin: 0 auto;
 }
 
 .landing-page__section--tinted {
   max-width: none;
-  background: #eef2fb;
+  background:
+    radial-gradient(50% 60% at 100% 0%, rgba(0, 56, 168, 0.08), transparent 70%),
+    #f3f6fd;
 }
 
 .landing-page__section-inner {
@@ -316,12 +409,16 @@
 }
 
 .landing-page__eyebrow {
-  margin: 0 0 8px;
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #fdeceb;
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #d71920;
+  color: var(--lp-red);
 }
 
 .landing-page__section-title {
@@ -329,134 +426,174 @@
   font-family: "LL Karatula", "DM Sans", sans-serif;
   font-size: 1.7rem;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--lp-ink);
   line-height: 1.25;
+  letter-spacing: -0.01em;
   max-width: 460px;
 }
 
 .landing-page__section-body {
-  margin: 12px 0 0;
-  font-size: 0.92rem;
-  color: #4a4f58;
-  line-height: 1.6;
+  margin: 14px 0 0;
+  font-size: 0.95rem;
+  color: var(--lp-text);
+  line-height: 1.65;
   max-width: 480px;
 }
 
 /* ===== Features ===== */
+/* Card style: tinted panel, icon tile + copy + arrow on top, banner bleeding
+   off the bottom edge. Phones get a horizontal swipe row so the whole
+   section fits one screen; desktop is a 3-column grid. */
 
 .landing-page__features {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 32px 20px;
-  margin-top: 40px;
+  display: flex;
+  gap: 14px;
+  margin: 28px -24px 0;
+  padding: 4px 24px 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 24px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-@media (min-width: 640px) {
-  .landing-page__features {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.landing-page__features::-webkit-scrollbar {
+  display: none;
 }
 
 @media (min-width: 860px) {
   .landing-page__features {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px 16px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    margin: 40px 0 0;
+    padding: 0;
+    overflow: visible;
   }
 }
 
 .landing-page__feature-card {
+  --card-bg: #e9f0ff;
+  --card-tile: #0038a8;
+  --card-tile-ink: #ffffff;
   position: relative;
   display: flex;
+  flex: 0 0 86%;
   flex-direction: column;
-  border: 2px solid #000000;
-  border-radius: 20px;
-  background: #faf6f0;
-  padding: 22px 18px 20px;
+  gap: 10px;
+  min-width: 0;
+  padding: 18px 18px 0;
+  border-radius: 28px;
+  background: var(--card-bg);
+  overflow: hidden;
+  scroll-snap-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.landing-page__feature-badge {
-  position: absolute;
-  top: -15px;
-  left: 20px;
-  display: inline-flex;
+@media (min-width: 860px) {
+  .landing-page__feature-card {
+    flex: none;
+    padding: 20px 20px 0;
+  }
+
+  .landing-page__feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--lp-shadow-md);
+  }
+}
+
+.landing-page__feature-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.landing-page__feature-icon {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  border: 1px solid #cddcfb;
-  background: #eaf0ff;
-  color: #1b3fa0;
-  font-size: 0.72rem;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--card-tile);
+  color: var(--card-tile-ink);
+}
+
+.landing-page__feature-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.landing-page__feature-title {
+  margin: 2px 0 0;
+  font-size: 1.1rem;
   font-weight: 800;
-  letter-spacing: 0.02em;
-  padding: 6px 12px;
-  white-space: nowrap;
+  color: var(--lp-navy);
+  line-height: 1.25;
+}
+
+.landing-page__feature-body {
+  margin: 6px 0 0;
+  font-size: 0.86rem;
+  color: #3b4457;
+  line-height: 1.5;
 }
 
 .landing-page__feature-image {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  aspect-ratio: 16 / 10;
-  margin-top: 10px;
-  border-radius: 12px;
-  background: #eef2fb;
-  color: #9ab0e6;
+  aspect-ratio: 2 / 1;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0 -18px;
 }
 
-.landing-page__feature-title {
-  margin: 18px 0 0;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #1a1a1a;
-  line-height: 1.3;
+@media (min-width: 860px) {
+  .landing-page__feature-image {
+    margin: 0 -20px;
+  }
 }
 
-.landing-page__feature-body {
-  margin: 8px 0 0;
-  font-size: 0.86rem;
-  color: #4a4f58;
-  line-height: 1.55;
+.landing-page__feature-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
 }
 
-.landing-page__features .landing-page__feature-card:nth-child(3n + 1) .landing-page__feature-badge {
-  border-color: #f5c2c2;
-  background: #fdeceb;
-  color: #d71920;
+.landing-page__features .landing-page__feature-card:nth-child(3n + 2) {
+  --card-bg: #fdeceb;
+  --card-tile: #ce1126;
 }
 
-.landing-page__features .landing-page__feature-card:nth-child(3n + 1) .landing-page__feature-image {
-  background: #fdeceb;
-  color: #ef9c9c;
-}
-
-.landing-page__features .landing-page__feature-card:nth-child(3n + 3) .landing-page__feature-badge {
-  border-color: #f5dea0;
-  background: #fdecc0;
-  color: #8a6207;
-}
-
-.landing-page__features .landing-page__feature-card:nth-child(3n + 3) .landing-page__feature-image {
-  background: #fdecc0;
-  color: #e0bb63;
+.landing-page__features .landing-page__feature-card:nth-child(3n + 3) {
+  --card-bg: #fdf1cc;
+  --card-tile: #fcd116;
+  --card-tile-ink: #00227a;
 }
 
 /* ===== How it works ===== */
 
 .landing-page__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   list-style: none;
-  margin: 28px 0 0;
+  margin: 32px 0 0;
   padding: 0;
 }
 
 .landing-page__step {
   display: flex;
   gap: 16px;
-  padding: 18px 0;
-  border-top: 1px solid #d7deef;
-}
-
-.landing-page__step:first-child {
-  border-top: none;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 56, 168, 0.1);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: var(--lp-shadow-sm);
 }
 
 .landing-page__step-number {
@@ -464,52 +601,59 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #1b3fa0;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1a56d6, var(--lp-blue));
   color: #ffffff;
-  font-size: 0.86rem;
+  font-size: 0.9rem;
   font-weight: 800;
 }
 
 .landing-page__step-title {
   margin: 2px 0 4px;
-  font-size: 0.98rem;
+  font-size: 1rem;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--lp-ink);
 }
 
 .landing-page__step-body {
   margin: 0;
-  font-size: 0.86rem;
-  color: #4a4f58;
-  line-height: 1.55;
+  font-size: 0.88rem;
+  color: var(--lp-text);
+  line-height: 1.6;
 }
 
 .landing-page__section-cta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 24px;
+  margin-top: 28px;
   border: none;
   border-radius: 999px;
-  background: #1b3fa0;
+  background: linear-gradient(135deg, #1a56d6 0%, var(--lp-blue) 55%, #00267f 100%);
   color: #ffffff;
   font-size: 0.9rem;
   font-weight: 700;
-  padding: 12px 22px;
+  padding: 13px 24px;
+  box-shadow: 0 8px 20px rgba(0, 56, 168, 0.28);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .landing-page__section-cta:hover {
-  background: #142f7e;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(0, 56, 168, 0.36);
 }
 
 /* ===== Routes ===== */
 
 .landing-page__routes {
-  margin-top: 24px;
-  border-top: 1px solid #ecebe6;
+  margin-top: 28px;
+  border: 1px solid var(--lp-line);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: var(--lp-shadow-sm);
+  overflow: hidden;
 }
 
 .landing-page__route-row {
@@ -517,38 +661,55 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  padding: 13px 0;
-  border-bottom: 1px solid #ecebe6;
+  padding: 16px 22px;
+  border-top: 1px solid var(--lp-line);
+  transition: background 0.15s ease;
+}
+
+.landing-page__route-row:first-child {
+  border-top: none;
+}
+
+.landing-page__route-row:hover {
+  background: #f6f8ff;
 }
 
 .landing-page__route-name {
   font-size: 0.92rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--lp-ink);
 }
 
 .landing-page__route-terminal {
   flex-shrink: 0;
-  font-size: 0.76rem;
-  font-weight: 600;
-  color: #9a9fa8;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f1f3f7;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--lp-text);
 }
 
 .landing-page__routes-note {
-  margin: 14px 0 0;
-  font-size: 0.8rem;
-  color: #9a9fa8;
+  margin: 16px 4px 0;
+  font-size: 0.82rem;
+  color: var(--lp-muted);
 }
 
 /* ===== Closing CTA ===== */
 
 .landing-page__closing {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 64px 28px;
-  background: #12275e;
+  overflow: hidden;
+  padding: 80px 28px;
+  background:
+    radial-gradient(50% 70% at 12% 0%, rgba(206, 17, 38, 0.28), transparent 70%),
+    radial-gradient(50% 70% at 95% 100%, rgba(252, 209, 22, 0.16), transparent 70%),
+    var(--lp-navy);
 }
 
 .landing-page__closing-title {
@@ -560,12 +721,12 @@
 }
 
 .landing-page__closing-title span {
-  color: #f4c430;
+  color: #fcd116;
 }
 
 .landing-page__closing-body {
-  margin: 10px 0 0;
-  font-size: 0.94rem;
+  margin: 12px 0 0;
+  font-size: 0.96rem;
   color: #c3cce6;
 }
 
@@ -573,25 +734,28 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 26px;
+  margin-top: 28px;
   border: none;
   border-radius: 999px;
-  background: #f4c430;
-  color: #12275e;
+  background: #fcd116;
+  color: var(--lp-navy);
   font-size: 1rem;
   font-weight: 800;
   padding: 15px 30px;
+  box-shadow: 0 10px 26px rgba(252, 209, 22, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .landing-page__closing-cta:hover {
-  background: #e6b620;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(252, 209, 22, 0.42);
 }
 
 /* ===== Footer ===== */
 
 .landing-page__footer {
-  background: #0c1c47;
-  padding: 44px 28px 24px;
+  background: #001a5c;
+  padding: 48px 28px 24px;
 }
 
 .landing-page__footer-brand {
@@ -648,6 +812,7 @@
   font-weight: 600;
   color: #c3cce6;
   text-decoration: none;
+  transition: color 0.15s ease;
 }
 
 .landing-page__footer-column a:hover {
@@ -677,28 +842,50 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .landing-page * {
+    transition: none !important;
+  }
+}
+
 /* ===== Desktop type scale for section copy ===== */
 /* Placed after every base rule above so these overrides win the cascade
    even though they share the same selector specificity. */
 @media (min-width: 860px) {
+  /* Hero type scales with viewport height so the hero always fits one screen. */
   .landing-page__wordmark {
-    font-size: 5.4rem;
+    font-size: clamp(3rem, 9.5vh, 5.4rem);
   }
 
   .landing-page__tagline {
-    font-size: 1.85rem;
+    margin-top: clamp(10px, 2vh, 18px);
+    font-size: clamp(1.4rem, 3.6vh, 1.85rem);
   }
 
   .landing-page__subtext {
-    font-size: 1.05rem;
+    margin-top: clamp(8px, 1.5vh, 12px);
+    font-size: clamp(0.92rem, 2vh, 1.05rem);
     max-width: 440px;
   }
 
+  .landing-page__start-button {
+    margin-top: clamp(16px, 3vh, 28px);
+  }
+
+  .landing-page__hero-chips {
+    margin-top: clamp(12px, 2.2vh, 20px);
+  }
+
+  .landing-page__sms-teaser {
+    margin-top: clamp(12px, 2.2vh, 24px);
+  }
+
   .landing-page__eyebrow {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
   }
 
   .landing-page__section {
+    padding: 64px 24px;
     max-width: 1120px;
   }
 
@@ -721,7 +908,11 @@
   }
 
   .landing-page__feature-title {
-    font-size: 1.08rem;
+    font-size: 1.2rem;
+  }
+
+  .landing-page__feature-body {
+    font-size: 0.94rem;
   }
 
   .landing-page__step-title {
@@ -734,7 +925,7 @@
 
   .landing-page__section-cta {
     font-size: 1rem;
-    padding: 14px 26px;
+    padding: 14px 28px;
   }
 
   .landing-page__route-name {
@@ -742,7 +933,7 @@
   }
 
   .landing-page__route-terminal {
-    font-size: 0.86rem;
+    font-size: 0.84rem;
   }
 
   .landing-page__closing-title {
@@ -763,5 +954,2429 @@
 
   .landing-page__footer-column a {
     font-size: 0.94rem;
+  }
+}
+
+/* ===== Section snapping ===== */
+/* Each section fills one viewport and the page glides to the next one.
+   Scoped with :has() so other routes keep normal scrolling. */
+
+html:has(.landing-page) {
+  scroll-behavior: smooth;
+  scroll-padding-top: 0;
+  scroll-snap-type: y proximity;
+}
+
+.landing-page__hero,
+.landing-page__section,
+.landing-page__closing {
+  scroll-snap-align: start;
+}
+
+.landing-page__footer {
+  scroll-snap-align: end;
+}
+
+@media (min-width: 860px) and (min-height: 560px) {
+  html:has(.landing-page) {
+    scroll-snap-type: y mandatory;
+  }
+
+  .landing-page__section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100svh;
+    scroll-snap-stop: always;
+  }
+
+  .landing-page__section-inner {
+    width: 100%;
+  }
+
+  .landing-page__hero,
+  .landing-page__closing {
+    scroll-snap-stop: always;
+  }
+
+  .landing-page__closing {
+    min-height: calc(100svh - 300px);
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.landing-page) {
+    scroll-behavior: auto;
+  }
+}
+
+@media (min-width: 860px) and (min-height: 560px) and (max-height: 820px) {
+  .landing-page__section {
+    padding-top: 28px;
+    padding-bottom: 28px;
+  }
+
+  .landing-page__features {
+    margin-top: 28px;
+  }
+
+  .landing-page__steps {
+    margin-top: 20px;
+  }
+
+  .landing-page__step {
+    padding: 12px 18px;
+  }
+
+  .landing-page__section-cta {
+    margin-top: 18px;
+  }
+}
+
+/* ===== Phone snapping ===== */
+/* Phones vary a lot in height, so every section is exactly one screen
+   (svh = the visible area with browser toolbars showing) and the content
+   inside scales with that height. */
+
+@media (max-width: 859px) {
+  html:has(.landing-page) {
+    scroll-snap-type: y mandatory;
+  }
+
+  .landing-page__hero,
+  .landing-page__section,
+  .landing-page__closing {
+    min-height: 100svh;
+    scroll-snap-stop: always;
+  }
+
+  .landing-page__section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(16px, 3svh, 36px) 24px;
+  }
+
+  .landing-page__section-inner {
+    width: 100%;
+  }
+
+  .landing-page__closing {
+    justify-content: center;
+  }
+
+  /* Hero */
+  .landing-page__hero {
+    padding: calc(var(--lp-header-h) + 10px) 20px 10px;
+  }
+
+  .landing-page__poster {
+    width: auto;
+    max-width: 100%;
+    max-height: 32svh;
+    margin-bottom: 0;
+  }
+
+  .landing-page__wordmark {
+    font-size: clamp(2.2rem, 6.5svh, 3rem);
+  }
+
+  .landing-page__hero-pill {
+    margin-top: clamp(10px, 2svh, 18px);
+  }
+
+  .landing-page__tagline {
+    margin-top: clamp(8px, 1.6svh, 14px);
+    font-size: clamp(1.1rem, 2.8svh, 1.3rem);
+  }
+
+  .landing-page__subtext {
+    margin-top: clamp(6px, 1.2svh, 10px);
+    font-size: clamp(0.84rem, 1.8svh, 0.95rem);
+  }
+
+  .landing-page__start-button {
+    margin-top: clamp(14px, 2.6svh, 24px);
+    padding: 13px 28px;
+  }
+
+  .landing-page__hero-chips {
+    display: none;
+  }
+
+  .landing-page__sms-teaser {
+    margin-top: clamp(12px, 2.4svh, 22px);
+  }
+
+  /* Titles / copy */
+  .landing-page__section-title {
+    font-size: clamp(1.25rem, 3.4svh, 1.6rem);
+  }
+
+  .landing-page__eyebrow {
+    margin-bottom: clamp(8px, 1.4svh, 14px);
+  }
+
+  /* Features: swipe row, vertically centred */
+  .landing-page__features {
+    margin-top: clamp(16px, 3svh, 28px);
+  }
+
+  /* How it works */
+  .landing-page__steps {
+    gap: 8px;
+    margin-top: clamp(14px, 2.4svh, 24px);
+  }
+
+  .landing-page__step {
+    padding: clamp(10px, 1.8svh, 16px) 16px;
+  }
+
+  .landing-page__step-body {
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .landing-page__section-cta {
+    margin-top: clamp(14px, 2.4svh, 22px);
+  }
+
+  /* Routes */
+  .landing-page__routes {
+    margin-top: clamp(14px, 2.4svh, 24px);
+  }
+
+  .landing-page__route-row {
+    padding: clamp(9px, 1.7svh, 14px) 16px;
+  }
+}
+
+@media (max-width: 859px) and (max-height: 760px) {
+  .landing-page__section-body,
+  .landing-page__subtext {
+    display: none;
+  }
+
+  .landing-page__poster {
+    max-height: 28svh;
+  }
+}
+
+@media (max-width: 859px) and (max-height: 700px) {
+  .landing-page__section {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .landing-page__feature-card {
+    padding: 14px 14px 0;
+    gap: 6px;
+  }
+
+  .landing-page__feature-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+
+  .landing-page__feature-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .landing-page__feature-body {
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .landing-page__feature-image {
+    aspect-ratio: 2 / 1;
+    margin: 0 -14px;
+  }
+
+  .landing-page__step {
+    padding: 8px 14px;
+  }
+
+  .landing-page__step-body {
+    font-size: 0.78rem;
+  }
+
+  .landing-page__step-title {
+    font-size: 0.92rem;
+  }
+
+  .landing-page__route-row {
+    padding: 8px 14px;
+  }
+
+  .landing-page__route-name {
+    font-size: 0.84rem;
+  }
+
+  .landing-page__routes-note {
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 859px) and (max-height: 600px) {
+  .landing-page__eyebrow {
+    display: none;
+  }
+
+  .landing-page__section-title {
+    font-size: 1.1rem;
+  }
+
+  .landing-page__step-body {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.74rem;
+  }
+
+  .landing-page__section-cta {
+    margin-top: 10px;
+    padding: 10px 18px;
+  }
+}
+
+/* ===== Flat buttons (house rule: never raised / 3D) ===== */
+.landing-page__start-button,
+.landing-page__section-cta {
+  background: var(--lp-blue);
+  box-shadow: none;
+  transform: none;
+  transition: background-color 0.15s ease;
+}
+
+.landing-page__start-button:hover,
+.landing-page__start-button:active,
+.landing-page__section-cta:hover,
+.landing-page__section-cta:active {
+  background: #00267f;
+  box-shadow: none;
+  transform: none;
+}
+
+.landing-page__closing-cta {
+  background: var(--lp-yellow);
+  box-shadow: none;
+  transform: none;
+  transition: background-color 0.15s ease;
+}
+
+.landing-page__closing-cta:hover,
+.landing-page__closing-cta:active {
+  background: #f0c200;
+  box-shadow: none;
+  transform: none;
+}
+
+.landing-page__start-button svg,
+.landing-page__start-button:hover svg {
+  transform: none;
+}
+
+.landing-page__eyebrow {
+  align-self: flex-start;
+}
+
+/* ===== Hero type hierarchy: wordmark > tagline > paragraph > chips/notes ===== */
+.landing-page__wordmark {
+  font-size: clamp(3rem, 8vw, 3.8rem);
+}
+
+.landing-page__tagline {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.landing-page__subtext {
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.landing-page__hero-chips li {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.landing-page__sms-teaser {
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+@media (min-width: 860px) {
+  .landing-page__wordmark {
+    font-size: clamp(3.6rem, 12.5vh, 6.6rem);
+  }
+
+  .landing-page__tagline {
+    font-size: clamp(1.5rem, 4vh, 2.1rem);
+  }
+
+  .landing-page__subtext {
+    font-size: clamp(0.95rem, 2.1vh, 1.1rem);
+    max-width: 460px;
+  }
+}
+
+@media (max-width: 859px) {
+  .landing-page__wordmark {
+    margin-top: clamp(16px, 3svh, 28px);
+    font-size: clamp(2.8rem, 8svh, 3.8rem);
+  }
+
+  .landing-page__tagline {
+    font-size: clamp(1.25rem, 3.2svh, 1.5rem);
+  }
+
+  .landing-page__subtext {
+    font-size: clamp(0.84rem, 1.8svh, 0.95rem);
+  }
+}
+
+@media (max-width: 859px) and (max-height: 600px) {
+  .landing-page__wordmark {
+    margin-top: 12px;
+    font-size: 2.4rem;
+  }
+}
+
+/* ===== Why cAIabe: jeepney body (windows) as the section backdrop ===== */
+/* First of a series: each viewport reveals another part of the jeepney.
+   The PNG has transparent window openings, so the gradient behind it shows
+   through like the view outside. --img-h is the rendered height of the
+   "cover" background; padding-top keeps the content under the roof band so
+   the title and cards sit inside the windows. */
+#features.landing-page__section {
+  --img-h: max(calc(100svh - 64px), calc(100vw * 0.5628));
+  max-width: none;
+  margin: 0;
+  padding-left: max(24px, calc((100% - 1120px) / 2));
+  padding-right: max(24px, calc((100% - 1120px) / 2));
+  padding-top: max(20px, calc((100svh - 64px) / 2 - 0.23 * var(--img-h) + 12px));
+  padding-bottom: 28px;
+  background:
+    url("/images/jeepney_window.png") center / cover no-repeat,
+    linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%);
+}
+
+@media (max-width: 859px) {
+  .landing-page__feature-card {
+    flex-basis: min(86%, 340px);
+  }
+}
+
+/* ===== Why cAIabe: whole jeepney image, edge to edge, with a roof peeking in ===== */
+/* The image is never cropped: it is drawn at 100% width and its natural
+   height (1672x941 => 56.28vw). A thin red roof (same red as the image's top
+   edge) sits above it and peeks into the bottom of the first screen, so the
+   hero flows into the jeepney as you scroll. Content is positioned relative
+   to the image (window band starts ~27% down), and anything taller than the
+   image continues onto the jeep's blue lower body. */
+.landing-page {
+  --roof: clamp(22px, 3vw, 44px);
+}
+
+.landing-page__hero {
+  min-height: calc(100svh - var(--roof));
+}
+
+#features.landing-page__section {
+  --img-h: 56.28vw;
+  --band-top: 15.2vw;
+  position: relative;
+  max-width: none;
+  margin: 0;
+  padding: calc(var(--roof) + var(--band-top)) max(24px, calc((100% - 1120px) / 2)) 36px;
+  min-height: calc(var(--roof) + var(--img-h));
+  justify-content: flex-start;
+  background:
+    url("/images/jeepney_window.png") 0 var(--roof) / 100% auto no-repeat,
+    linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%) 0 var(--roof) / 100% var(--img-h) no-repeat,
+    linear-gradient(#0a3f8f, #0a3f8f) 0 var(--roof) / 100% calc(100% - var(--roof)) no-repeat;
+}
+
+#features.landing-page__section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--roof);
+  border-radius: clamp(12px, 2vw, 32px) clamp(12px, 2vw, 32px) 0 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0, rgba(255, 255, 255, 0) 28%),
+    linear-gradient(90deg, #db0517 0%, #e40b1b 60%, #e70d1d 100%);
+}
+
+@media (max-width: 859px) {
+  /* Phone: the image is short (full width, ~56vw tall), so the heading sits in
+     its window and the cards continue on a pale sky below it. */
+  #features.landing-page__section {
+    padding: var(--roof) 24px 28px;
+    justify-content: flex-start;
+    background:
+      url("/images/jeepney_window.png") 0 var(--roof) / 100% auto no-repeat,
+      linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%) 0 var(--roof) / 100% var(--img-h) no-repeat,
+      linear-gradient(#eaf0ff, #eaf0ff) 0 var(--roof) / 100% calc(100% - var(--roof)) no-repeat;
+  }
+
+  #features .landing-page__features-head {
+    box-sizing: border-box;
+    height: var(--img-h);
+    padding-top: var(--band-top);
+  }
+
+  #features .landing-page__eyebrow {
+    display: none;
+  }
+
+  #features .landing-page__section-title {
+    font-size: clamp(0.95rem, 4.3vw, 1.2rem);
+    line-height: 1.2;
+  }
+
+  #features .landing-page__features {
+    margin: auto -24px;
+  }
+}
+
+/* Keep the heading inside the left window pane (clear of the frame and the
+   sliding divider), whatever the screen width. */
+#features .landing-page__features-head {
+  max-width: 40vw;
+  margin-left: max(0px, calc(9vw - max(24px, (100vw - 1120px) / 2)));
+}
+
+#features .landing-page__section-title {
+  max-width: none;
+  font-size: clamp(1.3rem, 2.4vw, 2.2rem);
+}
+
+#features .landing-page__features {
+  margin-top: 28px;
+}
+
+@media (max-width: 859px) {
+  #features .landing-page__features-head {
+    max-width: 38vw;
+    margin-left: calc(9vw - 24px);
+  }
+
+  #features .landing-page__section-title {
+    font-size: clamp(0.8rem, 3.8vw, 1.15rem);
+  }
+
+  #features .landing-page__features {
+    margin-top: auto;
+  }
+}
+
+/* Never shorter than one screen (so the next section does not peek in), but
+   never cropped: the image sets the height when it is taller. */
+#features.landing-page__section {
+  min-height: max(100svh, calc(var(--roof) + var(--img-h)));
+}
+
+/* Header hides while scrolling down; shows at the top and when scrolling up. */
+.landing-page__header--hidden {
+  transform: translateY(-100%);
+}
+
+/* ===== Poster wrapper + floating pills (top-right of the poster) ===== */
+.landing-page__poster-wrap {
+  order: -1;
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0 auto 8px;
+  line-height: 0;
+}
+
+.landing-page__poster-wrap .landing-page__poster {
+  order: 0;
+  margin: 0;
+}
+
+@media (min-width: 860px) {
+  .landing-page__poster-wrap {
+    order: 0;
+    justify-self: center;
+    margin: 0;
+  }
+}
+
+.landing-page__poster-pills {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.landing-page__poster-pill {
+  position: absolute;
+  padding: 0.55em 1.15em;
+  border-radius: 999px;
+  background: #dbe8ff;
+  color: var(--lp-blue);
+  font-size: clamp(0.6rem, 1.1vw, 0.88rem);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(0, 56, 168, 0.16);
+}
+
+.landing-page__poster-pill--a {
+  top: 5%;
+  right: 12%;
+  transform: rotate(-6deg);
+}
+
+.landing-page__poster-pill--b {
+  top: 14%;
+  right: 38%;
+  transform: rotate(-12deg);
+}
+
+.landing-page__poster-pill--c {
+  top: 17%;
+  right: 5%;
+  font-size: clamp(0.68rem, 1.3vw, 1rem);
+  transform: rotate(-8deg);
+}
+
+/* Pills: one tight cluster (even small gaps at every size) instead of three
+   independently placed pills. Font size drives the whole cluster in em. */
+.landing-page__poster-pills {
+  inset: auto;
+  top: 3%;
+  right: 4%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45em 0.4em;
+  width: 18em;
+  font-size: clamp(0.6rem, 1.1vw, 0.88rem);
+}
+
+.landing-page__poster-pill {
+  position: static;
+  font-size: 1em;
+}
+
+.landing-page__poster-pill--a {
+  transform: rotate(-6deg) translateX(-0.6em);
+}
+
+.landing-page__poster-pill--b {
+  transform: rotate(-10deg);
+}
+
+.landing-page__poster-pill--c {
+  font-size: 1.14em;
+  transform: rotate(-7deg) translateY(0.25em);
+}
+
+.landing-page__poster-pills {
+  gap: 0.7em 0.45em;
+}
+
+.landing-page__poster-pill--a {
+  transform: rotate(-6deg) translateY(-0.2em);
+}
+
+.landing-page__poster-pills {
+  width: 17.4em;
+  gap: 0.55em 0.4em;
+}
+
+/* a = 10.8em, b = 8.75em, c = 9.06em wide: 19em fits b + c on one row but
+   not a + b, so the cluster is always "one on top, two beneath". */
+.landing-page__poster-pills {
+  width: 19em;
+}
+
+/* Phones: the poster is small, so keep the pills in a narrow column at its
+   right edge (clear of the phone mock-up) instead of the wide two-row cluster. */
+@media (max-width: 859px) {
+  .landing-page__poster-pills {
+    top: 1%;
+    right: 2%;
+    width: 11em;
+    gap: 0.45em;
+    justify-content: flex-end;
+    font-size: clamp(0.6rem, 2.3vw, 0.78rem);
+  }
+
+  .landing-page__poster-pill--a {
+    transform: rotate(-6deg) translateX(-0.4em);
+  }
+
+  .landing-page__poster-pill--b {
+    transform: rotate(-8deg) translateX(-0.9em);
+  }
+
+  .landing-page__poster-pill--c {
+    transform: rotate(-6deg);
+  }
+}
+
+/* ===== Pills scale with the poster (not just the screen width) ===== */
+/* --pw approximates the poster's rendered width: the smaller of the space the
+   column allows and what the poster's height cap allows (aspect 4:3). The
+   pill font is a fraction of it, so the cluster keeps the same proportions on
+   every screen. */
+.landing-page__poster-wrap {
+  --pw: min(
+    calc(min(100vw - 80px, 1320px) - 512px),
+    calc((100svh - var(--lp-header-h) - 48px) * 1.333)
+  );
+}
+
+.landing-page__poster-pills {
+  font-size: clamp(0.58rem, calc(var(--pw) * 0.026), 0.98rem);
+}
+
+/* one pill tilts the opposite way for variety */
+.landing-page__poster-pill--b {
+  transform: rotate(7deg);
+}
+
+@media (max-width: 859px) {
+  .landing-page__poster-wrap {
+    --pw: min(calc(100vw - 40px), 42.6svh);
+  }
+
+  .landing-page__poster-pills {
+    font-size: clamp(0.56rem, calc(var(--pw) * 0.03), 0.9rem);
+  }
+
+  .landing-page__poster-pill--b {
+    transform: rotate(6deg) translateX(-0.9em);
+  }
+}
+
+@media (max-width: 859px) and (max-height: 760px) {
+  .landing-page__poster-wrap {
+    --pw: min(calc(100vw - 40px), 37.3svh);
+  }
+}
+
+/* ===== Pills: identical size, desktop lower toward the street lights,
+   phone raised clear of the poster ===== */
+.landing-page__poster-pills {
+  display: grid;
+  grid-template-columns: repeat(2, 11.2em);
+  gap: 0.5em 0.45em;
+  justify-content: end;
+  align-items: center;
+  width: auto;
+  top: 8%;
+  right: 4%;
+}
+
+.landing-page__poster-pill,
+.landing-page__poster-pill--c {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.6em 0;
+  font-size: 1em;
+  text-align: center;
+}
+
+.landing-page__poster-pill--a {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.landing-page__poster-pill--b {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.landing-page__poster-pill--c {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+@media (max-width: 859px) {
+  .landing-page__poster-pills {
+    grid-template-columns: 11.2em;
+    gap: 0.45em;
+    top: -2.4em;
+    right: 2%;
+  }
+
+  .landing-page__poster-pill--a,
+  .landing-page__poster-pill--b,
+  .landing-page__poster-pill--c {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+/* Phones: no pills on the poster. */
+@media (max-width: 859px) {
+  .landing-page__poster-pills {
+    display: none;
+  }
+}
+
+/* ===== First viewport background: faint map ===== */
+.landing-page__hero {
+  background:
+    url("/images/background_home.png") left center / cover no-repeat,
+    #f8f5ee;
+}
+
+/* Small screens: the same map rotated 90° so the detail is at the top (behind
+   the poster) and fades out vertically by the time it reaches the text. */
+@media (max-width: 859px) {
+  .landing-page__hero {
+    background:
+      url("/images/background_home_mobile.png") center top / cover no-repeat,
+      #f8f5ee;
+  }
+}
+
+/* ===== Jeepney series, parts 1 & 2: window (Why cAIabe) and seat (How it works) ===== */
+/* Both images are drawn full width, never cropped. The window cut-out PNG has
+   see-through panes and its own rounded roof, which peeks into the bottom of
+   the first screen (the hero is shortened by --roof). Its artwork covers
+   4.04%–96.07% of the 1672x941 image, so the image is shifted up by the
+   transparent top margin and the section is as tall as the artwork:
+   --hc = 0.9203 * 56.28vw. The window opening starts at 13.8vw. */
+#features.landing-page__section {
+  --img-h: 56.28vw;
+  --hc: 51.79vw;
+  --win-top: 13.8vw;
+  position: relative;
+  max-width: none;
+  margin: 0;
+  padding: calc(var(--win-top) + 8px) max(24px, calc((100% - 1120px) / 2)) 36px;
+  min-height: max(100svh, var(--hc));
+  justify-content: flex-start;
+  background:
+    url("/images/jeepney_window.png") 0 calc(var(--img-h) * -0.0404) / 100% auto no-repeat,
+    linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%) 0 0 / 100% var(--hc) no-repeat,
+    linear-gradient(#c5010b, #c5010b);
+}
+
+#features.landing-page__section::before {
+  display: none;
+}
+
+/* one-line heading inside the window (clear of the sliding divider at ~73%) */
+#features .landing-page__features-head {
+  max-width: none;
+}
+
+#features .landing-page__section-title {
+  max-width: none;
+  white-space: nowrap;
+  font-size: clamp(0.95rem, 1.9vw, 2.1rem);
+}
+
+/* How it works: the seat */
+#how-it-works.landing-page__section--tinted {
+  min-height: max(100svh, 56.28vw);
+  background:
+    url("/images/jeepney_chair.png") 0 0 / 100% auto no-repeat,
+    linear-gradient(#0048c8, #0048c8);
+}
+
+#how-it-works.landing-page__section--tinted::before {
+  display: none;
+}
+
+#how-it-works .landing-page__section-title,
+#how-it-works .landing-page__section-body {
+  color: #ffffff;
+}
+
+#how-it-works .landing-page__eyebrow {
+  background: var(--lp-yellow);
+  color: var(--lp-navy);
+}
+
+@media (max-width: 859px) {
+  /* Phone: the window artwork is short (~52vw), so the heading sits in its
+     window and the cards continue on pale sky below. */
+  #features.landing-page__section {
+    padding: 0 24px 28px;
+    min-height: 100svh;
+    background:
+      url("/images/jeepney_window.png") 0 calc(var(--img-h) * -0.0404) / 100% auto no-repeat,
+      linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%) 0 0 / 100% var(--hc) no-repeat,
+      linear-gradient(#eaf0ff, #eaf0ff);
+  }
+
+  #features .landing-page__features-head {
+    box-sizing: border-box;
+    height: var(--hc);
+    max-width: 62vw;
+    margin-left: calc(9vw - 24px);
+    padding-top: calc(var(--win-top) + 6px);
+  }
+
+  #features .landing-page__section-title {
+    white-space: normal;
+    font-size: clamp(0.8rem, 3.8vw, 1.15rem);
+  }
+
+  /* Phone: the seat image is only ~56vw tall; it fades into the flat seat
+     blue so the longer content below keeps a blue backdrop. */
+  #how-it-works.landing-page__section--tinted {
+    min-height: 100svh;
+    background:
+      linear-gradient(180deg, rgba(0, 72, 200, 0) 0%, #0048c8 100%) 0 calc(56.28vw * 0.62) / 100% calc(56.28vw * 0.38) no-repeat,
+      url("/images/jeepney_chair.png") 0 0 / 100% auto no-repeat,
+      linear-gradient(#0048c8, #0048c8);
+  }
+}
+
+@media (min-width: 860px) {
+  #features .landing-page__section-title {
+    font-size: clamp(0.95rem, 2.1vw, 2.4rem);
+  }
+}
+
+/* How it works layout on the seat: heading over the backrest cushions, steps
+   on the flat seat panel (starts ~43% down the image), yellow button. */
+#how-it-works.landing-page__section--tinted {
+  justify-content: flex-start;
+  padding-top: 3.5vw;
+  padding-bottom: 36px;
+}
+
+#how-it-works .landing-page__how-head {
+  min-height: 20.7vw;
+}
+
+#how-it-works .landing-page__section-title,
+#how-it-works .landing-page__section-body {
+  text-shadow: 0 2px 10px rgba(0, 25, 100, 0.5);
+}
+
+#how-it-works .landing-page__section-cta {
+  background: var(--lp-yellow);
+  color: var(--lp-navy);
+}
+
+#how-it-works .landing-page__section-cta:hover,
+#how-it-works .landing-page__section-cta:active {
+  background: #f0c200;
+}
+
+@media (max-width: 859px) {
+  #how-it-works.landing-page__section--tinted {
+    justify-content: center;
+    padding-top: 28px;
+    padding-bottom: 28px;
+  }
+
+  #how-it-works .landing-page__how-head {
+    min-height: 0;
+  }
+}
+
+/* Desktop: each part is exactly as tall as its artwork (no filler slab); if
+   the screen is taller, the next part of the jeepney peeks in below. Phones
+   keep one full screen per section. */
+@media (min-width: 860px) {
+  #features.landing-page__section {
+    min-height: var(--hc);
+  }
+
+  #how-it-works.landing-page__section--tinted {
+    min-height: 56.28vw;
+  }
+}
+
+/* ===== Why cAIabe: label in the roof band, phone heading fills the window ===== */
+/* The roof peek is a bit taller so the label (centred in the red band above
+   the handlebar, ~2.5vw below the top of the artwork) is fully visible. */
+.landing-page {
+  --roof: clamp(28px, 4.2vw, 64px);
+}
+
+#features.landing-page__section {
+  --win-h: 30.9vw;
+}
+
+#features .landing-page__eyebrow {
+  position: absolute;
+  top: 2.5vw;
+  left: 50%;
+  z-index: 1;
+  display: block;
+  margin: 0;
+  padding: 0;
+  background: none;
+  color: #ffffff;
+  font-size: clamp(0.62rem, 1vw, 0.95rem);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(110, 0, 10, 0.45);
+  transform: translate(-50%, -50%);
+}
+
+@media (max-width: 859px) {
+  /* heading centred in the whole window */
+  #features .landing-page__features-head {
+    position: relative;
+    box-sizing: border-box;
+    max-width: none;
+    height: var(--hc);
+    margin: 0 -24px;
+    padding: 0;
+  }
+
+  #features .landing-page__section-title {
+    position: absolute;
+    top: var(--win-top);
+    left: 9vw;
+    right: 9vw;
+    height: var(--win-h);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+    font-size: clamp(1rem, 5.6vw, 1.5rem);
+    line-height: 1.15;
+  }
+
+  /* plain red below the window — same red as the artwork's lowest edge */
+  #features.landing-page__section {
+    background:
+      url("/images/jeepney_window.png") 0 calc(var(--img-h) * -0.0404) / 100% auto no-repeat,
+      linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%) 0 0 / 100% var(--hc) no-repeat,
+      linear-gradient(#c5010b, #c5010b);
+  }
+}
+
+/* ===== "WHY CAIABE" pill returns above the heading ===== */
+.landing-page {
+  --roof: clamp(22px, 3vw, 44px);
+}
+
+#features .landing-page__eyebrow {
+  position: static;
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #fdeceb;
+  color: var(--lp-red);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  text-shadow: none;
+  transform: none;
+}
+
+@media (min-width: 860px) {
+  #features .landing-page__eyebrow {
+    font-size: 0.8rem;
+  }
+}
+
+/* Phones: pill + left-aligned heading inside the glass, well clear of the
+   frame; the sentence wraps onto the next line instead of touching the edges. */
+@media (max-width: 859px) {
+  #features .landing-page__features-head {
+    position: relative;
+    box-sizing: border-box;
+    max-width: none;
+    height: var(--hc);
+    margin: 0 -24px;
+    padding: 0;
+  }
+
+  #features .landing-page__features-head-inner {
+    display: none;
+  }
+
+  #features .landing-page__eyebrow {
+    position: absolute;
+    top: calc(var(--win-top) + 2.6vw);
+    left: 11vw;
+    margin: 0;
+    padding: 3px 9px;
+    font-size: clamp(0.56rem, 2.3vw, 0.7rem);
+  }
+
+  #features .landing-page__section-title {
+    position: absolute;
+    top: calc(var(--win-top) + 2.6vw + 1.6rem);
+    left: 11vw;
+    right: 10vw;
+    height: auto;
+    margin: 0;
+    display: block;
+    text-align: left;
+    white-space: normal;
+    font-size: clamp(0.88rem, 4.3vw, 1.2rem);
+    line-height: 1.18;
+  }
+}
+
+@media (max-width: 859px) {
+  /* stay inside the left glass pane (the sliding divider starts at ~72%) */
+  #features .landing-page__section-title {
+    right: 30vw;
+  }
+}
+
+/* Phones: the red area under the window hugs the cards (no full-screen
+   stretch), with a little padding above and below them. */
+@media (max-width: 859px) {
+  #features.landing-page__section {
+    min-height: 0;
+    justify-content: flex-start;
+    padding: 0 24px 16px;
+  }
+
+  #features .landing-page__features {
+    margin: 22px -24px 0;
+    padding: 0 24px;
+  }
+}
+
+/* Phones: "How it works" content starts below the seat lip's shadow. The
+   shadow ends ~46% down the 1672x941 artwork (= 26vw), plus a small gap. */
+@media (max-width: 859px) {
+  #how-it-works.landing-page__section--tinted {
+    justify-content: flex-start;
+    padding-top: calc(26vw + 14px);
+    padding-bottom: 28px;
+  }
+}
+
+/* Phones: let the fade into flat seat blue run a few px past the image's
+   bottom edge so the floor strip never shows as a dashed seam. */
+@media (max-width: 859px) {
+  #how-it-works.landing-page__section--tinted {
+    background:
+      linear-gradient(180deg, rgba(0, 72, 200, 0) 0%, #0048c8 100%) 0 calc(56.28vw * 0.62) / 100% calc(56.28vw * 0.38 + 8px) no-repeat,
+      url("/images/jeepney_chair.png") 0 0 / 100% auto no-repeat,
+      linear-gradient(#0048c8, #0048c8);
+  }
+}
+
+@media (max-width: 859px) {
+  /* start the fade lower on the (flat) seat panel so the panel's bottom lip is covered too */
+  #how-it-works.landing-page__section--tinted {
+    background:
+      linear-gradient(180deg, rgba(0, 72, 200, 0) 0%, #0048c8 100%) 0 calc(56.28vw * 0.5) / 100% calc(56.28vw * 0.5 + 8px) no-repeat,
+      url("/images/jeepney_chair.png") 0 0 / 100% auto no-repeat,
+      linear-gradient(#0048c8, #0048c8);
+  }
+}
+
+/* ===== Heading: bigger with the screen, centred on the glass ===== */
+/* The glass spans ~7.5%–71% of the width (the sliding divider starts ~72%).
+   The head box is exactly that pane, so centring inside it centres the
+   pill + sentence on the window. */
+@media (min-width: 860px) {
+  #features .landing-page__features-head {
+    width: 64vw;
+    max-width: none;
+    margin-left: calc(7.5vw - max(24px, (100vw - 1120px) / 2));
+    text-align: center;
+  }
+
+  #features .landing-page__section-title {
+    text-align: center;
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 859px) {
+  /* head = the whole artwork area; padding frames the glass pane, and the
+     content is centred inside it both ways */
+  #features .landing-page__features-head {
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2.2vw;
+    max-width: none;
+    height: var(--hc);
+    margin: 0 -24px;
+    padding: var(--win-top) 29.5vw 7.09vw 7.5vw;
+    text-align: center;
+  }
+
+  #features .landing-page__eyebrow {
+    position: static;
+    margin: 0;
+    padding: 0.35em 0.9em;
+    font-size: clamp(0.56rem, 2.3vw, 1rem);
+  }
+
+  #features .landing-page__section-title {
+    position: static;
+    height: auto;
+    margin: 0;
+    display: block;
+    text-align: center;
+    white-space: normal;
+    /* ~3 lines filling the pane at any phone/tablet width */
+    font-size: clamp(0.9rem, 5.2vw, 2.7rem);
+    line-height: 1.18;
+  }
+}
+
+#features .landing-page__eyebrow {
+  align-self: center;
+}
+
+/* ===== Heading: left-aligned on the glass, pill snug above the sentence ===== */
+@media (min-width: 860px) {
+  #features .landing-page__features-head {
+    width: 62vw;
+    margin-left: calc(9.5vw - max(24px, (100vw - 1120px) / 2));
+    text-align: left;
+  }
+
+  #features .landing-page__section-title {
+    text-align: left;
+    margin-inline: 0;
+  }
+
+  #features .landing-page__eyebrow {
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 859px) {
+  #features .landing-page__features-head {
+    align-items: flex-start;
+    gap: 0.9vw;
+    padding-left: 11vw;
+    text-align: left;
+  }
+
+  #features .landing-page__eyebrow {
+    align-self: flex-start;
+  }
+
+  #features .landing-page__section-title {
+    text-align: left;
+  }
+}
+
+/* ===== Window artwork: now the real transparent jeepney_window.png ===== */
+/* Measured on the new file: artwork rows 4.14%–95.96% of the image (so the
+   image is shifted up 4.14% and --hc = 0.9182 * 56.28vw); glass opening
+   14.0vw–43.8vw down, 7.5%–71.3% across. */
+#features.landing-page__section {
+  --hc: 51.68vw;
+  --win-top: 14vw;
+  --win-h: 29.8vw;
+  background:
+    url("/images/jeepney_window.png") 0 calc(var(--img-h) * -0.0414) / 100% auto no-repeat,
+    linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%) 0 0 / 100% var(--hc) no-repeat,
+    linear-gradient(#c5010b, #c5010b);
+}
+
+@media (max-width: 859px) {
+  #features.landing-page__section {
+    background:
+      url("/images/jeepney_window.png") 0 calc(var(--img-h) * -0.0414) / 100% auto no-repeat,
+      linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%) 0 0 / 100% var(--hc) no-repeat,
+      linear-gradient(#c5010b, #c5010b);
+  }
+
+  #features .landing-page__features-head {
+    padding-bottom: 7.88vw;
+  }
+}
+
+/* ===== Real routes, not guesses: the diamond-plate floor ===== */
+/* Desktop: the whole floor image, edge to edge, content on the open floor
+   above the raised step (which starts ~81% down). Phones: the floor
+   texture covers the section, scaled so the step falls below the content. */
+#routes.landing-page__section {
+  max-width: none;
+  margin: 0;
+  padding: 5vw max(24px, calc((100% - 1120px) / 2)) 36px;
+  justify-content: flex-start;
+  background:
+    url("/images/jeepney_floor.png") 0 0 / 100% auto no-repeat,
+    #aaadb4;
+}
+
+@media (min-width: 860px) {
+  #routes.landing-page__section {
+    min-height: 56.28vw;
+  }
+}
+
+@media (max-width: 859px) {
+  #routes.landing-page__section {
+    min-height: 0;
+    padding: 28px 24px 32px;
+    background:
+      url("/images/jeepney_floor.png") center top / auto 125% no-repeat,
+      #aaadb4;
+  }
+}
+
+#routes .landing-page__routes-note {
+  color: #2f3a63;
+}
+
+/* Readability on the metal floor */
+#routes .landing-page__routes-note {
+  display: inline-block;
+  align-self: flex-start;
+  margin: 16px 0 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #2f3a63;
+}
+
+#routes .landing-page__section-title {
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.55);
+}
+
+@media (max-width: 859px) {
+  /* phones: calm the larger, busier texture with a light veil */
+  #routes.landing-page__section {
+    background:
+      linear-gradient(rgba(176, 179, 186, 0.5), rgba(176, 179, 186, 0.5)),
+      url("/images/jeepney_floor.png") center top / auto 125% no-repeat,
+      #aaadb4;
+  }
+}
+
+/* ===== New jeepney_window.png: one wide pane, no divider ===== */
+/* Measured: artwork rows 4.14%–95.64% of the image (shift up 4.14%,
+   --hc = 0.915 * 56.28vw); glass 7.4%–95.1% across, 13.34vw–44.0vw down.
+   With no divider the heading can use the whole pane and grow with it. */
+#features.landing-page__section {
+  --hc: 51.5vw;
+  --win-top: 13.34vw;
+  --win-h: 30.68vw;
+}
+
+@media (min-width: 860px) {
+  #features .landing-page__features-head {
+    width: 82vw;
+  }
+
+  #features .landing-page__section-title {
+    font-size: clamp(0.95rem, 2.6vw, 3rem);
+  }
+}
+
+@media (max-width: 859px) {
+  #features .landing-page__features-head {
+    padding-right: 9vw;
+    padding-bottom: 7.48vw;
+  }
+
+  #features .landing-page__section-title {
+    font-size: clamp(0.9rem, 5.6vw, 2.8rem);
+  }
+}
+
+/* ===== jeepney_window: cropped edge to edge, flat bottom edge ===== */
+/* Crop (of the 1672x941 file): rows 39–849 (top margin removed; bottom cut
+   just under the yellow frame, above the body's rounded bottom corners) and
+   7px off each side (removes the ~5px transparent side border). The image is
+   drawn 1672/1658 = 100.84% wide, centred, so it touches both screen edges
+   with no gap. Everything is derived from that:
+     --img-h = 56.28vw * 1.00844 = 56.755vw   (rendered height of full file)
+     --hc    = 811/941 * --img-h = 48.91vw     (visible, cropped height)
+     glass   = rows 262–775 -> top 13.45vw, height 31.0vw
+   The red under the artwork is the exact red of the cropped bottom edge. */
+#features.landing-page__section {
+  --img-h: 56.755vw;
+  --hc: 48.91vw;
+  --win-top: 13.45vw;
+  --win-h: 31vw;
+  background:
+    url("/images/jeepney_window.png") 50% calc(var(--img-h) * -0.04145) / 100.844% auto no-repeat,
+    linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%) 0 0 / 100% var(--hc) no-repeat,
+    linear-gradient(#b70102, #b70102);
+}
+
+@media (max-width: 859px) {
+  #features.landing-page__section {
+    background:
+      url("/images/jeepney_window.png") 50% calc(var(--img-h) * -0.04145) / 100.844% auto no-repeat,
+      linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%) 0 0 / 100% var(--hc) no-repeat,
+      linear-gradient(#b70102, #b70102);
+  }
+
+  #features .landing-page__features-head {
+    padding-bottom: 4.46vw;
+  }
+}
+
+/* ===== Crop refined: end on the clean bright-red band (row 838) ===== */
+/* Rows 39–838 (800 rows) of the file: --hc = 800/941 * 56.755vw = 48.25vw.
+   The bottom edge is uniform bright red (#fa0a10), so the red area under the
+   artwork uses exactly that colour, and the top of the seat below blends from
+   it into its own dark-red edge. */
+#features.landing-page__section {
+  --hc: 48.25vw;
+  background:
+    url("/images/jeepney_window.png") 50% calc(var(--img-h) * -0.04145) / 100.844% auto no-repeat,
+    linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%) 0 0 / 100% var(--hc) no-repeat,
+    linear-gradient(#fa0a10, #fa0a10);
+}
+
+@media (max-width: 859px) {
+  #features.landing-page__section {
+    background:
+      url("/images/jeepney_window.png") 50% calc(var(--img-h) * -0.04145) / 100.844% auto no-repeat,
+      linear-gradient(180deg, #cfe1ff 0%, #f4eedd 100%) 0 0 / 100% var(--hc) no-repeat,
+      linear-gradient(#fa0a10, #fa0a10);
+  }
+
+  #features .landing-page__features-head {
+    padding-bottom: 3.8vw;
+  }
+}
+
+#how-it-works.landing-page__section--tinted {
+  position: relative;
+}
+
+#how-it-works.landing-page__section--tinted::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.6vw;
+  background: linear-gradient(#fa0a10, rgba(250, 10, 16, 0));
+  pointer-events: none;
+}
+
+/* ===== How it works, desktop: heading inside the middle backrest cushion ===== */
+/* Chair artwork (1672x941): middle cushion spans x 28.4%–73.6%, y 2.7%–25%
+   (= 1.6vw–14.0vw down). The heading block is centred in it; the steps start
+   below the seat lip's shadow (shadow ends ~25.7vw). Phones are unchanged:
+   the heading stays below the seat. */
+@media (min-width: 860px) {
+  #how-it-works.landing-page__section--tinted {
+    justify-content: flex-start;
+    padding-top: 27.5vw;
+    padding-bottom: 36px;
+  }
+
+  #how-it-works .landing-page__how-head {
+    position: absolute;
+    top: 1.6vw;
+    left: 28.8vw;
+    width: 44.4vw;
+    height: 12.2vw;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  #how-it-works .landing-page__eyebrow {
+    align-self: center;
+    margin: 0 0 0.5vw;
+    padding: 0.3vw 0.9vw;
+    font-size: clamp(0.6rem, 0.8vw, 0.85rem);
+  }
+
+  #how-it-works .landing-page__section-title {
+    margin: 0;
+    max-width: none;
+    white-space: nowrap;
+    font-size: clamp(1rem, 2vw, 2.3rem);
+    line-height: 1.15;
+  }
+
+  #how-it-works .landing-page__section-body {
+    max-width: none;
+    margin: 0.6vw 0 0;
+    font-size: clamp(0.78rem, 1.02vw, 1.1rem);
+    line-height: 1.5;
+  }
+}
+
+@media (min-width: 860px) {
+  /* keep clear of the cushion's rounded edges */
+  #how-it-works .landing-page__section-title {
+    font-size: clamp(1rem, 1.85vw, 2.1rem);
+  }
+
+  #how-it-works .landing-page__section-body {
+    max-width: 36vw;
+    font-size: clamp(0.76rem, 0.98vw, 1.05rem);
+  }
+}
+
+/* ===== How it works, desktop: lift the steps clear of the seat ledge; floor moves to the next section ===== */
+/* Seat artwork rows (of 941): shadow under the seat lip ends ~430 (25.7vw),
+   the front ledge starts ~845 (50.5vw), floor strip starts ~911. The section
+   is cut at row 908 (= 54.31vw) so the floor appears with the next section.
+   Steps are sized in vw so they always fit between the shadow and the ledge. */
+@media (min-width: 860px) {
+  #how-it-works.landing-page__section--tinted {
+    min-height: 54.31vw;
+    padding-top: 26.6vw;
+    padding-bottom: 0;
+  }
+
+  #how-it-works .landing-page__steps {
+    gap: 0.75vw;
+    margin: 0;
+  }
+
+  #how-it-works .landing-page__step {
+    gap: 1.1vw;
+    padding: 1.1vw 1.5vw;
+    border-radius: 1.5vw;
+  }
+
+  #how-it-works .landing-page__step-number {
+    width: clamp(26px, 2.2vw, 36px);
+    height: clamp(26px, 2.2vw, 36px);
+  }
+
+  #how-it-works .landing-page__step-title {
+    margin: 0 0 0.2vw;
+    font-size: clamp(0.85rem, 1.12vw, 1.2rem);
+  }
+
+  #how-it-works .landing-page__step-body {
+    font-size: clamp(0.74rem, 0.95vw, 1rem);
+    line-height: 1.45;
+  }
+
+  #how-it-works .landing-page__section-cta {
+    margin-top: 1.3vw;
+    padding: 0.85vw 1.8vw;
+    font-size: clamp(0.8rem, 0.95vw, 1rem);
+  }
+}
+
+/* the seat's shadow falls onto the start of the metal floor */
+#routes.landing-page__section {
+  position: relative;
+}
+
+#routes.landing-page__section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.8vw;
+  background: linear-gradient(rgba(1, 24, 80, 0.45), rgba(1, 24, 80, 0));
+  pointer-events: none;
+}
+
+/* narrower desktops/laptops: tighter steps so the button still clears the ledge */
+@media (min-width: 860px) and (max-width: 1199px) {
+  #how-it-works .landing-page__step {
+    padding: 9px 14px;
+  }
+
+  #how-it-works .landing-page__steps {
+    gap: 6px;
+  }
+
+  #how-it-works .landing-page__step-title {
+    font-size: 0.82rem;
+  }
+
+  #how-it-works .landing-page__step-body {
+    font-size: 0.72rem;
+  }
+
+  #how-it-works .landing-page__section-cta {
+    margin-top: 10px;
+    padding: 9px 18px;
+  }
+}
+
+@media (min-width: 860px) and (max-width: 960px) {
+  #how-it-works.landing-page__section--tinted {
+    padding-top: 26.1vw;
+  }
+
+  #how-it-works .landing-page__step {
+    padding: 8px 12px;
+  }
+
+  #how-it-works .landing-page__step-title {
+    font-size: 0.78rem;
+  }
+
+  #how-it-works .landing-page__step-body {
+    font-size: 0.7rem;
+  }
+}
+
+/* ===== Phones: the seat's bottom lip always closes the blue ===== */
+/* A strip cropped from the seat artwork (rows 836–908 of 941 = the glossy
+   front ledge and the shadow under it), drawn at the bottom of the section.
+   Its top fades into the flat seat blue so there is no seam. Sized from the
+   strip height --ledge-h: the image is scaled so those 72 rows are exactly
+   --ledge-h tall (image height = 941/72 * --ledge-h) and centred, which crops
+   the side caps on narrow screens but always shows the bright ledge. */
+@media (max-width: 859px) {
+  #how-it-works.landing-page__section--tinted {
+    --ledge-h: clamp(30px, 8vw, 54px);
+    padding-bottom: calc(var(--ledge-h) + 24px);
+  }
+
+  #how-it-works.landing-page__section--tinted::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--ledge-h);
+    background: url("/images/jeepney_chair.png") 50% calc(var(--ledge-h) * -11.61) / auto calc(var(--ledge-h) * 13.07) no-repeat;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 28%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 28%);
+    pointer-events: none;
+  }
+}
+
+/* Phones: hide the seat artwork's own bottom ledge (rows ~845–905 = 90%–96%
+   down the image) — the closing lip strip at the bottom of the section
+   replaces it. The fade now reaches solid seat blue by 80% of the image
+   height and a solid layer covers everything below, so only one lip shows. */
+@media (max-width: 859px) {
+  #how-it-works.landing-page__section--tinted {
+    background:
+      linear-gradient(#0048c8, #0048c8) 0 calc(56.28vw * 0.8) / 100% calc(56.28vw * 0.3) no-repeat,
+      linear-gradient(180deg, rgba(0, 72, 200, 0) 0%, #0048c8 100%) 0 calc(56.28vw * 0.5) / 100% calc(56.28vw * 0.3) no-repeat,
+      url("/images/jeepney_chair.png") 0 0 / 100% auto no-repeat,
+      linear-gradient(#0048c8, #0048c8);
+  }
+}
+
+/* ===== Real routes: readable on the metal floor, still modern ===== */
+/* Frosted-glass panels for the heading and footnote, a lifted list card, and
+   a light veil that calms the diamond-plate texture. */
+#routes.landing-page__section {
+  background:
+    linear-gradient(rgba(176, 179, 186, 0.32), rgba(176, 179, 186, 0.32)),
+    url("/images/jeepney_floor.png") 0 0 / 100% auto no-repeat,
+    #aaadb4;
+}
+
+@media (max-width: 859px) {
+  #routes.landing-page__section {
+    background:
+      linear-gradient(rgba(176, 179, 186, 0.5), rgba(176, 179, 186, 0.5)),
+      url("/images/jeepney_floor.png") center top / auto 125% no-repeat,
+      #aaadb4;
+  }
+}
+
+#routes .landing-page__eyebrow {
+  margin-bottom: 10px;
+  box-shadow: 0 4px 12px rgba(20, 30, 70, 0.14);
+}
+
+#routes .landing-page__section-title {
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.5em 0.85em 0.55em;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: 0 8px 24px rgba(20, 30, 70, 0.12);
+  color: var(--lp-ink);
+  text-shadow: none;
+}
+
+#routes .landing-page__routes {
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 38px rgba(20, 30, 70, 0.2);
+}
+
+#routes .landing-page__routes-note {
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 18px rgba(20, 30, 70, 0.12);
+  color: #26325c;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+/* ===== Feature cards: the inside-pages card border ===== */
+/* Same signature as the in-app cards (card-shell / trip search): 2px black
+   outline, thicker blue top edge, thicker red left edge, 26px corners — in the
+   landing palette. */
+.landing-page__feature-card {
+  border: 2px solid #000000;
+  border-left: 5px solid var(--lp-red);
+  border-top: 5px solid var(--lp-blue);
+  border-radius: 26px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+}
+
+@media (min-width: 860px) {
+  .landing-page__feature-card:hover {
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Phones: the cards sit on a red area, so the thick left edge is the flag's
+   yellow there (red would vanish into the background). */
+@media (max-width: 859px) {
+  .landing-page__feature-card {
+    border-left-color: var(--lp-yellow);
+  }
+}
+
+/* ===== Real routes: one unified card over the metal floor ===== */
+/* The heading, route list and footnote live inside a single panel (same
+   border signature as the feature cards); the pieces inside drop their own
+   frosted backgrounds so everything reads as one card. */
+#routes .landing-page__routes-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: clamp(18px, 2.4vw, 36px);
+  border: 2px solid #000000;
+  border-left: 5px solid var(--lp-red);
+  border-top: 5px solid var(--lp-blue);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 18px 44px rgba(20, 30, 70, 0.24);
+}
+
+#routes .landing-page__eyebrow {
+  margin-bottom: 10px;
+  box-shadow: none;
+}
+
+#routes .landing-page__section-title {
+  width: auto;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+#routes .landing-page__routes {
+  width: 100%;
+  margin-top: clamp(14px, 1.6vw, 22px);
+  border: 0;
+  border-top: 1px solid rgba(0, 56, 168, 0.16);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+#routes .landing-page__routes-note {
+  margin: 14px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+  color: var(--lp-text);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+@media (max-width: 859px) {
+  #routes .landing-page__routes-panel {
+    padding: 18px 16px;
+  }
+
+  #routes .landing-page__route-row {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+}
+
+/* ===== Header: all four sections ===== */
+/* Home · Features · How it works · Routes. From 700px up they sit inline in
+   the header; below that they move into the menu (where they fit). */
+.landing-page__menu-link,
+.landing-page__menu-divider {
+  display: none;
+}
+
+@media (max-width: 699px) {
+  .landing-page__nav {
+    display: none;
+  }
+
+  .landing-page__menu-link {
+    display: block;
+  }
+
+  .landing-page__menu-divider {
+    display: block;
+    height: 1px;
+    margin: 6px 4px;
+    background: rgba(0, 56, 168, 0.14);
+  }
+}
+
+@media (min-width: 700px) {
+  .landing-page__nav {
+    display: flex;
+  }
+}
+
+/* ===== How it works: heading only (paragraph removed), enlarged ===== */
+@media (min-width: 860px) {
+  /* inside the middle cushion: up to two lines, centred */
+  #how-it-works .landing-page__section-title {
+    max-width: 39vw;
+    white-space: normal;
+    font-size: clamp(1.15rem, 2.7vw, 3.2rem);
+    line-height: 1.12;
+  }
+
+  #how-it-works .landing-page__eyebrow {
+    margin-bottom: 0.7vw;
+  }
+}
+
+@media (max-width: 859px) {
+  #how-it-works .landing-page__section-title {
+    font-size: clamp(1.6rem, 7.2vw, 3.2rem);
+    line-height: 1.12;
+  }
+}
+
+/* Phones: with the paragraph gone, let the seat section hug its content
+   instead of stretching to a full screen of empty blue. */
+@media (max-width: 859px) {
+  #how-it-works.landing-page__section--tinted {
+    min-height: 0;
+  }
+}
+
+/* ===== Real routes card: geometric tiles on the top border ===== */
+/* A row of seven flag-coloured tiles (star, circle, diamond, triangle,
+   semicircle, ...) straddling the top border, like the tile column in the
+   brand poster. */
+#routes .landing-page__routes-panel {
+  --tile: clamp(24px, 3vw, 44px);
+  position: relative;
+}
+
+#routes .landing-page__routes-panel::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--tile) / -2 - 3px);
+  left: clamp(16px, 2.6vw, 38px);
+  width: calc(var(--tile) * 7);
+  height: var(--tile);
+  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22336%22%20height%3D%2248%22%20viewBox%3D%220%200%20336%2048%22%3E%3Crect%20x%3D%220%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%2224%2C6%2029%2C19%2042%2C24%2029%2C29%2024%2C42%2019%2C29%206%2C24%2019%2C19%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2248%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23ffffff%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2224%22%20r%3D%2214%22%20fill%3D%22%230038a8%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2224%22%20r%3D%225%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2296%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%230038a8%22%2F%3E%3Cpolygon%20points%3D%22120%2C8%20136%2C24%20120%2C40%20104%2C24%22%20fill%3D%22%23ffffff%22%2F%3E%3Cpolygon%20points%3D%22120%2C16%20128%2C24%20120%2C32%20112%2C24%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22144%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Cpolygon%20points%3D%22168%2C8%20184%2C40%20152%2C40%22%20fill%3D%22%23ce1126%22%2F%3E%3Crect%20x%3D%22192%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpath%20d%3D%22M200%2036%20A16%2016%200%200%201%20232%2036%20Z%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22240%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22252%22%20y%3D%2212%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23ce1126%22%2F%3E%3Ccircle%20cx%3D%22264%22%20cy%3D%2224%22%20r%3D%226%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%22288%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Cpolygon%20points%3D%22312%2C8%20316%2C20%20328%2C24%20316%2C28%20312%2C40%20308%2C28%20296%2C24%20308%2C20%22%20fill%3D%22%230038a8%22%2F%3E%3C%2Fsvg%3E") 0 0 / 100% 100% no-repeat;
+  border-radius: 6px;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+}
+
+/* ===== Real routes card: tile band across the whole top, inside the card ===== */
+/* The tile row (7 distinct tiles) repeats across the full width of the card
+   and follows its rounded top corners. Tile size is chosen so a whole number
+   of 7-tile units (4 / 3 / 2) fits the card exactly: card width =
+   min(1120px, 100vw - 48px). The content is pushed down by the band height. */
+#routes .landing-page__routes-panel {
+  --n: 2;
+  --tile: calc(min(1120px, 100vw - 48px) / (7 * var(--n)));
+  position: relative;
+  padding-top: calc(var(--tile) + clamp(16px, 2.2vw, 30px));
+}
+
+@media (min-width: 700px) {
+  #routes .landing-page__routes-panel {
+    --n: 3;
+  }
+}
+
+@media (min-width: 1000px) {
+  #routes .landing-page__routes-panel {
+    --n: 4;
+  }
+}
+
+#routes .landing-page__routes-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: auto;
+  height: var(--tile);
+  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22336%22%20height%3D%2248%22%20viewBox%3D%220%200%20336%2048%22%3E%3Crect%20x%3D%220%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%2224%2C6%2029%2C19%2042%2C24%2029%2C29%2024%2C42%2019%2C29%206%2C24%2019%2C19%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2248%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23ffffff%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2224%22%20r%3D%2214%22%20fill%3D%22%230038a8%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2224%22%20r%3D%225%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2296%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%230038a8%22%2F%3E%3Cpolygon%20points%3D%22120%2C8%20136%2C24%20120%2C40%20104%2C24%22%20fill%3D%22%23ffffff%22%2F%3E%3Cpolygon%20points%3D%22120%2C16%20128%2C24%20120%2C32%20112%2C24%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22144%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Cpolygon%20points%3D%22168%2C8%20184%2C40%20152%2C40%22%20fill%3D%22%23ce1126%22%2F%3E%3Crect%20x%3D%22192%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpath%20d%3D%22M200%2036%20A16%2016%200%200%201%20232%2036%20Z%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22240%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22252%22%20y%3D%2212%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23ce1126%22%2F%3E%3Ccircle%20cx%3D%22264%22%20cy%3D%2224%22%20r%3D%226%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%22288%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Cpolygon%20points%3D%22312%2C8%20316%2C20%20328%2C24%20316%2C28%20312%2C40%20308%2C28%20296%2C24%20308%2C20%22%20fill%3D%22%230038a8%22%2F%3E%3C%2Fsvg%3E") 0 0 / calc(var(--tile) * 7) var(--tile) round no-repeat;
+  border-radius: 21px 21px 0 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/* ===== Closing banner ("Nokarin ta munta, Jo?"): just tall enough ===== */
+/* No screen-height stretch — the section is its content plus even padding. */
+.landing-page__closing {
+  min-height: 0;
+  padding: clamp(52px, 7vw, 92px) 28px;
+}
+
+/* ===== Floor crop (desktop): keep the first lip, drop the rest ===== */
+/* Floor artwork rows (of 941): bevel top 756–794, front face 796–885, bottom
+   edge ~886. The section is cut at row 845 (= 50.54vw): the raised lip plus
+   ~50px of its front face, then the next section starts — like the reference
+   boundary. Top padding is trimmed so the card ends above the lip. */
+@media (min-width: 860px) {
+  #routes.landing-page__section {
+    min-height: 50.54vw;
+    padding-top: 2.6vw;
+    padding-bottom: 0;
+  }
+}
+
+/* Desktop: scale the route rows' vertical padding with the width so the card
+   always ends above the floor's lip (the lip's position scales with width). */
+@media (min-width: 860px) {
+  #routes .landing-page__route-row {
+    padding-top: clamp(8px, 1.05vw, 16px);
+    padding-bottom: clamp(8px, 1.05vw, 16px);
+  }
+}
+
+/* ===== Floor lip on phones + shadow under the lip (both layouts) ===== */
+/* Desktop already shows the lip (the section is cut just below it). A soft
+   navy shadow runs along the bottom edge so the metal steps down into the
+   blue closing section. */
+#routes.landing-page__section {
+  box-shadow: inset 0 -30px 26px -14px rgba(0, 24, 90, 0.55);
+}
+
+/* Phones: a strip cropped from the floor artwork (rows 750–845 of 941: the
+   bevel and a little of the front face) closes the section. Scaled so those
+   95 rows are exactly --lip-h tall and centred, which crops the sides on
+   narrow screens. The shadow is a gradient layer on top of the strip. */
+@media (max-width: 859px) {
+  #routes.landing-page__section {
+    --lip-h: clamp(46px, 13vw, 76px);
+    padding-bottom: calc(var(--lip-h) + 22px);
+    box-shadow: none;
+  }
+
+  #routes.landing-page__section::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--lip-h);
+    background:
+      linear-gradient(180deg, rgba(0, 24, 90, 0) 55%, rgba(0, 24, 90, 0.6) 100%),
+      url("/images/jeepney_floor.png") 50% calc(var(--lip-h) * -7.895) / auto calc(var(--lip-h) * 9.905) no-repeat;
+    pointer-events: none;
+  }
+}
+
+/* ===== Footer: the brand poster in miniature ===== */
+/* Blue | red halves behind a cream card, a column of geometric tiles down the
+   left edge, a sawtooth edge along the bottom and a wave-line accent — the
+   same pieces as the brand poster. Content: brand block + CTA, link columns,
+   bottom bar. Phones swap the tile column for a tile band across the top. */
+.landing-page__footer {
+  --f-col: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%22336%22%20viewBox%3D%220%200%2048%20336%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%2224%2C6%2029%2C19%2042%2C24%2029%2C29%2024%2C42%2019%2C29%206%2C24%2019%2C19%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%2248%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23ffffff%22%2F%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2272%22%20r%3D%2214%22%20fill%3D%22%230038a8%22%2F%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2272%22%20r%3D%225%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%2296%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%230038a8%22%2F%3E%3Cpolygon%20points%3D%2224%2C104%2040%2C120%2024%2C136%208%2C120%22%20fill%3D%22%23ffffff%22%2F%3E%3Cpolygon%20points%3D%2224%2C112%2032%2C120%2024%2C128%2016%2C120%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22144%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Cpolygon%20points%3D%2224%2C152%2040%2C184%208%2C184%22%20fill%3D%22%23ce1126%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22192%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpath%20d%3D%22M8%20228%20A16%2016%200%200%201%2040%20228%20Z%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22240%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%22252%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23ce1126%22%2F%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%22264%22%20r%3D%226%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22288%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Cpolygon%20points%3D%2224%2C296%2028%2C308%2040%2C312%2028%2C316%2024%2C328%2020%2C316%208%2C312%2020%2C308%22%20fill%3D%22%230038a8%22%2F%3E%3C%2Fsvg%3E");
+  --f-row: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22336%22%20height%3D%2248%22%20viewBox%3D%220%200%20336%2048%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%2224%2C6%2029%2C19%2042%2C24%2029%2C29%2024%2C42%2019%2C29%206%2C24%2019%2C19%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2248%22%20y%3D%220%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23ffffff%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2224%22%20r%3D%2214%22%20fill%3D%22%230038a8%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2224%22%20r%3D%225%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2296%22%20y%3D%220%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%230038a8%22%2F%3E%3Cpolygon%20points%3D%22120%2C8%20136%2C24%20120%2C40%20104%2C24%22%20fill%3D%22%23ffffff%22%2F%3E%3Cpolygon%20points%3D%22120%2C16%20128%2C24%20120%2C32%20112%2C24%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22144%22%20y%3D%220%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Cpolygon%20points%3D%22168%2C8%20184%2C40%20152%2C40%22%20fill%3D%22%23ce1126%22%2F%3E%3Crect%20x%3D%22192%22%20y%3D%220%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpath%20d%3D%22M200%2036%20A16%2016%200%200%201%20232%2036%20Z%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22240%22%20y%3D%220%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22252%22%20y%3D%2212%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23ce1126%22%2F%3E%3Ccircle%20cx%3D%22264%22%20cy%3D%2224%22%20r%3D%226%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%22288%22%20y%3D%220%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Cpolygon%20points%3D%22312%2C8%20316%2C20%20328%2C24%20316%2C28%20312%2C40%20308%2C28%20296%2C24%20308%2C20%22%20fill%3D%22%230038a8%22%2F%3E%3C%2Fsvg%3E");
+  --f-teeth: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2212%22%3E%3Crect%20width%3D%2224%22%20height%3D%2212%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%220%2C0%2024%2C0%2012%2C12%22%20fill%3D%22%23f1ebdd%22%2F%3E%3C%2Fsvg%3E");
+  --f-wave: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2212%22%20viewBox%3D%220%200%2040%2012%22%3E%3Cpath%20d%3D%22M0%206%20Q5%200%2010%206%20T20%206%20T30%206%20T40%206%22%20fill%3D%22none%22%20stroke%3D%22%23ce1126%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E");
+  padding: clamp(24px, 4vw, 56px) clamp(14px, 3vw, 40px);
+  background: linear-gradient(90deg, var(--lp-blue) 0 50%, var(--lp-red) 50% 100%);
+}
+
+.landing-page__footer-card {
+  position: relative;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: clamp(36px, 4vw, 52px) clamp(20px, 3vw, 44px) calc(clamp(24px, 3vw, 36px) + 12px);
+  padding-top: calc(28px + 24px);
+  border-radius: 24px;
+  background: var(--lp-cream);
+  overflow: hidden;
+  box-shadow: 0 18px 44px rgba(0, 20, 80, 0.3);
+}
+
+/* sawtooth edge along the bottom */
+.landing-page__footer-card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 12px;
+  background: var(--f-teeth) repeat-x 0 0 / 24px 12px;
+}
+
+/* tile band across the top (phones) */
+.landing-page__footer-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background: var(--f-row) 0 0 / auto 28px repeat-x;
+}
+
+.landing-page__footer-main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+}
+
+.landing-page__footer .landing-page__footer-brand {
+  max-width: none;
+  margin: 0;
+}
+
+.landing-page__footer .landing-page__footer-wordmark {
+  display: inline-block;
+  margin-right: 0.7em;
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+  color: var(--lp-red);
+  -webkit-text-stroke: 0.3px currentColor;
+}
+
+.landing-page__footer .landing-page__footer-tagline {
+  max-width: 30ch;
+  margin: 12px 0 0;
+  font-size: clamp(0.9rem, 1.1vw, 1rem);
+  line-height: 1.55;
+  color: var(--lp-text);
+}
+
+.landing-page__footer-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--lp-blue);
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 12px 22px;
+  box-shadow: none;
+  transition: background-color 0.15s ease;
+}
+
+.landing-page__footer-cta:hover,
+.landing-page__footer-cta:active {
+  background: #00267f;
+}
+
+.landing-page__footer .landing-page__footer-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 26px 20px;
+  max-width: none;
+  margin: 0;
+}
+
+.landing-page__footer .landing-page__footer-column {
+  min-width: 0;
+  gap: 11px;
+}
+
+.landing-page__footer .landing-page__footer-column:last-child {
+  grid-column: 1 / -1;
+}
+
+.landing-page__footer .landing-page__footer-heading {
+  margin: 0 0 2px;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  color: var(--lp-red);
+}
+
+.landing-page__footer .landing-page__footer-column a {
+  font-size: clamp(0.9rem, 1vw, 0.98rem);
+  font-weight: 600;
+  color: var(--lp-ink);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.landing-page__footer .landing-page__footer-column a:hover {
+  color: var(--lp-blue);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.landing-page__footer .landing-page__footer-mail {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border: 1px solid rgba(0, 56, 168, 0.22);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--lp-blue);
+}
+
+.landing-page__footer .landing-page__footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+  max-width: none;
+  margin: 28px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 56, 168, 0.16);
+  font-size: 0.8rem;
+  color: var(--lp-text);
+}
+
+.landing-page__footer-wave {
+  width: 80px;
+  height: 12px;
+  background: var(--f-wave) repeat-x 0 0 / 40px 12px;
+}
+
+/* Desktop: brand left, link columns right; tile column down the left edge */
+@media (min-width: 860px) {
+  .landing-page__footer-card {
+    padding: clamp(36px, 3.6vw, 52px) clamp(24px, 3vw, 44px) calc(clamp(26px, 3vw, 36px) + 12px)
+      calc(48px + clamp(24px, 3vw, 44px));
+  }
+
+  .landing-page__footer-card::before {
+    top: 0;
+    bottom: 12px;
+    right: auto;
+    width: 48px;
+    height: auto;
+    background: var(--f-col) 0 0 / 48px 336px repeat-y;
+  }
+
+  .landing-page__footer-main {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+    gap: 48px;
+  }
+
+  .landing-page__footer .landing-page__footer-links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .landing-page__footer .landing-page__footer-column:last-child {
+    grid-column: auto;
+  }
+}
+
+/* ===== Footer, take 2: woven-textile band over navy (Kape de Filipina style) ===== */
+/* No cream card and no blue/red split. A full-width woven band — zigzag
+   stripes, diamond medallions, a sunburst and a diamond lattice in the brand
+   red, blue, gold and cream — sits across the top; the content is on solid
+   navy below it. */
+.landing-page__footer {
+  --band: clamp(72px, 9vw, 132px);
+  --weave: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22144%22%20viewBox%3D%220%200%20480%20144%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22120%22%20height%3D%22144%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolyline%20points%3D%226%2C0%2014%2C12%206%2C24%2014%2C36%206%2C48%2014%2C60%206%2C72%2014%2C84%206%2C96%2014%2C108%206%2C120%2014%2C132%206%2C144%22%20fill%3D%22none%22%20stroke%3D%22%23f1ebdd%22%20stroke-width%3D%222.4%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolyline%20points%3D%2218%2C0%2026%2C12%2018%2C24%2026%2C36%2018%2C48%2026%2C60%2018%2C72%2026%2C84%2018%2C96%2026%2C108%2018%2C120%2026%2C132%2018%2C144%22%20fill%3D%22none%22%20stroke%3D%22%23f1ebdd%22%20stroke-width%3D%222.4%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolyline%20points%3D%2294%2C0%20102%2C12%2094%2C24%20102%2C36%2094%2C48%20102%2C60%2094%2C72%20102%2C84%2094%2C96%20102%2C108%2094%2C120%20102%2C132%2094%2C144%22%20fill%3D%22none%22%20stroke%3D%22%23f1ebdd%22%20stroke-width%3D%222.4%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolyline%20points%3D%22106%2C0%20114%2C12%20106%2C24%20114%2C36%20106%2C48%20114%2C60%20106%2C72%20114%2C84%20106%2C96%20114%2C108%20106%2C120%20114%2C132%20106%2C144%22%20fill%3D%22none%22%20stroke%3D%22%23f1ebdd%22%20stroke-width%3D%222.4%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolyline%20points%3D%2213%2C0%2019%2C12%2013%2C24%2019%2C36%2013%2C48%2019%2C60%2013%2C72%2019%2C84%2013%2C96%2019%2C108%2013%2C120%2019%2C132%2013%2C144%22%20fill%3D%22none%22%20stroke%3D%22%23fcd116%22%20stroke-width%3D%221.6%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolyline%20points%3D%22101%2C0%20107%2C12%20101%2C24%20107%2C36%20101%2C48%20107%2C60%20101%2C72%20107%2C84%20101%2C96%20107%2C108%20101%2C120%20107%2C132%20101%2C144%22%20fill%3D%22none%22%20stroke%3D%22%23fcd116%22%20stroke-width%3D%221.6%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolygon%20points%3D%2260%2C3%2074%2C18%2060%2C33%2046%2C18%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%2260%2C9%2068%2C18%2060%2C27%2052%2C18%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2218%22%20r%3D%223%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%2240%2C18%2034%2C13%2034%2C23%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%2280%2C18%2086%2C13%2086%2C23%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%2260%2C39%2074%2C54%2060%2C69%2046%2C54%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%2260%2C45%2068%2C54%2060%2C63%2052%2C54%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2254%22%20r%3D%223%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%2240%2C54%2034%2C49%2034%2C59%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%2280%2C54%2086%2C49%2086%2C59%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%2260%2C75%2074%2C90%2060%2C105%2046%2C90%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%2260%2C81%2068%2C90%2060%2C99%2052%2C90%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2290%22%20r%3D%223%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%2240%2C90%2034%2C85%2034%2C95%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%2280%2C90%2086%2C85%2086%2C95%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%2260%2C111%2074%2C126%2060%2C141%2046%2C126%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%2260%2C117%2068%2C126%2060%2C135%2052%2C126%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%22126%22%20r%3D%223%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%2240%2C126%2034%2C121%2034%2C131%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%2280%2C126%2086%2C121%2086%2C131%22%20fill%3D%22%2300227a%22%2F%3E%3Crect%20x%3D%22120%22%20y%3D%220%22%20width%3D%22120%22%20height%3D%22144%22%20fill%3D%22%2300227a%22%2F%3E%3Crect%20x%3D%22122%22%20y%3D%220%22%20width%3D%226%22%20height%3D%22144%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Crect%20x%3D%22134%22%20y%3D%220%22%20width%3D%223%22%20height%3D%22144%22%20fill%3D%22%23e0a82e%22%2F%3E%3Crect%20x%3D%22146%22%20y%3D%220%22%20width%3D%228%22%20height%3D%22144%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22158%22%20y%3D%220%22%20width%3D%226%22%20height%3D%22144%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Crect%20x%3D%22170%22%20y%3D%220%22%20width%3D%223%22%20height%3D%22144%22%20fill%3D%22%23e0a82e%22%2F%3E%3Crect%20x%3D%22182%22%20y%3D%220%22%20width%3D%228%22%20height%3D%22144%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22194%22%20y%3D%220%22%20width%3D%226%22%20height%3D%22144%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Crect%20x%3D%22206%22%20y%3D%220%22%20width%3D%223%22%20height%3D%22144%22%20fill%3D%22%23e0a82e%22%2F%3E%3Crect%20x%3D%22218%22%20y%3D%220%22%20width%3D%228%22%20height%3D%22144%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22230%22%20y%3D%220%22%20width%3D%226%22%20height%3D%22144%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Cpolygon%20points%3D%22180%2C4%20196%2C24%20180%2C44%20164%2C24%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22180%2C12%20190%2C24%20180%2C36%20170%2C24%22%20fill%3D%22%23ce1126%22%2F%3E%3Ccircle%20cx%3D%22180%22%20cy%3D%2224%22%20r%3D%223.5%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%22180%2C52%20196%2C72%20180%2C92%20164%2C72%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22180%2C60%20190%2C72%20180%2C84%20170%2C72%22%20fill%3D%22%23ce1126%22%2F%3E%3Ccircle%20cx%3D%22180%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%22180%2C100%20196%2C120%20180%2C140%20164%2C120%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22180%2C108%20190%2C120%20180%2C132%20170%2C120%22%20fill%3D%22%23ce1126%22%2F%3E%3Ccircle%20cx%3D%22180%22%20cy%3D%22120%22%20r%3D%223.5%22%20fill%3D%22%2300227a%22%2F%3E%3Crect%20x%3D%22240%22%20y%3D%220%22%20width%3D%22120%22%20height%3D%22144%22%20fill%3D%22%2300227a%22%2F%3E%3Ccircle%20cx%3D%22300%22%20cy%3D%2250%22%20r%3D%2213%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22316.91507080972644%2C48.30283191700392%20336%2C50%20316.91507080972644%2C51.69716808299608%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22316.2769658193868%2C54.90513850105316%20333.2596631704063%2C63.77660356514323%20314.97800960478395%2C58.04109621127614%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22313.1608403341081%2C60.76068221350829%20325.4558441227157%2C75.45584412271572%20310.7606822135083%2C63.16084033410809%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22308.04109621127617%2C64.97800960478395%20313.7766035651432%2C83.25966317040633%20304.90513850105316%2C66.27696581938679%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22301.6971680829961%2C66.91507080972644%20300%2C86%20298.3028319170039%2C66.91507080972644%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22295.09486149894684%2C66.27696581938679%20286.2233964348568%2C83.25966317040633%20291.95890378872383%2C64.97800960478395%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22289.2393177864917%2C63.16084033410809%20274.5441558772843%2C75.45584412271572%20286.8391596658919%2C60.76068221350829%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22285.02199039521605%2C58.04109621127615%20266.7403368295937%2C63.77660356514323%20283.7230341806132%2C54.90513850105316%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22283.08492919027356%2C51.69716808299608%20264%2C50.00000000000001%20283.08492919027356%2C48.30283191700392%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22283.7230341806132%2C45.09486149894685%20266.7403368295937%2C36.223396434856774%20285.02199039521605%2C41.95890378872386%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22286.8391596658919%2C39.23931778649171%20274.5441558772843%2C24.54415587728429%20289.2393177864917%2C36.83915966589191%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22291.95890378872383%2C35.021990395216044%20286.22339643485674%2C16.740336829593687%20295.09486149894684%2C33.72303418061321%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22298.3028319170039%2C33.084929190273556%20300%2C14%20301.6971680829961%2C33.084929190273556%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22304.90513850105316%2C33.72303418061321%20313.77660356514326%2C16.74033682959368%20308.04109621127617%2C35.021990395216044%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22310.7606822135083%2C36.83915966589191%20325.4558441227157%2C24.544155877284282%20313.16084033410806%2C39.2393177864917%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22314.97800960478395%2C41.95890378872385%20333.2596631704063%2C36.223396434856745%20316.27696581938676%2C45.09486149894683%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolyline%20points%3D%22240%2C110%20270%2C98%20300%2C110%20330%2C98%20360%2C110%22%20fill%3D%22none%22%20stroke%3D%22%23ce1126%22%20stroke-width%3D%227%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolyline%20points%3D%22240%2C124%20270%2C112%20300%2C124%20330%2C112%20360%2C124%22%20fill%3D%22none%22%20stroke%3D%22%23f1ebdd%22%20stroke-width%3D%227%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolyline%20points%3D%22240%2C138%20270%2C126%20300%2C138%20330%2C126%20360%2C138%22%20fill%3D%22none%22%20stroke%3D%22%23ce1126%22%20stroke-width%3D%227%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Crect%20x%3D%22360%22%20y%3D%220%22%20width%3D%22120%22%20height%3D%22144%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%22390%2C4%20422%2C36%20390%2C68%20358%2C36%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22390%2C11%20415%2C36%20390%2C61%20365%2C36%22%20fill%3D%22%230038a8%22%2F%3E%3Cpolygon%20points%3D%22390%2C22%20404%2C36%20390%2C50%20376%2C36%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Ccircle%20cx%3D%22390%22%20cy%3D%2236%22%20r%3D%224%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%22450%2C4%20482%2C36%20450%2C68%20418%2C36%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22450%2C11%20475%2C36%20450%2C61%20425%2C36%22%20fill%3D%22%230038a8%22%2F%3E%3Cpolygon%20points%3D%22450%2C22%20464%2C36%20450%2C50%20436%2C36%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Ccircle%20cx%3D%22450%22%20cy%3D%2236%22%20r%3D%224%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%22420%2C76%20452%2C108%20420%2C140%20388%2C108%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpolygon%20points%3D%22420%2C83%20445%2C108%20420%2C133%20395%2C108%22%20fill%3D%22%230038a8%22%2F%3E%3Cpolygon%20points%3D%22420%2C94%20434%2C108%20420%2C122%20406%2C108%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Ccircle%20cx%3D%22420%22%20cy%3D%22108%22%20r%3D%224%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%22390%2C98%20400%2C108%20390%2C118%20380%2C108%22%20fill%3D%22%2300227a%22%2F%3E%3Cpolygon%20points%3D%22450%2C98%20460%2C108%20450%2C118%20440%2C108%22%20fill%3D%22%2300227a%22%2F%3E%3Crect%20x%3D%22119%22%20y%3D%220%22%20width%3D%222%22%20height%3D%22144%22%20fill%3D%22%2300227a%22%2F%3E%3Crect%20x%3D%22239%22%20y%3D%220%22%20width%3D%222%22%20height%3D%22144%22%20fill%3D%22%2300227a%22%2F%3E%3Crect%20x%3D%22359%22%20y%3D%220%22%20width%3D%222%22%20height%3D%22144%22%20fill%3D%22%2300227a%22%2F%3E%3C%2Fsvg%3E");
+  --wave-y: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2212%22%20viewBox%3D%220%200%2040%2012%22%3E%3Cpath%20d%3D%22M0%206%20Q5%200%2010%206%20T20%206%20T30%206%20T40%206%22%20fill%3D%22none%22%20stroke%3D%22%23fcd116%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E");
+  position: relative;
+  padding: calc(var(--band) + clamp(28px, 4vw, 52px)) clamp(20px, 4vw, 56px) clamp(24px, 3vw, 36px);
+  background: #001a5c;
+}
+
+.landing-page__footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--band);
+  background: var(--weave) 0 0 / auto 100% round no-repeat;
+  background-repeat: round no-repeat;
+}
+
+/* a thin gold keyline where the weave meets the navy */
+.landing-page__footer::after {
+  content: "";
+  position: absolute;
+  top: var(--band);
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--lp-yellow);
+}
+
+.landing-page__footer .landing-page__footer-card {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  overflow: visible;
+  box-shadow: none;
+}
+
+.landing-page__footer .landing-page__footer-card::before,
+.landing-page__footer .landing-page__footer-card::after {
+  display: none;
+}
+
+.landing-page__footer .landing-page__footer-main {
+  grid-template-columns: 1fr;
+  gap: 28px;
+}
+
+.landing-page__footer .landing-page__footer-wordmark {
+  color: #ffffff;
+}
+
+.landing-page__footer .landing-page__wordmark-ai {
+  color: var(--lp-yellow);
+}
+
+.landing-page__footer .landing-page__footer-tagline {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.landing-page__footer .landing-page__footer-cta {
+  background: var(--lp-yellow);
+  color: var(--lp-navy);
+}
+
+.landing-page__footer .landing-page__footer-cta:hover,
+.landing-page__footer .landing-page__footer-cta:active {
+  background: #f0c200;
+}
+
+.landing-page__footer .landing-page__footer-heading {
+  color: var(--lp-yellow);
+}
+
+.landing-page__footer .landing-page__footer-column a {
+  color: var(--lp-cream);
+}
+
+.landing-page__footer .landing-page__footer-column a:hover {
+  color: var(--lp-yellow);
+}
+
+.landing-page__footer .landing-page__footer-mail {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #ffffff;
+}
+
+.landing-page__footer .landing-page__footer-column a.landing-page__footer-mail:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.landing-page__footer .landing-page__footer-bottom {
+  border-top-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.landing-page__footer-wave {
+  background: var(--wave-y) repeat-x 0 0 / 40px 12px;
+}
+
+@media (min-width: 860px) {
+  .landing-page__footer .landing-page__footer-main {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+    gap: 48px;
+  }
+}
+
+/* ===== Footer: logo before the wordmark, no CTA, compact on phones ===== */
+.landing-page__footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.landing-page__footer-logo-img {
+  flex-shrink: 0;
+  width: clamp(34px, 3.4vw, 46px);
+  height: clamp(34px, 3.4vw, 46px);
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.landing-page__footer .landing-page__footer-wordmark {
+  margin-right: 0;
+  transform-origin: left center;
+}
+
+@media (max-width: 859px) {
+  /* every vertical gap tightened; the weave band is slimmer */
+  .landing-page__footer {
+    --band: 52px;
+    padding: calc(var(--band) + 18px) 20px 16px;
+  }
+
+  .landing-page__footer::after {
+    height: 3px;
+  }
+
+  .landing-page__footer-logo {
+    gap: 10px;
+  }
+
+  .landing-page__footer-logo-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .landing-page__footer .landing-page__footer-wordmark {
+    font-size: 1.5rem;
+  }
+
+  .landing-page__footer .landing-page__footer-main {
+    gap: 14px;
+  }
+
+  .landing-page__footer .landing-page__footer-tagline {
+    max-width: none;
+    margin: 8px 0 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+
+  /* Explore on the left; Drive with us and Support stacked on the right */
+  .landing-page__footer .landing-page__footer-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto;
+    gap: 12px 16px;
+  }
+
+  .landing-page__footer .landing-page__footer-column:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .landing-page__footer .landing-page__footer-column:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .landing-page__footer .landing-page__footer-column:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .landing-page__footer .landing-page__footer-column {
+    gap: 6px;
+  }
+
+  .landing-page__footer .landing-page__footer-heading {
+    margin: 0;
+    font-size: 0.68rem;
+  }
+
+  .landing-page__footer .landing-page__footer-column a {
+    font-size: 0.86rem;
+  }
+
+  .landing-page__footer .landing-page__footer-mail {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+  }
+
+  .landing-page__footer .landing-page__footer-bottom {
+    margin-top: 14px;
+    padding-top: 12px;
+    font-size: 0.72rem;
+    line-height: 1.4;
+  }
+
+  .landing-page__footer-wave {
+    display: none;
+  }
+}
+
+/* Phones: the support email is a plain underlined link so it always fits its column */
+@media (max-width: 859px) {
+  .landing-page__footer .landing-page__footer-column a.landing-page__footer-mail {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(255, 255, 255, 0.45);
+    overflow-wrap: anywhere;
+  }
+
+  .landing-page__footer .landing-page__footer-column a.landing-page__footer-mail:hover {
+    background: none;
+    color: var(--lp-yellow);
+    text-decoration-color: var(--lp-yellow);
+  }
+}
+
+@media (max-width: 340px) {
+  .landing-page__footer .landing-page__footer-column a.landing-page__footer-mail {
+    font-size: 0.7rem;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* ===== Footer weave band: slimmer ===== */
+/* The band height drives the weave's scale (tile = 480x144 scaled to the band),
+   so a shorter band also makes the pattern finer. */
+.landing-page__footer {
+  --band: clamp(48px, 5.2vw, 76px);
+}
+
+@media (max-width: 859px) {
+  .landing-page__footer {
+    --band: 36px;
   }
 }

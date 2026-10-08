@@ -1,85 +1,145 @@
+/* About you: the first step after "Start journey".
+   Rebrand: flag palette, faint map backdrop, the landing-page card border
+   (black outline, blue top, red left) with a geometric tile band across the
+   top, flag-coloured option icons, flat blue button. Fonts unchanged. */
+
 .about-you-page {
+  --ay-tile: calc(min(440px, 100vw - 32px) / 14);
+  position: relative;
   min-height: 100vh;
+  min-height: 100svh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f5f6f8;
-  padding: 24px 16px;
+  gap: 18px;
+  padding: 88px 16px 32px;
+  background:
+    url("/images/background_no-gradient.png") center / cover no-repeat,
+    #fbf6ec;
 }
 
 .about-you-page__card {
+  position: relative;
   width: 100%;
-  max-width: 380px;
+  max-width: 440px;
+  padding: calc(var(--ay-tile) + 28px) clamp(20px, 5vw, 32px) 28px;
   border: 2px solid #000000;
-  border-left: 5px solid #d71920;
-  border-top: 5px solid #1b3fa0;
+  border-left: 5px solid #ce1126;
+  border-top: 5px solid #0038a8;
   border-radius: 26px;
-  background: #faf6f0;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  padding: 28px 24px;
-  text-align: center;
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 18px 44px rgba(20, 30, 70, 0.22);
+  text-align: left;
+}
+
+/* geometric tile band across the top of the card */
+.about-you-page__card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--ay-tile);
+  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22336%22%20height%3D%2248%22%20viewBox%3D%220%200%20336%2048%22%3E%3Crect%20x%3D%220%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23ce1126%22%2F%3E%3Cpolygon%20points%3D%2224%2C6%2029%2C19%2042%2C24%2029%2C29%2024%2C42%2019%2C29%206%2C24%2019%2C19%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2248%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23ffffff%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2224%22%20r%3D%2214%22%20fill%3D%22%230038a8%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2224%22%20r%3D%225%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2296%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%230038a8%22%2F%3E%3Cpolygon%20points%3D%22120%2C8%20136%2C24%20120%2C40%20104%2C24%22%20fill%3D%22%23ffffff%22%2F%3E%3Cpolygon%20points%3D%22120%2C16%20128%2C24%20120%2C32%20112%2C24%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22144%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Cpolygon%20points%3D%22168%2C8%20184%2C40%20152%2C40%22%20fill%3D%22%23ce1126%22%2F%3E%3Crect%20x%3D%22192%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23fcd116%22%2F%3E%3Cpath%20d%3D%22M200%2036%20A16%2016%200%200%201%20232%2036%20Z%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22240%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%230038a8%22%2F%3E%3Crect%20x%3D%22252%22%20y%3D%2212%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23ce1126%22%2F%3E%3Ccircle%20cx%3D%22264%22%20cy%3D%2224%22%20r%3D%226%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%22288%22%20width%3D%2248%22%20height%3D%2248%22%20fill%3D%22%23f1ebdd%22%2F%3E%3Cpolygon%20points%3D%22312%2C8%20316%2C20%20328%2C24%20316%2C28%20312%2C40%20308%2C28%20296%2C24%20308%2C20%22%20fill%3D%22%230038a8%22%2F%3E%3C%2Fsvg%3E") 0 0 / calc(var(--ay-tile) * 7) var(--ay-tile) round no-repeat;
+  border-radius: 21px 21px 0 0;
+  pointer-events: none;
 }
 
 .about-you-page__question {
   margin: 0;
   font-family: "LL Karatula", "DM Sans", sans-serif;
-  font-size: 1.6rem;
+  font-size: clamp(1.7rem, 6vw, 2.1rem);
   font-weight: 800;
-  color: #1a1a1a;
-  line-height: 1.2;
+  color: #0a1f66;
+  line-height: 1.12;
 }
 
 .about-you-page__prompt {
-  margin: 10px 0 24px;
-  font-size: 0.88rem;
-  color: #6a6f79;
-  line-height: 1.5;
+  margin: 10px 0 22px;
+  font-size: 0.92rem;
+  color: #3d4663;
+  line-height: 1.55;
 }
 
 .about-you-page__options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
   width: 100%;
 }
 
 .about-you-page__option {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 18px 10px;
-  border: 2px solid #e2e4e9;
-  border-radius: 14px;
+  gap: 10px;
+  padding: 20px 10px 16px;
+  border: 2px solid #e1e5ee;
+  border-radius: 18px;
   background: #ffffff;
-  color: #1a1a1a;
-  font-size: 0.86rem;
+  color: #0a1f66;
+  font-size: 0.92rem;
   font-weight: 700;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .about-you-page__option:hover {
-  border-color: #1b3fa0;
+  border-color: #0038a8;
+  background: #f5f8ff;
 }
 
+.about-you-page__option:focus-visible,
+.about-you-page__next-button:focus-visible {
+  outline: 3px solid #fcd116;
+  outline-offset: 2px;
+}
+
+/* each passenger type gets a flag colour for its icon tile */
 .about-you-page__option-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #f0f1f4;
-  color: #6a6f79;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #0038a8;
+  color: #ffffff;
 }
 
-.about-you-page__option--selected {
-  border-color: #1b3fa0;
+.about-you-page__option[data-type="pwd"] .about-you-page__option-icon {
+  background: #ce1126;
+}
+
+.about-you-page__option[data-type="senior_citizen"] .about-you-page__option-icon {
+  background: #fcd116;
+  color: #00227a;
+}
+
+.about-you-page__option[data-type="regular"] .about-you-page__option-icon {
+  background: #00227a;
+}
+
+.about-you-page__option--selected,
+.about-you-page__option--selected:hover {
+  border-color: #0038a8;
   background: #eaf0ff;
-  color: #1b3fa0;
 }
 
-.about-you-page__option--selected .about-you-page__option-icon {
-  background: #1b3fa0;
+.about-you-page__option-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #0038a8;
   color: #ffffff;
 }
 
@@ -89,21 +149,35 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  margin-top: 24px;
+  margin-top: 22px;
   border: none;
-  border-radius: 10px;
-  background: #1b3fa0;
+  border-radius: 999px;
+  background: #0038a8;
   color: #ffffff;
-  font-size: 0.98rem;
+  font-size: 1rem;
   font-weight: 700;
-  padding: 14px;
+  padding: 15px;
+  box-shadow: none;
+  transition: background-color 0.15s ease;
 }
 
 .about-you-page__next-button:hover:not(:disabled) {
-  background: #142f7e;
+  background: #00267f;
 }
 
 .about-you-page__next-button:disabled {
-  background: #aab6d9;
+  background: #b6c3e6;
+  color: #ffffff;
   cursor: not-allowed;
+}
+
+@media (max-width: 380px) {
+  .about-you-page__options {
+    gap: 10px;
+  }
+
+  .about-you-page__option {
+    padding: 16px 8px 14px;
+    font-size: 0.86rem;
+  }
 }

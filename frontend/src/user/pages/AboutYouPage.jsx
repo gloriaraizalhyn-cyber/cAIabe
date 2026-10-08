@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, Accessibility, UserRound, User, ArrowRight } from "lucide-react";
+import { GraduationCap, Accessibility, UserRound, User, ArrowRight, Check } from "lucide-react";
 import { PASSENGER_TYPES } from "../../shared/constants/passengerTypes.js";
+import SiteHeader from "../components/SiteHeader.jsx";
 import "./AboutYouPage.css";
 
 const PASSENGER_TYPE_ICONS = {
@@ -25,6 +26,8 @@ function AboutYouPage() {
 
   return (
     <main className="about-you-page">
+      <SiteHeader />
+
       <div className="about-you-page__card">
         <h1 className="about-you-page__question">Tell us about yourself.</h1>
         <p className="about-you-page__prompt">
@@ -41,6 +44,7 @@ function AboutYouPage() {
                 type="button"
                 role="radio"
                 aria-checked={isSelected}
+                data-type={passengerType.value}
                 className={
                   isSelected
                     ? "about-you-page__option about-you-page__option--selected"
@@ -48,8 +52,13 @@ function AboutYouPage() {
                 }
                 onClick={() => handleSelectPassengerType(passengerType.value)}
               >
+                {isSelected && (
+                  <span className="about-you-page__option-check" aria-hidden="true">
+                    <Check size={13} strokeWidth={3.25} />
+                  </span>
+                )}
                 <span className="about-you-page__option-icon">
-                  <Icon size={22} strokeWidth={2.25} />
+                  <Icon size={24} strokeWidth={2.25} />
                 </span>
                 {passengerType.label}
               </button>
