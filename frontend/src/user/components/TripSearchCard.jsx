@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Bookmark, ArrowUpDown, LocateFixed, Mic, ChevronRight } from "lucide-react";
 import LocationAutocompleteInput from "./LocationAutocompleteInput.jsx";
 import MascotReveal from "./MascotReveal.jsx";
+import { savedRouteLabel } from "../../shared/utils/savedRoutesStorage.js";
 import "./TripSearchCard.css";
 
 // How much of the sheet's total height stays off-screen (below the
@@ -186,7 +187,7 @@ function TripSearchCard({
                     className="trip-search-card__saved-route-label"
                     onClick={() => onApplySavedRoute(savedRoute)}
                   >
-                    {savedRoute.label}
+                    {savedRouteLabel(savedRoute)}
                   </button>
                   <button
                     type="button"

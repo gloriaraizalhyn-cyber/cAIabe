@@ -23,7 +23,7 @@ function OperatingStatusCard({ data, isLoading, onUseTerminalLocation }) {
       <section className="operating-status-card operating-status-card--pending">
         <p className="operating-status-card__body">Waiting for your location to read passenger demand…</p>
         <button type="button" className="operating-status-card__demo-button" onClick={onUseTerminalLocation}>
-          No GPS? Use terminal location instead
+          No GPS? Drive the route automatically (demo)
         </button>
       </section>
     );

@@ -19,6 +19,7 @@ import DriverImpactCard from "../components/DriverImpactCard.jsx";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { haversineDistanceMeters } from "../../shared/utils/geo.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
+import { isDemoDriverFrame } from "../../demo/demoTripParams.js";
 import "./DriverDashboardPage.css";
 
 const TERMINAL_ARRIVAL_RADIUS_METERS = 150;
@@ -53,6 +54,9 @@ function DriverDashboardPage() {
     await supabase.functions.invoke("driver-queue-join", {
       body: { terminal_id: driver.terminal.id },
     });
+    // Back at the terminal means an empty jeep: clear any "Full" left over from
+    // the last trip, which would otherwise show to passengers while queued.
+    supabase.functions.invoke("driver-capacity-toggle", { body: { state: "available" } });
     // Whether this call created a fresh entry or 409'd because one already
     // exists, the driver's real position comes from re-reading the queue.
     await refreshQueueEntry();
@@ -137,6 +141,17 @@ function DriverDashboardPage() {
     isLoading: isImpactLoading,
     error: impactError,
   } = useDriverImpactSummary(driver?.verificationStatus === "approved");
+
+  // Promoted to "driving" while still on this screen (the "Skip wait" test
+  // button's queue-advance can promote a driver who was already next to go, and
+  // the follow-up "lining up" then has nothing left to answer, so it never
+  // navigates). The queue screen would keep saying "Waiting for your turn" for a
+  // driver who is already out — follow them to the driving screen instead.
+  useEffect(() => {
+    if (shiftStage === "arrived" && ownQueueEntry?.status === "driving") {
+      navigate("/driver/driving");
+    }
+  }, [shiftStage, ownQueueEntry?.status, navigate]);
 
   const handleStartShift = () => {
     setShiftStage("awaiting_location_permission");
@@ -357,8 +372,14 @@ function DriverDashboardPage() {
   const driverName = session?.user?.user_metadata?.full_name?.trim() || "Driver";
   const showShiftSummaryCard = shiftStage === "not_started" || shiftStage === "awaiting_location_permission";
   const isTemporarilyAway = ownQueueEntry?.status === "temporarily_away";
+  // Never on the demo stage's driver phones: there the driver is placed at the
+  // terminal by the script (no real GPS), so "head back to your vehicle" is
+  // always wrong and only covers the screen.
   const showQueueTurnAlert =
-    shiftStage === "arrived" && Boolean(ownQueueEntry?.notifiedAt) && !ownQueueEntry?.respondedAt;
+    shiftStage === "arrived" &&
+    Boolean(ownQueueEntry?.notifiedAt) &&
+    !ownQueueEntry?.respondedAt &&
+    !isDemoDriverFrame();
 
   return (
     <main className="driver-dashboard-page">
@@ -443,14 +464,7 @@ function DriverDashboardPage() {
       )}
 
       {showQueueTurnAlert && (
-        <QueueTurnAlert
-          queuePosition={ownQueueEntry?.position ?? null}
-          geofenceStatus={ownQueueEntry?.geofenceStatus}
-          isSubmitting={isRespondingToQueue}
-          onLiningUp={handleLiningUp}
-          onLeaveTemporarily={handleLeaveTemporarily}
-          onEndShiftForTheDay={handleEndShiftForTheDay}
-        />
+        <QueueTurnAlert queuePosition={ownQueueEntry?.position ?? null} />
       )}
 
       {isLogOutConfirmOpen && (

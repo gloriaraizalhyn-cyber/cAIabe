@@ -226,6 +226,8 @@ node --env-file=.env mock-passenger-simulator.js --route="Florida"   # optional;
 
 Open **`/demo/stage`**. Use **Space** or **→** to go to the next step and **←** to go back.
 
+**Driver phones: simulated or real accounts.** By default the two driver phones sign themselves in as simulated drivers (units #4 grey and #3 yellow), so nothing needs setting up. To use real driver accounts instead (for example Mang Ruben and Mang Dodong), open **`/demo/stage?drivers=own`**. Each phone then shows the normal driver login: sign in once on each, and it is remembered after reloads. Each phone keeps its own login, so signing one driver in never signs the other out. Then run the shift as a real driver would: **Start Shift**, tap the no-GPS option to use the terminal location, and use **Skip wait (testing)**. Once driving, the jeep follows its route automatically.
+
 **The passenger's whole trip plays out on its own** (Astro Park → SM City Telabastagan, grey jeep, transfer, yellow jeep). After she taps **"I'm here"**:
 1. The first jeep with open seats that reaches her picks her up, and her screen switches to **ON BOARD**. A full jeep drives past.
 2. Her screen follows that jeep to the transfer stop with a progress bar, then shows **TRANSFER**, walks her to the yellow stop and waits there.
@@ -267,7 +269,7 @@ What the **Carbon Impact panel** counts ([`add_carbon_impact.sql`](supabase/sql/
 - **CO₂ avoided** = engine-off queue time at terminals. It assumes engines are switched off while queued. **Riders are not counted**: the app can't know how many people actually chose to ride, so the panel shows no rider tile and none of its numbers depend on one. (The backend still logs `rider_trip` events; nothing reads them into this panel.)
 - **Idling caught** = roadside idle burn that Sak.AI flagged. This fuel was already wasted, so it is reported separately and **never** added to "avoided".
 
-The panel above is fleet-wide (admin dashboard and the demo stage map). Each driver sees their **own** version on their phone: **Your impact today** on the queue screen and while driving (CO₂ avoided, engine-off queue time, idling caught), and the fuller "Your Fuel & CO₂" card on their dashboard. These come from `get_driver_impact_summary` and are the driver's own figures only.
+The panel above is fleet-wide (admin dashboard and the demo stage map). Each driver sees their **own** version on their phone: **Your savings today** on the queue screen and while driving (pesos of fuel saved, time waiting with the engine off, fuel wasted idling), and the fuller "Your Fuel & CO₂" card on their dashboard. These come from `get_driver_impact_summary` and are the driver's own figures only.
 
 Quick conversion for the pitch: at ₱92.77/L, **₱100 of diesel saved ≈ 1.08 L ≈ 2.9 kg CO₂ not emitted.**
 

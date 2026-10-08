@@ -21,15 +21,21 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 //
 // Inert outside the demo: with no ?demoFrame= in the URL this is the same
 // default-storage client it has always been.
-const demoFrame =
-  typeof window !== "undefined"
-    ? new URLSearchParams(window.location.search).get("demoFrame")
-    : null;
+const demoParams =
+  typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+const demoFrame = demoParams?.get("demoFrame") ?? null;
+// The stage can hold TWO driver frames (grey and yellow) that are both
+// demoFrame=driver. They need separate logins too, or signing one driver in
+// would replace the other's session in the shared storage entry. ?demoSlot=
+// names the frame ("grey" | "yellow") and is part of the storage key.
+const demoSlot = demoParams?.get("demoSlot") ?? null;
 
 // Client-side only: uses the anon key, so access is governed by the
 // database's Row Level Security policies, not by anything in this file.
 export const supabase = createClient(
   SUPABASE_URL ?? "",
   SUPABASE_ANON_KEY ?? "",
-  demoFrame ? { auth: { storageKey: `sb-caiabe-demo-${demoFrame}` } } : undefined
+  demoFrame
+    ? { auth: { storageKey: `sb-caiabe-demo-${demoFrame}${demoSlot ? `-${demoSlot}` : ""}` } }
+    : undefined
 );

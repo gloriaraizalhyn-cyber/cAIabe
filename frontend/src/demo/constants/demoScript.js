@@ -92,7 +92,11 @@ export const DEMO_DRIVE_ROUTES = {
   },
 };
 export const DEMO_DRIVE_STEP_INTERVAL_MS = 2000;
-export const DEMO_LEAD_TERMINAL = { name: "Public Transport Terminal (SM Clark)", lat: 15.1682564, lng: 120.5823745 };
+// ~40 m along the route from its first point (route start/end: 15.1682564,
+// 120.5823745). NOT on that closing point itself: the demand engine projects a
+// driver standing exactly there to the END of the loop, which turns every
+// waiting passenger into one "behind" him. See demo-prep.js.
+export const DEMO_LEAD_TERMINAL = { name: "Public Transport Terminal (SM Clark)", lat: 15.1683551, lng: 120.5825205 };
 
 // The driver pane gets a unit the fleet simulator does NOT drive.
 //

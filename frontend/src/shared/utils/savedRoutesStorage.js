@@ -29,6 +29,33 @@ function writeAll(routes) {
   }
 }
 
+// Google's reverse geocoder often starts a street address with a "plus code"
+// like "4HXC+HC7 Forest Parkhomes…" — meaningless to a passenger. Strip it.
+const PLUS_CODE_PREFIX = /^[0-9A-Z]{4,8}\+[0-9A-Z]{2,}[,\s]*/i;
+
+export function friendlyPlaceName(text) {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return "";
+  const withoutCode = trimmed.replace(PLUS_CODE_PREFIX, "").trim();
+  return withoutCode || trimmed;
+}
+
+// A route "starts from the passenger's current location" if it was saved that
+// way, or (for entries saved before that flag existed) its text says so or is
+// just a reverse-geocoded address that opens with a plus code.
+export function startsFromCurrentLocation(route) {
+  if (typeof route?.originIsCurrentLocation === "boolean") return route.originIsCurrentLocation;
+  const text = (route?.origin ?? "").trim();
+  return /^current location$/i.test(text) || PLUS_CODE_PREFIX.test(text);
+}
+
+// What the saved-route chip shows.
+export function savedRouteLabel(route) {
+  const from = startsFromCurrentLocation(route) ? "Current location" : friendlyPlaceName(route?.origin);
+  const to = friendlyPlaceName(route?.destination);
+  return from && to ? `${from} → ${to}` : route?.label ?? "";
+}
+
 export function getSavedRoutes() {
   return readAll();
 }
@@ -40,7 +67,16 @@ export function isRouteSaved(routeKey) {
 // routeKey identifies the specific itinerary being saved (route.cardKey ??
 // route.id from route-search results) — re-saving the same key updates
 // rather than duplicates the entry.
-export function saveRoute({ routeKey, label, origin, destination, originPlace, destinationPlace, routeId }) {
+export function saveRoute({
+  routeKey,
+  label,
+  origin,
+  destination,
+  originPlace,
+  destinationPlace,
+  routeId,
+  originIsCurrentLocation,
+}) {
   const withoutExisting = readAll().filter((route) => route.routeKey !== routeKey);
   const entry = {
     id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
@@ -51,6 +87,7 @@ export function saveRoute({ routeKey, label, origin, destination, originPlace, d
     originPlace,
     destinationPlace,
     routeId,
+    originIsCurrentLocation,
     createdAt: new Date().toISOString(),
   };
   writeAll([entry, ...withoutExisting].slice(0, MAX_SAVED_ROUTES));

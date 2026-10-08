@@ -45,8 +45,11 @@ function DrivingPage() {
   const [newQueuePosition, setNewQueuePosition] = useState(null);
   const [tripTimeMinutes, setTripTimeMinutes] = useState(null);
   // The stage's driver iframe has geolocation blocked, so it drives itself
-  // along the route instead (see the demo drive loop below).
-  const isDemoDrive = isDemoDriverFrame();
+  // along the route instead (see the demo drive loop below). Outside the stage,
+  // a driver with no GPS can switch the same scripted drive on with the
+  // "No GPS?" button (handleUseTerminalLocation) — otherwise a jeep with no
+  // position source just sits at the terminal forever.
+  const [isDemoDrive, setIsDemoDrive] = useState(isDemoDriverFrame());
   const [isUsingDemoPosition, setIsUsingDemoPosition] = useState(isDemoDrive);
 
   const lastUpdateAtRef = useRef(0);
@@ -101,6 +104,16 @@ function DrivingPage() {
     if (!driver?.terminal?.position) return;
     setIsUsingDemoPosition(true);
     setCurrentPosition(driver.terminal.position);
+
+    // On a demo route, hand over to the scripted drive: it rolls the jeep out
+    // along the real route. Posting the terminal's own position here would be
+    // wrong anyway — the terminal is within the server's 100 m end-of-route
+    // radius, so a driving unit reporting it is requeued as "trip finished".
+    if (driver.route?.id && DEMO_DRIVE_ROUTES[driver.route.id]) {
+      setIsDemoDrive(true);
+      return;
+    }
+
     lastUpdateAtRef.current = Date.now();
     supabase.functions.invoke("driver-location-update", { body: driver.terminal.position });
   };
@@ -223,6 +236,18 @@ function DrivingPage() {
       body: { response: "engine_off", minutes: roadsideIdleMinutes },
     });
   };
+
+  // A trip starts with seats open. The seat state is stored per driver and was
+  // never reset, while this screen's own button always starts on "Seats open" —
+  // so a driver who once tapped FULL kept showing FULL to passengers on every
+  // later trip while their own screen said otherwise. Sync the stored value to
+  // what the screen shows, once, when the trip starts.
+  const didResetSeatsRef = useRef(false);
+  useEffect(() => {
+    if (!driver || didResetSeatsRef.current) return;
+    didResetSeatsRef.current = true;
+    supabase.functions.invoke("driver-capacity-toggle", { body: { state: "available" } });
+  }, [driver]);
 
   const handleSetCapacityStatus = (state) => {
     setCapacityStatus(state);

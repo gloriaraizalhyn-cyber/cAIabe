@@ -18,20 +18,34 @@ import {
 } from "../constants/demoScript.js";
 import "./DemoStagePage.css";
 
-// /driver/next-to-go, not the dashboard: it renders WaitOrGoCard, the
-// individual waiting-passenger dots, and the demand clusters — the driver-side
-// half of the story — and it never watches GPS once "Use terminal location"
-// is tapped, so it can't fight the fleet simulator for a driver's position.
-const DRIVER_FRAME_URL = `/driver/next-to-go?demoFrame=driver&demoAs=${encodeURIComponent(
-  simDriverEmail(DEMO_LEAD_ROUTE.name, DEMO_PANE_DRIVER_UNIT)
-)}`;
+// By default each driver phone signs itself in as a simulated driver and opens
+// /driver/next-to-go — not the dashboard: it renders WaitOrGoCard, the
+// individual waiting-passenger dots, and the demand clusters, which is the
+// driver-side half of the story.
+//
+// With /demo/stage?drivers=own the phones use REAL driver accounts instead:
+// no automatic sign-in, they open the normal driver dashboard (which sends you
+// to the login page first), and each phone keeps its own login — the slot in
+// the URL gives every frame separate storage, so signing Mang Ruben in on one
+// never signs Mang Dodong out on the other. Log in once on each phone; it is
+// remembered across reloads.
+const USE_OWN_DRIVERS =
+  typeof window !== "undefined" && new URLSearchParams(window.location.search).get("drivers") === "own";
 
-// The yellow (Telabastagan) driver's phone — same page, signed in as the
-// yellow route's spare simulated unit.
+function driverFrameUrl(slot, route, unit) {
+  if (USE_OWN_DRIVERS) {
+    return `/driver/dashboard?demoFrame=driver&demoSlot=${slot}`;
+  }
+  return `/driver/next-to-go?demoFrame=driver&demoSlot=${slot}&demoAs=${encodeURIComponent(
+    simDriverEmail(route.name, unit)
+  )}`;
+}
+
+const DRIVER_FRAME_URL = driverFrameUrl("grey", DEMO_LEAD_ROUTE, DEMO_PANE_DRIVER_UNIT);
+
+// The yellow (Telabastagan) driver's phone — same page, its own login slot.
 const YELLOW_DRIVER_ROUTE = DEMO_ROUTES[1];
-const YELLOW_DRIVER_FRAME_URL = `/driver/next-to-go?demoFrame=driver&demoAs=${encodeURIComponent(
-  simDriverEmail(YELLOW_DRIVER_ROUTE.name, DEMO_YELLOW_PANE_DRIVER_UNIT)
-)}`;
+const YELLOW_DRIVER_FRAME_URL = driverFrameUrl("yellow", YELLOW_DRIVER_ROUTE, DEMO_YELLOW_PANE_DRIVER_UNIT);
 
 const PASSENGER_FRAME_URL = buildPassengerFrameUrl({
   path: "/routes",

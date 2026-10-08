@@ -7,13 +7,19 @@ function formatKg(kg) {
   return value >= 100 ? value.toFixed(0) : value.toFixed(1);
 }
 
-function formatMinutes(minutes) {
-  const value = Math.round(Number(minutes) || 0);
-  if (value < 60) return `${value} min`;
-  return `${Math.floor(value / 60)}h ${value % 60}m`;
+// Whole litres once it's 10 or more, one decimal below that.
+function formatLiters(liters) {
+  const value = Number(liters) || 0;
+  return value >= 10 ? Math.round(value).toString() : value.toFixed(1);
 }
 
-// Fleet-wide fuel and carbon totals for today — the "Impact" view.
+function times(count) {
+  return count === 1 ? "1 time" : `${count} times`;
+}
+
+// Fleet-wide fuel and pollution savings for today. Worded for ordinary people,
+// not engineers: fuel in litres, and CO₂ as "pollution". Internally this is
+// still the same fuel model as the rest of the app (fuel.ts).
 // Every number is an estimate built on the same fuel model as the rest of
 // the app (fuel.ts); the footnote says so. variant="dark" matches the demo
 // stage's projector theme, "light" the admin dashboard.
@@ -40,41 +46,40 @@ function CarbonImpactPanel({ variant = "light", compact = false }) {
   return (
     <section
       className={`carbon-impact carbon-impact--${variant}${compact ? " carbon-impact--compact" : ""}`}
-      aria-label="Fuel and carbon impact today"
+      aria-label="Fuel saved today"
     >
       <div className="carbon-impact__headline">
         <span className="carbon-impact__badge">
           <Leaf size={14} strokeWidth={2.5} />
-          Impact today
+          Saved today
         </span>
         <span className="carbon-impact__total">
-          {queue ? formatKg(queue.co2_kg) : "…"}
-          <span className="carbon-impact__unit"> kg CO₂ avoided</span>
+          {queue ? formatLiters(queue.liters) : "…"}
+          <span className="carbon-impact__unit"> liters of fuel</span>
         </span>
       </div>
+      <p className="carbon-impact__sub">
+        {queue ? `That keeps ${formatKg(queue.co2_kg)} kg of CO₂ pollution out of the air.` : ""}
+      </p>
 
       <div className="carbon-impact__tiles">
-        <div className="carbon-impact__tile">
-          <span className="carbon-impact__tile-label">Engine-off queue time</span>
-          <span className="carbon-impact__tile-value">{queue ? formatMinutes(queue.minutes) : "…"}</span>
-          <span className="carbon-impact__tile-detail">
-            {queue ? `${queue.liters} L · ${formatKg(queue.co2_kg)} kg CO₂ if engines off` : ""}
-          </span>
-        </div>
-
         <div className="carbon-impact__tile carbon-impact__tile--warning">
-          <span className="carbon-impact__tile-label">Idling caught</span>
-          <span className="carbon-impact__tile-value">{idle?.episodes ?? "…"}</span>
+          <span className="carbon-impact__tile-label">Fuel wasted idling</span>
+          <span className="carbon-impact__tile-value">{idle ? `${formatLiters(idle.liters)} L` : "…"}</span>
           <span className="carbon-impact__tile-detail">
-            {idle ? `${idle.liters} L · ${formatKg(idle.co2_kg)} kg CO₂ flagged` : ""}
+            {idle
+              ? idle.episodes > 0
+                ? `Drivers stopped on the road with the engine on, ${times(idle.episodes)}`
+                : "No one idled on the road"
+              : ""}
           </span>
         </div>
       </div>
 
       {!compact && (
         <p className="carbon-impact__footnote">
-          Estimated. Diesel 2.68 kg CO₂/L, gasoline 2.31 kg CO₂/L; jeepney idle burn 1.2–1.8 L/hr.
-          Engine-off time assumes drivers switch their engines off while queued.
+          These are estimates. We assume drivers switch their engines off while they wait in the
+          queue, and count how much fuel that saves compared with leaving them running.
         </p>
       )}
     </section>

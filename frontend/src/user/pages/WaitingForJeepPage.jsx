@@ -108,7 +108,12 @@ function WaitingForJeepPage() {
   const { jeepneys, isConnected } = useLiveDriverPositions(realRouteId);
 
   const [waitingPhase, setWaitingPhase] = useState("walking_to_bay");
-  const waitingIdRef = useRef(null);
+  // Every "I'm here" row this page created, and the request still in flight.
+  // A row must always be cleared (drivers count waiting rows), so the page keeps
+  // all of them — not just the latest — and clearing waits for a request that
+  // hasn't answered yet instead of skipping it.
+  const waitingIdsRef = useRef(new Set());
+  const waitingStartInFlightRef = useRef(null);
 
   // Precise, road-network ETA to the nearest live jeepney via Google's
   // Routes API — replaces the straight-line/assumed-speed guess below once
@@ -256,11 +261,45 @@ function WaitingForJeepPage() {
   }, [pickedUpBy]);
 
   const clearWaitingState = async () => {
-    if (!waitingIdRef.current) return;
-    const waitingId = waitingIdRef.current;
-    waitingIdRef.current = null;
-    await supabase.functions.invoke("waiting-clear", { body: { waiting_id: waitingId } });
+    // If "I'm here" hasn't been answered yet, wait for it: clearing before the
+    // row id is known used to skip the clear and leave the row behind.
+    if (waitingStartInFlightRef.current) {
+      try {
+        await waitingStartInFlightRef.current;
+      } catch {
+        // the start failed — there is nothing to clear for it
+      }
+    }
+    const ids = [...waitingIdsRef.current];
+    waitingIdsRef.current.clear();
+    await Promise.all(ids.map((waitingId) => supabase.functions.invoke("waiting-clear", { body: { waiting_id: waitingId } })));
   };
+
+  // Reloading or closing the page while waiting would orphan the row for up to
+  // 2 hours (the driver keeps seeing a passenger who is gone). A keepalive
+  // request survives the page going away; also clears on in-app navigation away.
+  useEffect(() => {
+    const clearWithKeepalive = () => {
+      const ids = [...waitingIdsRef.current];
+      if (!ids.length) return;
+      waitingIdsRef.current.clear();
+      const base = import.meta.env.VITE_SUPABASE_URL;
+      const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      for (const waitingId of ids) {
+        fetch(`${base}/functions/v1/waiting-clear`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: key, Authorization: `Bearer ${key}` },
+          body: JSON.stringify({ waiting_id: waitingId }),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    };
+    window.addEventListener("pagehide", clearWithKeepalive);
+    return () => {
+      window.removeEventListener("pagehide", clearWithKeepalive);
+      clearWithKeepalive();
+    };
+  }, []);
 
   // Committing to a jeep ("Wait for this jeep") doesn't mean you're on board
   // yet — it just starts watching your own GPS for the sustained, vehicle
@@ -290,8 +329,10 @@ function WaitingForJeepPage() {
     setWaitingPhase("waiting_for_jeep");
 
     if (!realRouteId || !passengerPosition) return;
+    // A second tap (or a double timer) must not create a second row.
+    if (waitingStartInFlightRef.current || waitingIdsRef.current.size > 0) return;
 
-    const { data, error } = await supabase.functions.invoke("waiting-start", {
+    const request = supabase.functions.invoke("waiting-start", {
       body: {
         route_id: realRouteId,
         lat: passengerPosition.lat,
@@ -304,8 +345,12 @@ function WaitingForJeepPage() {
         ride_distance_km: isTransferLeg ? undefined : passedRoute?.carbon?.ride_distance_km,
       },
     });
+    waitingStartInFlightRef.current = request;
+
+    const { data, error } = await request;
+    waitingStartInFlightRef.current = null;
     if (!error && data?.waiting_id) {
-      waitingIdRef.current = data.waiting_id;
+      waitingIdsRef.current.add(data.waiting_id);
     }
   };
 

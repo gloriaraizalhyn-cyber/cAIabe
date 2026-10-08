@@ -5,6 +5,7 @@ import { useDriverSession } from "../hooks/useDriverSession.js";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import QueueTurnAlert from "../components/QueueTurnAlert.jsx";
 import { supabase } from "../../shared/lib/supabaseClient.js";
+import { isDemoDriverFrame } from "../../demo/demoTripParams.js";
 import "./DriverQueueListPage.css";
 
 const STATUS_LABEL = {
@@ -87,7 +88,8 @@ function DriverQueueListPage() {
   const ownId = session?.user?.id;
   const ownIndex = entries.findIndex((entry) => entry.driver_id === ownId);
   const ownEntry = ownIndex === -1 ? null : entries[ownIndex];
-  const showQueueTurnAlert = Boolean(ownEntry?.notified_at) && !ownEntry?.responded_at;
+  // Not on the demo stage's driver phones (the script puts the driver at the terminal).
+  const showQueueTurnAlert = Boolean(ownEntry?.notified_at) && !ownEntry?.responded_at && !isDemoDriverFrame();
 
   return (
     <main className="driver-queue-list-page">
@@ -126,14 +128,7 @@ function DriverQueueListPage() {
       </ol>
 
       {showQueueTurnAlert && (
-        <QueueTurnAlert
-          queuePosition={ownIndex === -1 ? null : ownIndex + 1}
-          geofenceStatus={ownEntry?.geofence_status}
-          isSubmitting={isResponding}
-          onLiningUp={handleLiningUp}
-          onLeaveTemporarily={handleLeaveTemporarily}
-          onEndShiftForTheDay={handleEndShiftForTheDay}
-        />
+        <QueueTurnAlert queuePosition={ownIndex === -1 ? null : ownIndex + 1} />
       )}
     </main>
   );

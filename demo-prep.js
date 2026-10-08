@@ -32,10 +32,15 @@ const PANE_DRIVER_UNIT = 4;
 // the Pampang route that the fleet simulator must not drive (--jeeps=2).
 const YELLOW_PANE_DRIVER_UNIT = 3;
 const PANE_DRIVER_TERMINAL = "Public Transport Terminal (SM Clark)";
-// Where that terminal must sit: the grey route's own start/terminus (its
-// routes.terminus), right beside SM City Clark. The seeded row was ~456 m
-// away from it. Must match DEMO_LEAD_TERMINAL in demoScript.js.
-const PANE_DRIVER_TERMINAL_POSITION = { lat: 15.1682564, lng: 120.5823745 };
+// Where that terminal must sit: on the grey route's own start, beside SM City
+// Clark (the seeded row was ~456 m away). Deliberately ~40 m ALONG the route
+// from its first point, not on its end point: the route is a closed loop whose
+// last point is also its first, and a point sitting exactly on that closing
+// point projects to the END of the loop in the demand engine
+// (st_linelocatepoint), which makes every waiting passenger look like they are
+// thousands of metres BEHIND the driver — so the driver would never see anyone.
+// Must match DEMO_LEAD_TERMINAL in demoScript.js.
+const PANE_DRIVER_TERMINAL_POSITION = { lat: 15.1683551, lng: 120.5825205 };
 
 // Must match frontend/src/demo/constants/demoScript.js.
 const ORIGIN = { label: "Astro Park", landmark: "Bayanihan Park (Astro Park)", lat: 15.1695, lng: 120.588 };
@@ -181,7 +186,7 @@ async function ensureTerminalLocation() {
     return;
   }
   console.log(
-    `   ✅ ${PANE_DRIVER_TERMINAL} at ${PANE_DRIVER_TERMINAL_POSITION.lat}, ${PANE_DRIVER_TERMINAL_POSITION.lng} (the grey route's own start)`,
+    `   ✅ ${PANE_DRIVER_TERMINAL} at ${PANE_DRIVER_TERMINAL_POSITION.lat}, ${PANE_DRIVER_TERMINAL_POSITION.lng} (40 m along the grey route's start)`,
   );
 }
 

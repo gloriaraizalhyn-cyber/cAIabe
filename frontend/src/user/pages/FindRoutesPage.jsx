@@ -1,10 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MapView from "../../shared/components/MapView.jsx";
 import TripSearchCard from "../components/TripSearchCard.jsx";
 import TripResultsPanel from "../components/TripResultsPanel.jsx";
 import { adaptRouteSearchResult } from "../utils/adaptRouteSearchResult.js";
-import { getSavedRoutes, saveRoute, removeSavedRouteByKey } from "../../shared/utils/savedRoutesStorage.js";
+import {
+  getSavedRoutes,
+  saveRoute,
+  removeSavedRouteByKey,
+  savedRouteLabel,
+  startsFromCurrentLocation,
+} from "../../shared/utils/savedRoutesStorage.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import { readDemoTripSearch, readDemoPassengerType } from "../../demo/demoTripParams.js";
 import "./FindRoutesPage.css";
@@ -48,6 +54,14 @@ function FindRoutesPage() {
   const [searchError, setSearchError] = useState(null);
   const [savedRoutes, setSavedRoutes] = useState(() => getSavedRoutes());
   const savedRouteKeys = useMemo(() => new Set(savedRoutes.map((route) => route.routeKey)), [savedRoutes]);
+
+  // The GPS lookup below answers asynchronously (up to ~10 s, then a second
+  // reverse-geocode round trip). If the passenger has already chosen an origin
+  // by then — a saved route, a suggestion, a swap, or typing — it must not
+  // overwrite their choice. originIsGpsRef records where the origin came from,
+  // so a saved route knows whether it started at "current location".
+  const userSetOriginRef = useRef(false);
+  const originIsGpsRef = useRef(false);
 
   const runSearch = async (originForSearch, destinationForSearch) => {
     setIsSearching(true);
@@ -100,6 +114,8 @@ function FindRoutesPage() {
 
   navigator.geolocation.getCurrentPosition(
     async (position) => {
+      if (userSetOriginRef.current) return; // they already picked an origin
+
       const { latitude, longitude } = position.coords;
 
       console.log("GPS coordinates:", {
@@ -115,6 +131,7 @@ function FindRoutesPage() {
         lng: longitude,
       };
 
+      originIsGpsRef.current = true;
       setOrigin("Current location");
       setOriginPlace(currentLocation);
 
@@ -130,7 +147,9 @@ function FindRoutesPage() {
             },
           });
 
-          if (response.results?.length > 0) {
+          // Checked again: the passenger may have chosen an origin while the
+          // address lookup was in flight.
+          if (!userSetOriginRef.current && response.results?.length > 0) {
             const readableLocation =
               response.results[0].formatted_address;
 
@@ -231,7 +250,16 @@ useEffect(() => {
   };
 }, [destination, destinationPlace]);
 
+  // Typing an origin: from here on the passenger owns it, GPS must not touch it.
+  const handleOriginTextChange = (text) => {
+    userSetOriginRef.current = true;
+    originIsGpsRef.current = false;
+    setOrigin(text);
+  };
+
   const handleSelectOriginPlace = (place) => {
+    userSetOriginRef.current = true;
+    originIsGpsRef.current = false;
     setOrigin(place.label);
     setOriginPlace(place);
   };
@@ -242,17 +270,45 @@ useEffect(() => {
   };
 
   const handleSwapPlaces = () => {
+    userSetOriginRef.current = true;
+    originIsGpsRef.current = false;
     setOrigin(destination);
     setDestination(origin);
     setOriginPlace(destinationPlace);
     setDestinationPlace(originPlace);
   };
 
+  // Tapping a saved route uses it: fills both fields and finds the routes.
+  // A route saved from "current location" keeps starting from wherever the
+  // passenger is NOW (the GPS point it was saved at is stale), so only its
+  // destination is restored and the live GPS origin is used.
   const handleApplySavedRoute = (savedRoute) => {
-    setOrigin(savedRoute.origin);
+    setSearchError(null);
     setDestination(savedRoute.destination);
-    setOriginPlace(savedRoute.originPlace);
     setDestinationPlace(savedRoute.destinationPlace);
+
+    if (startsFromCurrentLocation(savedRoute)) {
+      if (originPlace && originIsGpsRef.current) {
+        // GPS already answered — search from where they are right now.
+        if (savedRoute.destinationPlace) runSearch(originPlace, savedRoute.destinationPlace);
+        return;
+      }
+      if (!originPlace && !userSetOriginRef.current) {
+        // GPS still working: it will fill the origin in; they tap Find routes.
+        setSearchError("Getting your current location… tap Find routes in a moment.");
+        return;
+      }
+      // Otherwise they've chosen a different start by hand; fall through and
+      // restore the place this route was saved from.
+    }
+
+    userSetOriginRef.current = true;
+    originIsGpsRef.current = false;
+    setOrigin(savedRoute.origin);
+    setOriginPlace(savedRoute.originPlace);
+    if (savedRoute.originPlace && savedRoute.destinationPlace) {
+      runSearch(savedRoute.originPlace, savedRoute.destinationPlace);
+    }
   };
 
   const handleRemoveSavedRoute = (routeKey) => {
@@ -313,12 +369,17 @@ useEffect(() => {
     } else {
       saveRoute({
         routeKey,
-        label: `${origin} → ${destination}`,
+        label: savedRouteLabel({
+          origin,
+          destination,
+          originIsCurrentLocation: originIsGpsRef.current,
+        }),
         origin,
         destination,
         originPlace,
         destinationPlace,
         routeId: route.id,
+        originIsCurrentLocation: originIsGpsRef.current,
       });
     }
     setSavedRoutes(getSavedRoutes());
@@ -340,7 +401,7 @@ useEffect(() => {
           <TripSearchCard
             origin={origin}
             destination={destination}
-            onOriginChange={setOrigin}
+            onOriginChange={handleOriginTextChange}
             onDestinationChange={setDestination}
             onSelectOriginPlace={handleSelectOriginPlace}
             onSelectDestinationPlace={handleSelectDestinationPlace}

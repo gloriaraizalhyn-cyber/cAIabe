@@ -39,9 +39,17 @@
   color: #6a6f79;
 }
 
+.driver-impact-strip__sub {
+  margin: -2px 0 6px;
+  font-size: 0.64rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #6a6f79;
+}
+
 .driver-impact-strip__tiles {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 
