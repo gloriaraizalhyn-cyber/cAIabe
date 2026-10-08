@@ -1,5 +1,5 @@
--- Run in your cloud SQL Editor, AFTER add_carbon_impact.sql and
--- add_vehicle_type.sql. Safe to re-run.
+-- Run in your cloud SQL Editor, AFTER add_carbon_impact.sql,
+-- add_vehicle_type.sql and add_fuel_factors.sql. Safe to re-run.
 --
 -- Driver-side fuel / CO2 tracking:
 --   1. drivers.vehicle_km_per_liter  - the driver's own mileage (optional;
@@ -11,10 +11,12 @@
 --   3. get_driver_impact_summary() - the signed-in driver's own totals for
 --      today and this week (Philippine time), for the dashboard card.
 --
--- Every figure is an ESTIMATE from the same model as _shared/fuel.ts. The
--- constants in the function below MUST stay in sync with fuel.ts:
---   jeepney : diesel   P85/L, idle 0.025 L/min (midpoint), 2.68 kg CO2/L, 4 km/L
---   tricycle: gasoline P65/L, idle 0.010 L/min,            2.31 kg CO2/L, 30 km/L
+-- Every figure is an ESTIMATE from the same model as _shared/fuel.ts.
+-- Price, idle burn and mileage come from approved fuel_factors rows
+-- (add_fuel_factors.sql); the fallbacks below MUST stay in sync with
+-- fuel.ts's defaults:
+--   jeepney : diesel   P85/L, idle 1.2-1.8 L/h, 2.68 kg CO2/L, 4 km/L
+--   tricycle: gasoline P65/L, idle 0.6 L/h,     2.31 kg CO2/L, 30 km/L
 
 alter table drivers
   add column if not exists vehicle_km_per_liter numeric
@@ -37,10 +39,22 @@ as $$
       d.id,
       d.vehicle_type,
       d.vehicle_km_per_liter,
-      case d.vehicle_type when 'tricycle' then 0.01 else 0.025 end as idle_lpm,
-      case d.vehicle_type when 'tricycle' then 65 else 85 end as price,
+      -- Midpoint of the sourced idle range, L/h -> L/min.
+      case d.vehicle_type
+        when 'tricycle' then (fuel_factor('tricycle', 'idle_liters_per_hour', 0.6, 'min')
+                              + fuel_factor('tricycle', 'idle_liters_per_hour', 0.6, 'max')) / 2 / 60
+        else (fuel_factor('jeepney', 'idle_liters_per_hour', 1.2, 'min')
+              + fuel_factor('jeepney', 'idle_liters_per_hour', 1.8, 'max')) / 2 / 60
+      end as idle_lpm,
+      case d.vehicle_type
+        when 'tricycle' then fuel_factor('gasoline', 'price_per_liter', 65)
+        else fuel_factor('diesel', 'price_per_liter', 85)
+      end as price,
       case d.vehicle_type when 'tricycle' then 2.31 else 2.68 end as co2_per_liter,
-      case d.vehicle_type when 'tricycle' then 30 else 4 end as default_km_per_liter
+      case d.vehicle_type
+        when 'tricycle' then fuel_factor('tricycle', 'km_per_liter', 30)
+        else fuel_factor('jeepney', 'km_per_liter', 4)
+      end as default_km_per_liter
     from drivers d
     where d.id = auth.uid()
   ),

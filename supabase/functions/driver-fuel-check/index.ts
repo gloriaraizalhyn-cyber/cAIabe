@@ -22,7 +22,7 @@
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getAuthedDriverId, getServiceClient } from "../_shared/client.ts";
-import { estimateFuelCost } from "../_shared/fuel.ts";
+import { estimateFuelCost, loadFuelFactors } from "../_shared/fuel.ts";
 
 const GOOGLE_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY")!;
 
@@ -47,6 +47,7 @@ Deno.serve(async (req: Request) => {
     const { destination } = await req.json().catch(() => ({})) as { destination?: LatLng };
 
     const supabase = getServiceClient();
+    await loadFuelFactors(supabase);
 
     const { data: driver, error: driverErr } = await supabase
       .from("drivers")

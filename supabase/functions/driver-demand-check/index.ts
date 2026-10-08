@@ -28,7 +28,12 @@
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getAuthedDriverId, getServiceClient } from "../_shared/client.ts";
-import { estimateIdleFuelMidpoint, estimateIdleFuelRange, type FuelRangeEstimate } from "../_shared/fuel.ts";
+import {
+  estimateIdleFuelMidpoint,
+  estimateIdleFuelRange,
+  type FuelRangeEstimate,
+  loadFuelFactors,
+} from "../_shared/fuel.ts";
 
 const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY"); // optional
 
@@ -139,6 +144,7 @@ Deno.serve(async (req: Request) => {
         : null;
 
     const supabase = getServiceClient();
+    await loadFuelFactors(supabase);
 
     const { data: driver, error: driverErr } = await supabase
       .from("drivers")

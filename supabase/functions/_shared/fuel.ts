@@ -22,6 +22,14 @@
 // of diesel and ~2.31 kg per liter of gasoline. That's pure chemistry
 // (carbon in the fuel -> CO2 out the tailpipe), so it's the one figure here
 // that's not an assumption — the liters it multiplies still are.
+//
+// Sourced overrides: every figure above except CO2 can be replaced by
+// approved rows in fuel_factors (add_fuel_factors.sql), extracted from
+// studies and DOE price reports by fuel-factors.js and checked by a person.
+// Handlers call loadFuelFactors() once per request; the constants below
+// stay as the fallback for any factor with no approved source.
+
+import type { getServiceClient } from "./client.ts";
 
 export interface FuelProfile {
   fuelType: string;
@@ -40,7 +48,9 @@ const CO2_KG_PER_LITER: Record<string, number> = {
   gasoline: 2.31,
 };
 
-const FUEL_PROFILES: Record<string, FuelProfile> = {
+// Fallbacks — also mirrored in add_carbon_impact.sql and
+// add_driver_fuel_impact.sql; keep all three in sync.
+const DEFAULT_FUEL_PROFILES: Record<string, FuelProfile> = {
   jeepney: {
     fuelType: "diesel",
     pricePerLiter: 85,
@@ -56,6 +66,74 @@ const FUEL_PROFILES: Record<string, FuelProfile> = {
     idleLitersPerMinuteMax: 0.01,
   },
 };
+const DEFAULT_AVG_JEEPNEY_RIDERS = 12;
+const DEFAULT_CAR_KM_PER_LITER = 10;
+
+// Current figures: the defaults with any approved fuel_factors applied.
+let FUEL_PROFILES: Record<string, FuelProfile> = structuredClone(DEFAULT_FUEL_PROFILES);
+let ASSUMED_AVG_JEEPNEY_RIDERS = DEFAULT_AVG_JEEPNEY_RIDERS;
+let ASSUMED_CAR_KM_PER_LITER = DEFAULT_CAR_KM_PER_LITER;
+
+// ---------- sourced overrides (fuel_factors) ----------
+// Cached per function instance: approvals are rare, and a factor check on
+// every request would add a round trip to every driver poll.
+const FACTOR_CACHE_MS = 10 * 60 * 1000;
+let factorsLoadedAt = 0;
+
+interface FuelFactorRow {
+  subject: string;
+  factor: string;
+  value: number;
+  min_value: number;
+  max_value: number;
+  source_count: number;
+}
+
+// Never throws: on any failure the previous figures (defaults, or the last
+// good load) stay in place, so a fuel estimate is never blocked on this.
+export async function loadFuelFactors(supabase: ReturnType<typeof getServiceClient>): Promise<void> {
+  if (Date.now() - factorsLoadedAt < FACTOR_CACHE_MS) return;
+  try {
+    const { data, error } = await supabase.rpc("fuel_factor_summary");
+    if (error) throw new Error(error.message);
+    applyFuelFactors((data ?? []) as FuelFactorRow[]);
+    factorsLoadedAt = Date.now();
+  } catch (err) {
+    console.error("loadFuelFactors failed, using previous fuel figures:", err);
+  }
+}
+
+function applyFuelFactors(rows: FuelFactorRow[]) {
+  const profiles = structuredClone(DEFAULT_FUEL_PROFILES);
+  let riders = DEFAULT_AVG_JEEPNEY_RIDERS;
+  let carKmPerLiter = DEFAULT_CAR_KM_PER_LITER;
+
+  for (const row of rows) {
+    const value = Number(row.value);
+    if (!(value > 0)) continue;
+    const key = `${row.subject}.${row.factor}`;
+
+    if (key === "jeepney.avg_riders") riders = value;
+    else if (key === "car.km_per_liter") carKmPerLiter = value;
+    else if (row.factor === "km_per_liter" && profiles[row.subject]) {
+      profiles[row.subject].kmPerLiter = value;
+    } else if (row.factor === "idle_liters_per_hour" && profiles[row.subject]) {
+      // Spread across sources becomes the displayed range; one source
+      // collapses it to a single figure.
+      profiles[row.subject].idleLitersPerMinuteMin = Number(row.min_value) / 60;
+      profiles[row.subject].idleLitersPerMinuteMax = Number(row.max_value) / 60;
+    } else if (row.factor === "price_per_liter") {
+      // Priced per fuel, so it applies to every vehicle burning it.
+      for (const profile of Object.values(profiles)) {
+        if (profile.fuelType === row.subject) profile.pricePerLiter = value;
+      }
+    }
+  }
+
+  FUEL_PROFILES = profiles;
+  ASSUMED_AVG_JEEPNEY_RIDERS = riders;
+  ASSUMED_CAR_KM_PER_LITER = carKmPerLiter;
+}
 
 function idleLitersPerMinuteMidpoint(profile: FuelProfile): number {
   return (profile.idleLitersPerMinuteMin + profile.idleLitersPerMinuteMax) / 2;
@@ -150,8 +228,8 @@ export function estimateIdleFuelMidpoint(vehicleType: string, minutes: number): 
 // always label the result "estimated" in the UI. The comparison uses only
 // the jeepney ride distance (not the walk legs) for both sides, so the
 // car figure is conservative: a car would also cover the walked stretches.
-const ASSUMED_AVG_JEEPNEY_RIDERS = 12;
-const ASSUMED_CAR_KM_PER_LITER = 10;
+// (ASSUMED_AVG_JEEPNEY_RIDERS / ASSUMED_CAR_KM_PER_LITER are declared above,
+// with the other sourced figures.)
 
 export interface TripCarbonEstimate {
   ride_distance_km: number;

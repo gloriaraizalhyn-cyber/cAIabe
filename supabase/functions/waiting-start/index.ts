@@ -6,7 +6,7 @@
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
-import { estimateTripCarbon } from "../_shared/fuel.ts";
+import { estimateTripCarbon, loadFuelFactors } from "../_shared/fuel.ts";
 
 const FUZZ_RADIUS_METERS_MIN = 80;
 const FUZZ_RADIUS_METERS_MAX = 150;
@@ -49,6 +49,7 @@ Deno.serve(async (req: Request) => {
 
     const fuzzed = fuzzCoordinate(lat, lng);
     const supabase = getServiceClient();
+    await loadFuelFactors(supabase);
 
     const { data, error } = await supabase
       .from("passenger_waiting_state")

@@ -1,5 +1,5 @@
--- Run in your cloud SQL Editor, AFTER schema.sql and
--- add_terminal_geofence_queue.sql. Safe to re-run.
+-- Run in your cloud SQL Editor, AFTER schema.sql,
+-- add_terminal_geofence_queue.sql and add_fuel_factors.sql. Safe to re-run.
 --
 -- Backs the Carbon Impact panel (CarbonImpactPanel.jsx — admin dashboard
 -- and the demo stage). Every figure here is an ESTIMATE derived from the
@@ -49,9 +49,10 @@ grant select, insert, update on carbon_impact_events to service_role;
 
 -- Totals since p_since (default: start of today, Philippine time).
 --
--- QUEUE_IDLE_LITERS_PER_MIN and DIESEL_CO2_KG_PER_LITER below MUST stay in
--- sync with fuel.ts (jeepney idle-burn midpoint 0.025 L/min, diesel
--- 2.68 kg CO2/L) — SQL can't import the Deno module.
+-- queue_idle_liters_per_min is the midpoint of the approved jeepney idle
+-- range in fuel_factors (add_fuel_factors.sql). Its fallbacks (1.2-1.8 L/h)
+-- and DIESEL_CO2_KG_PER_LITER (2.68) MUST stay in sync with fuel.ts — SQL
+-- can't import the Deno module.
 --
 -- Queue minutes: drivers still queued and physically inside the terminal
 -- count up to now(); finished entries count until responded_at. Entries
@@ -71,7 +72,8 @@ as $$
         p_since,
         (date_trunc('day', now() at time zone 'Asia/Manila')) at time zone 'Asia/Manila'
       ) as since,
-      0.025::numeric as queue_idle_liters_per_min,
+      (fuel_factor('jeepney', 'idle_liters_per_hour', 1.2, 'min')
+        + fuel_factor('jeepney', 'idle_liters_per_hour', 1.8, 'max')) / 2 / 60 as queue_idle_liters_per_min,
       2.68::numeric as diesel_co2_kg_per_liter
   ),
   riders as (
