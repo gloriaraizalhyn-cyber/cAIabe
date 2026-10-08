@@ -12,9 +12,9 @@
 .queue-turn-alert {
   width: 100%;
   max-width: 340px;
-  background: #241f14;
-  border: 1px solid #4a3d24;
-  border-radius: 14px;
+  background: #00227a;
+  border: 1px solid #1c3a9a;
+  border-radius: 24px;
   padding: 20px;
 }
 
@@ -23,7 +23,7 @@
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.06em;
-  color: #e0a82e;
+  color: #fcd116;
 }
 
 .queue-turn-alert__heading {
@@ -42,7 +42,7 @@
 
 .queue-turn-alert__button {
   flex: 1;
-  border-radius: 10px;
+  border-radius: 999px;
   font-size: 0.88rem;
   font-weight: 700;
   padding: 12px;
@@ -54,22 +54,22 @@
 }
 
 .queue-turn-alert__button--primary {
-  background: #e0a82e;
-  color: #1a1a1a;
+  background: #fcd116;
+  color: #0a1f66;
 }
 
 .queue-turn-alert__button--primary:hover {
-  background: #c99521;
+  background: #f0c200;
 }
 
 .queue-turn-alert__button--secondary {
   background: transparent;
-  border-color: #5a4a2a;
+  border-color: #3b57b0;
   color: #ffffff;
 }
 
 .queue-turn-alert__button--secondary:hover {
-  border-color: #e0a82e;
+  border-color: #fcd116;
 }
 
 .queue-turn-alert__button--danger {
@@ -81,3 +81,4 @@
 .queue-turn-alert__button--danger:hover {
   background: rgba(224, 96, 90, 0.1);
 }
+

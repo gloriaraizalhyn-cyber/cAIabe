@@ -4,6 +4,10 @@
 
 .demo-stage {
   height: 100vh;
+  /* Phone column width follows the screen height (390:844 phone) so each
+     pane is a true phone shape; the app inside renders at 390px and is
+     scaled to fit. */
+  --phone-w: clamp(230px, calc((100vh - 250px) * 0.462 + 18px), 360px);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   background: #0b1020;
@@ -90,7 +94,7 @@
 
 .demo-stage__body {
   display: grid;
-  grid-template-columns: minmax(230px, 300px) minmax(0, 1fr) minmax(230px, 300px) minmax(230px, 300px);
+  grid-template-columns: var(--phone-w) minmax(0, 1fr) var(--phone-w) var(--phone-w);
   gap: 16px;
   padding: 16px 20px;
   min-height: 0;
@@ -251,12 +255,23 @@
 }
 
 .phone-frame__screen {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
   border: 0;
   border-radius: 20px;
   background: #ffffff;
   display: block;
+}
+
+.phone-frame__viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #ffffff;
 }
 
 /* ---------- SMS pane (overlays the map on the SMS beat) ---------- */
@@ -522,3 +537,4 @@
     display: none;
   }
 }
+

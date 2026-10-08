@@ -1,64 +1,172 @@
 .driver-impact-card {
-  border-left: 5px solid #2e8b57;
-  border-radius: 16px;
-  background: #faf6f0;
-  padding: 20px;
+  margin-top: 16px;
   margin-bottom: 14px;
+  padding: 20px;
+  border: 1px solid rgba(20, 23, 31, 0.08);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(20, 23, 31, 0.04), 0 10px 28px rgba(0, 56, 168, 0.08);
   font-family: "DM Sans", sans-serif;
 }
 
-.driver-impact-card__title {
-  margin: 0 0 12px;
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #1a1a1a;
+/* ===== Head: title + period switch ===== */
+
+.driver-impact-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
-.driver-impact-card__columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.driver-impact-card__period {
+.driver-impact-card__eyebrow {
+  display: inline-block;
   margin: 0 0 8px;
-  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fdeceb;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #6a6f79;
+  color: #ce1126;
+}
+
+.driver-impact-card__title {
+  margin: 0;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #0a1f66;
+}
+
+.driver-impact-card__tabs {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: #eef2fb;
+}
+
+.driver-impact-card__tab {
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #3d4663;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.driver-impact-card__tab:hover:not(.driver-impact-card__tab--active) {
+  color: #0038a8;
+}
+
+.driver-impact-card__tab--active {
+  background: #0038a8;
+  color: #ffffff;
+}
+
+/* ===== Stat tiles ===== */
+
+.driver-impact-card__stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.driver-impact-card__stat {
+  --tone-bg: #e6f4ec;
+  --tone-ink: #1f7a4a;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--tone-bg);
+}
+
+.driver-impact-card__stat--bad {
+  --tone-bg: #fdeceb;
+  --tone-ink: #ce1126;
+}
+
+.driver-impact-card__stat-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--tone-ink);
+  color: #ffffff;
+}
+
+.driver-impact-card__stat-copy {
+  min-width: 0;
 }
 
 .driver-impact-card__label {
-  margin: 10px 0 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #6a6f79;
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #3d4663;
 }
 
 .driver-impact-card__big {
-  margin: 0;
-  font-size: 1.9rem;
+  margin: 4px 0 2px;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 2.1rem;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--tone-ink);
 }
 
-.driver-impact-card__big--good {
-  color: #1f7a4a;
-}
-
-.driver-impact-card__big--bad {
-  color: #c0392b;
+.driver-impact-card__peso {
+  margin-right: 3px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.6em;
+  font-weight: 800;
+  vertical-align: 0.22em;
 }
 
 .driver-impact-card__sub {
-  margin: 2px 0 0;
-  font-size: 0.8rem;
-  color: #6a6f79;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #3d4663;
+}
+
+.driver-impact-card__empty {
+  margin: 0;
+  padding: 18px;
+  border-radius: 16px;
+  background: #f3f6fd;
+  font-size: 0.86rem;
+  text-align: center;
+  color: #3d4663;
 }
 
 .driver-impact-card__footnote {
-  margin: 14px 0 0;
-  font-size: 0.72rem;
-  color: #9a9fa8;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 16px 2px 0;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: #8a909b;
 }
+
+.driver-impact-card__footnote svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+

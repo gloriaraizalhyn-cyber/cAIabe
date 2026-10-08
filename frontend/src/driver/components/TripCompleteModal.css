@@ -5,92 +5,160 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(26, 26, 26, 0.45);
+  background: rgba(0, 20, 70, 0.5);
   padding: 16px;
 }
 
 .trip-complete-modal {
+  position: relative;
   width: 100%;
-  max-width: 360px;
-  background: #faf6f0;
-  border: 2px solid #000000;
-  border-left: 5px solid #d71920;
+  max-width: 380px;
+  overflow: hidden;
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(0, 20, 70, 0.35);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+}
+
+.trip-complete-modal__pattern {
+  display: block;
+  width: 100%;
+  height: 38px;
+}
+
+.trip-complete-modal__content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 24px 22px 22px;
+}
+
+.trip-complete-modal__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 16px;
   border-radius: 16px;
-  padding: 20px;
+  background: #1f7a4a;
+  color: #ffffff;
+}
+
+.trip-complete-modal__eyebrow {
+  margin: 0 0 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e6f4ec;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1f7a4a;
 }
 
 .trip-complete-modal__heading {
-  margin: 0 0 8px;
-  font-family: "DM Sans", sans-serif;
-  font-size: 1.2rem;
+  margin: 0 0 10px;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.6rem;
   font-weight: 800;
-  line-height: 1.25;
-  color: #1a1a1a;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: #0a1f66;
 }
 
 .trip-complete-modal__body {
-  margin: 0 0 14px;
-  font-size: 0.85rem;
-  line-height: 1.45;
-  color: #6a6f79;
+  margin: 0 0 18px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #3d4663;
 }
 
 .trip-complete-modal__parked {
-  color: #1b3fa0;
+  color: #0038a8;
 }
 
 .trip-complete-modal__stats {
-  background: #ffffff;
-  border: 1px solid #edeef1;
-  border-radius: 10px;
-  padding: 10px 14px;
-  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 14px;
 }
 
-.trip-complete-modal__stat-row {
+.trip-complete-modal__stat {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f3f6fd;
 }
 
-.trip-complete-modal__stat-row + .trip-complete-modal__stat-row {
-  border-top: 1px solid #edeef1;
+.trip-complete-modal__stat--accent {
+  background: #0038a8;
 }
 
 .trip-complete-modal__stat-label {
-  font-size: 0.78rem;
-  color: #9a9fa8;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a909b;
+}
+
+.trip-complete-modal__stat--accent .trip-complete-modal__stat-label {
+  color: #c3cce6;
 }
 
 .trip-complete-modal__stat-value {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.05;
+  color: #0a1f66;
 }
 
-.trip-complete-modal__stat-value--accent {
-  color: #1b3fa0;
+.trip-complete-modal__stat--accent .trip-complete-modal__stat-value {
+  color: #fcd116;
+}
+
+.trip-complete-modal__stat-unit {
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #3d4663;
 }
 
 .trip-complete-modal__note {
-  margin: 0 0 16px;
-  font-size: 0.76rem;
-  line-height: 1.4;
-  color: #9a9fa8;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 20px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #3d4663;
 }
 
+.trip-complete-modal__note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #8a909b;
+}
+
+/* Flat primary button (house rule: never raised / 3D) */
 .trip-complete-modal__close-button {
   width: 100%;
   border: none;
-  border-radius: 10px;
-  background: #1b3fa0;
+  border-radius: 999px;
+  background: #0038a8;
   color: #ffffff;
   font-size: 0.95rem;
   font-weight: 700;
-  padding: 13px;
+  padding: 14px;
+  transition: background-color 0.15s ease;
 }
 
 .trip-complete-modal__close-button:hover {
-  background: #142f7e;
+  background: #00267f;
 }

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TextField from "../../driver/components/TextField.jsx";
+import AuthLayout from "../../shared/components/AuthLayout.jsx";
 import { supabase } from "../../shared/lib/supabaseClient.js";
-import "./AdminLoginPage.css";
 
 const INITIAL_FORM_VALUES = { email: "", password: "" };
 
@@ -68,52 +68,52 @@ function AdminLoginPage() {
   };
 
   const isSubmitting = submitStatus === "submitting";
-
   return (
-    <main className="admin-login-page">
-      <div className="admin-login-page__card">
-        <header className="admin-login-page__header">
-          <div className="admin-login-page__header-copy">
-            <h1 className="admin-login-page__title">Admin Log In</h1>
-            <p className="admin-login-page__subtitle">Review and approve driver applications.</p>
-          </div>
-          <img src="/images/caiabe-logo.png" alt="CAIABE" className="admin-login-page__logo" />
-        </header>
+    <AuthLayout
+      role="Admin console"
+      tagline="Keep the road network trusted, one driver at a time."
+      points={[
+        "Review and approve driver applications",
+        "Verify documents and vehicle details",
+        "Manage active drivers across routes",
+      ]}
+      eyebrow="Admin"
+      title="Admin log in"
+      subtitle="Authorized staff only. Sign in to review driver applications."
+    >
+      <form className="auth-layout__form" onSubmit={handleSubmit} noValidate>
+        <TextField
+          label="Email"
+          required
+          type="email"
+          value={formValues.email}
+          onChange={(value) => handleFieldChange("email", value)}
+          placeholder="you@example.com"
+          autoComplete="username"
+          error={formErrors.email}
+        />
+        <TextField
+          label="Password"
+          required
+          type="password"
+          value={formValues.password}
+          onChange={(value) => handleFieldChange("password", value)}
+          placeholder="Enter your password"
+          autoComplete="current-password"
+          error={formErrors.password}
+        />
 
-        <form className="admin-login-page__form" onSubmit={handleSubmit} noValidate>
-          <TextField
-            label="Email"
-            required
-            type="email"
-            value={formValues.email}
-            onChange={(value) => handleFieldChange("email", value)}
-            placeholder="you@example.com"
-            autoComplete="username"
-            error={formErrors.email}
-          />
-          <TextField
-            label="Password"
-            required
-            type="password"
-            value={formValues.password}
-            onChange={(value) => handleFieldChange("password", value)}
-            placeholder="Enter your password"
-            autoComplete="current-password"
-            error={formErrors.password}
-          />
+        {submitStatus === "error" && (
+          <p className="auth-layout__error" role="alert">
+            {submitErrorMessage ?? "Incorrect email or password."}
+          </p>
+        )}
 
-          {submitStatus === "error" && (
-            <p className="admin-login-page__submit-error">
-              {submitErrorMessage ?? "Incorrect email or password."}
-            </p>
-          )}
-
-          <button type="submit" className="admin-login-page__submit-button" disabled={isSubmitting}>
-            {isSubmitting ? "Logging in…" : "Log In"}
-          </button>
-        </form>
-      </div>
-    </main>
+        <button type="submit" className="auth-layout__submit" disabled={isSubmitting}>
+          {isSubmitting ? "Logging in…" : "Log in"}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }
 

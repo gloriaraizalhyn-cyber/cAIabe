@@ -4,7 +4,7 @@ import TextField from "../components/TextField.jsx";
 import CheckboxField from "../components/CheckboxField.jsx";
 import { validateDriverLoginForm } from "../utils/validateDriverLoginForm.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
-import MascotReveal from "../../user/components/MascotReveal.jsx";
+import AuthLayout from "../../shared/components/AuthLayout.jsx";
 import "./DriverLoginPage.css";
 
 const INITIAL_FORM_VALUES = {
@@ -72,87 +72,70 @@ function DriverLoginPage() {
   const isSubmitting = submitStatus === "submitting";
 
   return (
-    <main className="driver-login-page">
-      <div className="driver-login-page__brand-panel" aria-hidden="true">
-        <MascotReveal className="driver-login-page__brand-mascot" />
-        <p className="driver-login-page__brand-wordmark">
-          c<span>AI</span>abe
-        </p>
-        <p className="driver-login-page__brand-tagline">
-          The AI co-pilot for your route — track your queue, respond to riders, and see where the
-          demand is, all from one dashboard.
-        </p>
-      </div>
-
-      <div className="driver-login-page__card">
-        <header className="driver-login-page__header">
-          <div className="driver-login-page__header-copy">
-            <h1 className="driver-login-page__title">Driver Log In</h1>
-            <p className="driver-login-page__subtitle">Log in to access your driver dashboard.</p>
-          </div>
-          <img
-            src="/images/caiabe-logo.png"
-            alt="CAIABE"
-            className="driver-login-page__logo"
-          />
-        </header>
-
-        <form className="driver-login-page__form" onSubmit={handleSubmit} noValidate>
-          <TextField
-            label="Email or Mobile Number"
-            required
-            type="text"
-            value={formValues.emailOrMobileNumber}
-            onChange={(value) => handleFieldChange("emailOrMobileNumber", value)}
-            placeholder="you@example.com or 09171234567"
-            autoComplete="username"
-            error={formErrors.emailOrMobileNumber}
-          />
-          <TextField
-            label="Password"
-            required
-            type="password"
-            value={formValues.password}
-            onChange={(value) => handleFieldChange("password", value)}
-            placeholder="Enter your password"
-            autoComplete="current-password"
-            error={formErrors.password}
-          />
-
-          <div className="driver-login-page__row">
-            <CheckboxField
-              label="Remember Me"
-              checked={formValues.rememberMe}
-              onChange={(value) => handleFieldChange("rememberMe", value)}
-            />
-            <button
-              type="button"
-              className="driver-login-page__forgot-password-link"
-              onClick={handleForgotPassword}
-            >
-              Forgot Password?
-            </button>
-          </div>
-
-          {submitStatus === "error" && (
-            <p className="driver-login-page__submit-error">
-              {submitErrorMessage ?? "Incorrect email/mobile number or password."}
-            </p>
-          )}
-
-          <button type="submit" className="driver-login-page__submit-button" disabled={isSubmitting}>
-            {isSubmitting ? "Logging in…" : "Log In"}
-          </button>
-        </form>
-
-        <p className="driver-login-page__apply-notice">
+    <AuthLayout
+      role="Driver portal"
+      tagline="Your route, your queue and your riders, all in one dashboard."
+      points={[
+        "Track your place in the terminal queue",
+        "Respond to rider requests in real time",
+        "See where the demand is before you roll",
+      ]}
+      eyebrow="Driver"
+      title="Welcome back"
+      subtitle="Log in to access your driver dashboard."
+      footer={
+        <>
           New driver?{" "}
-          <button type="button" className="driver-login-page__apply-link" onClick={handleApplyAsDriver}>
+          <button type="button" className="auth-layout__link" onClick={handleApplyAsDriver}>
             Apply as a Driver
           </button>
-        </p>
-      </div>
-    </main>
+        </>
+      }
+    >
+      <form className="auth-layout__form" onSubmit={handleSubmit} noValidate>
+        <TextField
+          label="Email or Mobile Number"
+          required
+          type="text"
+          value={formValues.emailOrMobileNumber}
+          onChange={(value) => handleFieldChange("emailOrMobileNumber", value)}
+          placeholder="you@example.com or 09171234567"
+          autoComplete="username"
+          error={formErrors.emailOrMobileNumber}
+        />
+        <TextField
+          label="Password"
+          required
+          type="password"
+          value={formValues.password}
+          onChange={(value) => handleFieldChange("password", value)}
+          placeholder="Enter your password"
+          autoComplete="current-password"
+          error={formErrors.password}
+        />
+
+        <div className="auth-layout__row">
+          <CheckboxField
+            label="Remember me"
+            checked={formValues.rememberMe}
+            onChange={(value) => handleFieldChange("rememberMe", value)}
+          />
+          <button type="button" className="auth-layout__link" onClick={handleForgotPassword}>
+            Forgot password?
+          </button>
+        </div>
+
+        {submitStatus === "error" && (
+          <p className="auth-layout__error" role="alert">
+            {submitErrorMessage ?? "Incorrect email/mobile number or password."}
+          </p>
+        )}
+
+        <button type="submit" className="auth-layout__submit" disabled={isSubmitting}>
+          {isSubmitting ? "Logging in…" : "Log in"}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }
 

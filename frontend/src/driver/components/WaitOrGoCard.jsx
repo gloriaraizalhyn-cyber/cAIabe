@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import DemandStatGrid from "./DemandStatGrid.jsx";
 import { describeWaitOrGo } from "../utils/plainDemand.js";
 import "./WaitOrGoCard.css";
@@ -19,6 +20,12 @@ const RECOMMENDATION_META = {
 // "More details" for anyone who wants to see how the call was made.
 function WaitOrGoCard({ data, isLoading, error, onUseTerminalLocation, onSkipToDriving, isSkippingToDriving }) {
   const [showDetails, setShowDetails] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  // A new call (WAIT -> GO or back) is worth a fresh look, so it reopens the card.
+  useEffect(() => {
+    setIsDismissed(false);
+  }, [data?.recommendation]);
 
   if (error) {
     return (
@@ -58,11 +65,31 @@ function WaitOrGoCard({ data, isLoading, error, onUseTerminalLocation, onSkipToD
     nearestDistanceKm: data.nearest_distance_km,
   });
 
+  if (isDismissed) {
+    return (
+      <button
+        type="button"
+        className="wait-or-go-card__reopen"
+        onClick={() => setIsDismissed(false)}
+      >
+        {meta.emoji} {meta.label} · Wait or go?
+      </button>
+    );
+  }
+
   return (
     <section className={`wait-or-go-card wait-or-go-card--${data.recommendation}`}>
       <div className="wait-or-go-card__header">
         <span className="wait-or-go-card__kicker">WAIT OR GO?</span>
         {isLoading && <span className="wait-or-go-card__refreshing">Updating…</span>}
+        <button
+          type="button"
+          className="wait-or-go-card__close"
+          aria-label="Close"
+          onClick={() => setIsDismissed(true)}
+        >
+          <X size={16} strokeWidth={2.6} />
+        </button>
       </div>
 
       <div className="wait-or-go-card__badge-row">
@@ -119,3 +146,4 @@ function WaitOrGoCard({ data, isLoading, error, onUseTerminalLocation, onSkipToD
 }
 
 export default WaitOrGoCard;
+

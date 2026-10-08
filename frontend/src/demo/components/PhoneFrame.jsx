@@ -1,9 +1,33 @@
+import { useEffect, useRef, useState } from "react";
+
+// The app inside always lays out at a real phone width (390px) and is scaled
+// down to fit the bezel, so it never runs its cramped small-screen layout.
+const PHONE_WIDTH = 390;
+
 // A phone bezel around a live iframe of the real app.
 //
 // The panes really are the shipping passenger and driver apps, not mockups —
 // that's the point of the stage, so the bezel should read as a device and
 // otherwise get out of the way.
 function PhoneFrame({ title, subtitle, accent, src, isFocused, badge }) {
+  const viewportRef = useRef(null);
+  const [scale, setScale] = useState(null);
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return undefined;
+    const measure = () => {
+      const nextScale = el.clientWidth / PHONE_WIDTH;
+      setScale(nextScale);
+      setHeight(el.clientHeight / nextScale);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section
       className={`phone-frame${isFocused ? " phone-frame--focused" : ""}`}
@@ -19,8 +43,10 @@ function PhoneFrame({ title, subtitle, accent, src, isFocused, badge }) {
 
       <div className="phone-frame__device">
         <div className="phone-frame__notch" aria-hidden="true" />
+        <div className="phone-frame__viewport" ref={viewportRef}>
         <iframe
           className="phone-frame__screen"
+          style={scale ? { width: PHONE_WIDTH, height, transform: `scale(${scale})` } : undefined}
           src={src}
           title={title}
           // Deliberately NO allow="geolocation" — the Permissions Policy must
@@ -38,9 +64,11 @@ function PhoneFrame({ title, subtitle, accent, src, isFocused, badge }) {
           // be moving, so the jeepney would flip between the route and the
           // laptop. Blocked, "Use terminal location" is the only writer.
         />
+        </div>
       </div>
     </section>
   );
 }
 
 export default PhoneFrame;
+

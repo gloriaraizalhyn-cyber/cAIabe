@@ -26,12 +26,30 @@ function TripResultsPanel({
   onFocusRoute,
 }) {
   const [sortMetric, setSortMetric] = useState("time");
+  // Until the rider actually picks a filter, the pick stays the AI-recommended
+  // route. After that, the CAIABEST pick is the best route for that filter.
+  const [hasChosenSort, setHasChosenSort] = useState(false);
   const [expandedRouteId, setExpandedRouteId] = useState(null);
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const [liveDragY, setLiveDragY] = useState(null);
   const dragStateRef = useRef(null);
 
-  const bestPickRoute = routes.find((route) => route.isRecommended) ?? routes[0];
+  const recommendedRoute = routes.find((route) => route.isRecommended) ?? routes[0];
+
+  const bestPickRoute = useMemo(() => {
+    if (!recommendedRoute || !hasChosenSort) return recommendedRoute;
+    const sortField = SORT_METRIC_TO_FIELD[sortMetric];
+    // Ties keep the recommended route on top.
+    return routes.reduce(
+      (best, route) => (route[sortField] < best[sortField] ? route : best),
+      recommendedRoute
+    );
+  }, [routes, recommendedRoute, hasChosenSort, sortMetric]);
+
+  const handleChangeSortMetric = (metric) => {
+    setSortMetric(metric);
+    setHasChosenSort(true);
+  };
 
   const otherRoutes = useMemo(() => {
     const sortField = SORT_METRIC_TO_FIELD[sortMetric];
@@ -142,7 +160,7 @@ function TripResultsPanel({
             onSaveRoute={onSaveRoute}
             isSaved={savedRouteKeys?.has(bestPickRoute.cardKey ?? bestPickRoute.id)}
             sortMetric={sortMetric}
-            onChangeSortMetric={setSortMetric}
+            onChangeSortMetric={handleChangeSortMetric}
           />
 
           {otherRoutes.length > 0 && (

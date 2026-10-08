@@ -1,0 +1,272 @@
+/* Saved routes dialog — same card border as the other in-app cards (black
+   outline, blue top, red left, 26px corners). Centered card on desktop,
+   bottom sheet on phones. Flat buttons. */
+
+.saved-routes-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 20, 50, 0.5);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: saved-routes-fade 0.16s ease-out;
+}
+
+.saved-routes-dialog__panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 440px;
+  max-height: min(80vh, 600px);
+  overflow: hidden;
+  border: 2px solid #000000;
+  border-left: 5px solid #d71920;
+  border-top: 5px solid #1b3fa0;
+  border-radius: 26px;
+  background: #faf6f0;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+  animation: saved-routes-rise 0.2s ease-out;
+}
+
+.saved-routes-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px 12px;
+}
+
+.saved-routes-dialog__title {
+  margin: 0;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #0a1f66;
+}
+
+.saved-routes-dialog__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6a6f79;
+}
+
+.saved-routes-dialog__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d8dade;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #3d4663;
+  transition: background-color 0.15s ease;
+}
+
+.saved-routes-dialog__close:hover {
+  background: #eef0f4;
+}
+
+.saved-routes-dialog__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 4px 16px 18px;
+  list-style: none;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.saved-routes-dialog__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid #e2e4e9;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.saved-routes-dialog__item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.saved-routes-dialog__item-label {
+  margin: 0;
+  font-size: 0.94rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0a1f66;
+  overflow-wrap: anywhere;
+}
+
+.saved-routes-dialog__item-trip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #3d4663;
+}
+
+.saved-routes-dialog__item-trip svg {
+  flex-shrink: 0;
+  color: #1b3fa0;
+}
+
+.saved-routes-dialog__item-date {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  color: #8a909b;
+}
+
+.saved-routes-dialog__item-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.saved-routes-dialog__use {
+  border: none;
+  border-radius: 999px;
+  background: #1b3fa0;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 9px 14px;
+  box-shadow: none;
+  transition: background-color 0.15s ease;
+}
+
+.saved-routes-dialog__use:hover {
+  background: #142f7e;
+}
+
+.saved-routes-dialog__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e2e4e9;
+  border-radius: 50%;
+  background: #f5f6f7;
+  color: #7a7f89;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.saved-routes-dialog__remove:hover {
+  border-color: #f0b4b8;
+  background: #fdecee;
+  color: #d71920;
+}
+
+.saved-routes-dialog__close:focus-visible,
+.saved-routes-dialog__use:focus-visible,
+.saved-routes-dialog__remove:focus-visible {
+  outline: 3px solid #f4c430;
+  outline-offset: 2px;
+}
+
+.saved-routes-dialog__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 24px 30px;
+  text-align: center;
+}
+
+.saved-routes-dialog__empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: #fdecc0;
+  color: #c58d16;
+}
+
+.saved-routes-dialog__empty-title {
+  margin: 14px 0 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0a1f66;
+}
+
+.saved-routes-dialog__empty-body {
+  max-width: 28ch;
+  margin: 6px 0 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: #6a6f79;
+}
+
+@keyframes saved-routes-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes saved-routes-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Phones: bottom sheet */
+@media (max-width: 640px) {
+  .saved-routes-dialog {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .saved-routes-dialog__panel {
+    max-width: none;
+    max-height: 82vh;
+    border-radius: 26px 26px 0 0;
+  }
+
+  .saved-routes-dialog__item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .saved-routes-dialog__item-actions {
+    justify-content: space-between;
+  }
+
+  .saved-routes-dialog__use {
+    flex: 1;
+    padding: 11px 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .saved-routes-dialog,
+  .saved-routes-dialog__panel {
+    animation: none;
+  }
+}

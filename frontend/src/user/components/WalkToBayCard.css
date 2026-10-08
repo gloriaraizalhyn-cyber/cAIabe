@@ -65,3 +65,104 @@
     padding: 10px;
   }
 }
+
+/* =====================================================================
+   Brand refresh — visual layer only (class names and behaviour untouched).
+   ===================================================================== */
+
+.card-shell.walk-to-bay-card {
+  border: 1px solid rgba(20, 23, 31, 0.08);
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(20, 23, 31, 0.04), 0 18px 44px rgba(0, 34, 122, 0.18);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+}
+
+@media (max-width: 640px) {
+  .card-shell.walk-to-bay-card {
+    border-radius: 28px 28px 0 0;
+    border-bottom: none;
+    box-shadow: 0 -4px 30px rgba(0, 34, 122, 0.18);
+  }
+
+  .card-shell.walk-to-bay-card .card-shell__drag-handle {
+    background: #ffffff;
+    padding: 14px 0 14px;
+  }
+
+  .card-shell.walk-to-bay-card .card-shell__drag-handle-bar {
+    width: 56px;
+    height: 6px;
+    background: #b4bbd0;
+  }
+}
+
+.walk-to-bay-card__step {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fdeceb;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #ce1126;
+}
+
+.walk-to-bay-card__title {
+  margin: 0 0 10px;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: #0a1f66;
+}
+
+.walk-to-bay-card__body {
+  margin: 0 0 18px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #3d4663;
+}
+
+.walk-to-bay-card__body strong {
+  color: #0a1f66;
+}
+
+/* Flat primary button (house rule: never raised / 3D) */
+.walk-to-bay-card__arrived-button {
+  border-radius: 999px;
+  background: #fcd116;
+  color: #00227a;
+  font-size: 1.02rem;
+  font-weight: 800;
+  padding: 14px;
+  transition: background-color 0.15s ease;
+}
+
+.walk-to-bay-card__arrived-button:hover {
+  background: #f0c200;
+}
+
+@media (max-width: 640px) {
+  .walk-to-bay-card {
+    padding: 0 20px 10px;
+  }
+
+  .walk-to-bay-card__title {
+    font-size: 1.4rem;
+    line-height: 1.15;
+  }
+
+  .walk-to-bay-card__body {
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .walk-to-bay-card__arrived-button {
+    padding: 13px;
+  }
+}
+
+

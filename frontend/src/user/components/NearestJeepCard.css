@@ -142,3 +142,147 @@
     font-size: 0.84rem;
   }
 }
+
+/* =====================================================================
+   Brand refresh — visual layer only (class names and behaviour untouched).
+   ===================================================================== */
+
+.card-shell.nearest-jeep-card {
+  border: 1px solid rgba(20, 23, 31, 0.08);
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(20, 23, 31, 0.04), 0 18px 44px rgba(0, 34, 122, 0.18);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+}
+
+@media (max-width: 640px) {
+  .card-shell.nearest-jeep-card {
+    border-radius: 28px 28px 0 0;
+    border-bottom: none;
+    box-shadow: 0 -4px 30px rgba(0, 34, 122, 0.18);
+  }
+
+  .card-shell.nearest-jeep-card .card-shell__drag-handle {
+    background: #ffffff;
+    padding: 14px 0 14px;
+  }
+
+  .card-shell.nearest-jeep-card .card-shell__drag-handle-bar {
+    width: 56px;
+    height: 6px;
+    background: #b4bbd0;
+  }
+}
+
+.nearest-jeep-card__header {
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.nearest-jeep-card__label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #8a909b;
+}
+
+.nearest-jeep-card__availability-badge {
+  flex-shrink: 0;
+  border: none;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+}
+
+.nearest-jeep-card__availability-badge--seats {
+  background: #e6f4ec;
+  color: #1f7a4a;
+}
+
+.nearest-jeep-card__availability-badge--full {
+  background: #fdeceb;
+  color: #ce1126;
+}
+
+.nearest-jeep-card__eta {
+  margin: 0 0 16px;
+}
+
+.nearest-jeep-card__eta-value {
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #0a1f66;
+}
+
+.nearest-jeep-card__eta-unit {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #3d4663;
+}
+
+.nearest-jeep-card__departure-status {
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: #f3f6fd;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #3d4663;
+}
+
+.nearest-jeep-card__actions {
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Flat buttons (house rule: never raised / 3D) */
+.nearest-jeep-card__wait-button {
+  border-radius: 999px;
+  background: #0038a8;
+  font-size: 0.98rem;
+  padding: 14px;
+  transition: background-color 0.15s ease;
+}
+
+.nearest-jeep-card__wait-button:hover:not(:disabled) {
+  background: #00267f;
+}
+
+.nearest-jeep-card__wait-button:disabled {
+  background: #9aa4c0;
+}
+
+.nearest-jeep-card__other-options-button {
+  border: 1.5px solid #0038a8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0038a8;
+  font-size: 0.98rem;
+  padding: 13px;
+  transition: background-color 0.15s ease;
+}
+
+.nearest-jeep-card__other-options-button:hover {
+  border-color: #0038a8;
+  background: #eef2fb;
+}
+
+@media (max-width: 640px) {
+  .nearest-jeep-card {
+    padding: 0 20px 10px;
+  }
+
+  .nearest-jeep-card__eta-value {
+    font-size: 2.6rem;
+  }
+
+  .nearest-jeep-card__wait-button,
+  .nearest-jeep-card__other-options-button {
+    padding: 13px;
+    font-size: 0.94rem;
+  }
+}
+
+

@@ -1,8 +1,8 @@
 .arrived-at-terminal-panel {
-  border: none;
-  border-left: 5px solid #d71920;
-  border-radius: 16px;
-  background: #faf6f0;
+  border: 1px solid rgba(20, 23, 31, 0.08);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(20, 23, 31, 0.04), 0 10px 28px rgba(0, 56, 168, 0.08);
   padding: 20px;
 }
 
@@ -12,7 +12,7 @@
   gap: 8px;
   font-size: 0.95rem;
   font-weight: 800;
-  color: #1a1a1a;
+  color: #0a1f66;
   margin-bottom: 6px;
 }
 
@@ -48,7 +48,7 @@
 .arrived-at-terminal-panel__message {
   margin: 0 0 18px;
   font-size: 0.88rem;
-  color: #6a6f79;
+  color: #3d4663;
 }
 
 .arrived-at-terminal-panel__field {
@@ -71,7 +71,7 @@
 .arrived-at-terminal-panel__field-value {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #0a1f66;
   text-align: right;
 }
 
@@ -85,14 +85,14 @@
   margin: 14px 0 16px;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #6a6f79;
+  color: #3d4663;
 }
 
 .arrived-at-terminal-panel__view-queue-button {
   width: 100%;
   border: none;
-  border-radius: 10px;
-  background: #1b3fa0;
+  border-radius: 999px;
+  background: #0038a8;
   color: #ffffff;
   font-size: 0.95rem;
   font-weight: 700;
@@ -100,26 +100,27 @@
 }
 
 .arrived-at-terminal-panel__view-queue-button:hover {
-  background: #142f7e;
+  background: #00267f;
 }
 
 .arrived-at-terminal-panel__skip-button {
   width: 100%;
   margin-top: 10px;
   border: 1px dashed #9a9fa8;
-  border-radius: 10px;
+  border-radius: 999px;
   background: none;
-  color: #6a6f79;
+  color: #3d4663;
   font-size: 0.8rem;
   font-weight: 700;
   padding: 10px;
 }
 
 .arrived-at-terminal-panel__skip-button:hover {
-  border-color: #1a1a1a;
-  color: #1a1a1a;
+  border-color: #0a1f66;
+  color: #0a1f66;
 }
 
 .arrived-at-terminal-panel__skip-button:disabled {
   opacity: 0.6;
 }
+

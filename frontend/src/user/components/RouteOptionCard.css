@@ -376,3 +376,301 @@
   background: #ecfdf5;
   color: #15803d;
 }
+
+/* =====================================================================
+   Brand refresh — visual layer only (class names, the --route-accent
+   variable and all behaviour are untouched).
+   ===================================================================== */
+
+.route-option-card {
+  border: 1.5px solid #e3e7f1;
+  border-radius: 24px;
+  padding: 16px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(20, 23, 31, 0.04), 0 8px 22px rgba(0, 56, 168, 0.06);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.route-option-card:hover {
+  box-shadow: 0 1px 2px rgba(20, 23, 31, 0.04), 0 12px 28px rgba(0, 56, 168, 0.12);
+}
+
+.route-option-card--best-pick {
+  border-width: 2px;
+  border-color: var(--route-accent);
+}
+
+.route-option-card__best-pick-label {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fdeceb;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #ce1126;
+}
+
+.route-option-card__sort-filter {
+  border: 1.5px solid #dfe3ee;
+  background: #ffffff;
+  color: #3d4663;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.route-option-card__sort-filter:hover:not(.route-option-card__sort-filter--active) {
+  border-color: #0038a8;
+  color: #0038a8;
+}
+
+.route-option-card__title {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #0a1f66;
+}
+
+.route-option-card__subtitle {
+  font-size: 0.8rem;
+  color: #6b7390;
+}
+
+.route-option-card__fare {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ce1126;
+}
+
+.route-option-card__distance {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7390;
+}
+
+.route-option-card__stat {
+  background: #eef2fb;
+  color: #0038a8;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 7px 12px;
+}
+
+.route-option-card__toggle {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid #dfe3ee;
+  border-radius: 12px;
+  color: #0038a8;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.route-option-card__toggle:hover {
+  border-color: #0038a8;
+  background: #eef2fb;
+  color: #0038a8;
+}
+
+.route-option-card__details {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e3e7f1;
+}
+
+.route-option-card__legs {
+  gap: 12px;
+}
+
+.route-option-card__leg-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #eef2fb;
+}
+
+.route-option-card__leg-icon:not([style]) {
+  color: #0038a8;
+}
+
+.route-option-card__leg-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #0a1f66;
+}
+
+.route-option-card__leg-subtitle {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #6b7390;
+}
+
+.route-option-card__leg-duration {
+  background: #eef2fb;
+  color: #0a1f66;
+  font-size: 0.76rem;
+  padding: 5px 10px;
+}
+
+.route-option-card__walk-summary p {
+  font-size: 0.86rem;
+  color: #3d4663;
+}
+
+.route-option-card__timing {
+  border-radius: 18px;
+  background: #f3f6fd;
+  padding: 12px 16px;
+}
+
+.route-option-card__timing-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0a1f66;
+}
+
+.route-option-card__timing-label {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #8a909b;
+}
+
+.route-option-card__carbon {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: #e6f4ec;
+}
+
+.route-option-card__carbon-icon {
+  color: #1f7a4a;
+}
+
+.route-option-card__carbon-headline {
+  font-size: 0.84rem;
+  color: #14532d;
+}
+
+.route-option-card__carbon-subline {
+  font-size: 0.76rem;
+  color: #3d6b52;
+}
+
+.route-option-card__availability {
+  font-size: 0.82rem;
+  color: #3d4663;
+}
+
+/* Flat buttons (house rule: never raised / 3D) */
+.route-option-card__take-button {
+  border-radius: 999px;
+  background: #0038a8;
+  font-size: 0.95rem;
+  padding: 13px;
+  transition: background-color 0.15s ease;
+}
+
+.route-option-card__take-button:hover {
+  background: #00267f;
+}
+
+.route-option-card__save-button {
+  border: 1.5px solid #0038a8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0038a8;
+  font-size: 0.95rem;
+  padding: 12px 20px;
+  transition: background-color 0.15s ease;
+}
+
+.route-option-card__save-button:hover {
+  border-color: #0038a8;
+  background: #eef2fb;
+}
+
+.route-option-card__save-button--saved {
+  border-color: #1f7a4a;
+  background: #e6f4ec;
+  color: #1f7a4a;
+}
+
+.route-option-card__save-button--saved:hover {
+  border-color: #1f7a4a;
+  background: #d6ecdf;
+}
+
+
+.route-option-card__best-pick-header {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.route-option-card__best-pick-label {
+  white-space: nowrap;
+}
+
+
+/* Outlines: the CAIABEST pick is green; every other card gets a slightly
+   heavier neutral outline. */
+.route-option-card {
+  border: 2px solid #d3d9e8;
+}
+
+.route-option-card--best-pick {
+  border-width: 2.5px;
+  border-color: #1f7a4a;
+}
+
+
+/* ----- Sort filters: a segmented control, with a clearly selected state ----- */
+
+.route-option-card__sort-filters {
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: #eef2fb;
+}
+
+.route-option-card__sort-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: #3d4663;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.route-option-card__sort-filter:hover:not(.route-option-card__sort-filter--active) {
+  border: none;
+  background: #dfe8fa;
+  color: #0038a8;
+}
+
+.route-option-card__sort-filter.route-option-card__sort-filter--active,
+.route-option-card__sort-filter.route-option-card__sort-filter--active.route-option-card__sort-filter--white {
+  border: none;
+  background: #0038a8;
+  color: #ffffff;
+  font-weight: 800;
+  cursor: default;
+}
+
+.route-option-card__sort-filter--active::before {
+  content: "\2713";
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.route-option-card__sort-filter:focus-visible {
+  outline: 3px solid #fcd116;
+  outline-offset: 1px;
+}
+

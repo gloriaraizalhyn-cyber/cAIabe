@@ -15,6 +15,7 @@
   border: 1px solid var(--impact-border);
   background: var(--impact-bg);
   color: var(--impact-text);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
 }
 
 .carbon-impact--dark {
@@ -41,10 +42,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.72rem;
+  font-size: 0.9rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--impact-accent);
 }
 
@@ -56,7 +55,7 @@
 }
 
 .carbon-impact__unit {
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--impact-muted);
 }
@@ -86,15 +85,14 @@
 }
 
 .carbon-impact__tile-label {
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  line-height: 1.3;
   color: var(--impact-muted);
 }
 
 .carbon-impact__tile-value {
-  font-size: 1.15rem;
+  font-size: 1.4rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--impact-accent);
@@ -105,13 +103,13 @@
 }
 
 .carbon-impact__tile-detail {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--impact-muted);
 }
 
 .carbon-impact__footnote {
   margin: 0;
-  font-size: 0.66rem;
+  font-size: 0.76rem;
   line-height: 1.4;
   color: var(--impact-muted);
 }
@@ -138,11 +136,11 @@
 }
 
 .carbon-impact--compact .carbon-impact__tile-value {
-  font-size: 0.95rem;
+  font-size: 1.2rem;
 }
 
 .carbon-impact--compact .carbon-impact__tile-detail {
-  font-size: 0.62rem;
+  font-size: 0.76rem;
 }
 
 @media (max-width: 640px) {
@@ -150,3 +148,5 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+

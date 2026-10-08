@@ -3,37 +3,45 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  font-family: "DM Sans", "Segoe UI", sans-serif;
 }
 
 .next-to-go-page__top-bar {
   position: absolute;
-  top: 16px;
+  top: 14px;
   left: 16px;
   right: 16px;
-  z-index: 1;
+  z-index: 11;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
 }
 
 .next-to-go-page__badge {
   flex-shrink: 0;
-  background: #7c3aed;
+  background: #0038a8;
   color: #ffffff;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 800;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.08em;
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 8px 14px;
+  box-shadow: 0 4px 14px rgba(0, 56, 168, 0.28);
 }
 
 .next-to-go-page__terminal-name {
-  margin-left: auto;
-  font-size: 0.85rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #0a1f66;
   background: #ffffff;
+  border: 1px solid rgba(20, 23, 31, 0.08);
   border-radius: 999px;
-  padding: 6px 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 8px 14px;
+  box-shadow: 0 4px 14px rgba(20, 23, 31, 0.12);
 }
+

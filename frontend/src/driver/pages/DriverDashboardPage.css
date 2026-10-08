@@ -1,10 +1,22 @@
 .driver-dashboard-page {
+  --dd-red: #ce1126;
+  --dd-blue: #0038a8;
+  --dd-navy: #00227a;
+  --dd-ink: #0a1f66;
+  --dd-text: #3d4663;
+  --dd-muted: #8a909b;
+  --dd-yellow: #fcd116;
+  --dd-line: rgba(20, 23, 31, 0.08);
   height: 100vh;
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: #faf6f0;
+  background:
+    url("/images/background_no-gradient.png") center / cover no-repeat,
+    #fbf6ec;
   overflow: hidden;
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+  color: var(--dd-ink);
 }
 
 .driver-dashboard-page__content::-webkit-scrollbar,
@@ -21,9 +33,7 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  background: #ffffff;
-  border-top: 3px solid #1b3fa0;
-  border-radius: 20px 20px 0 0;
+  background: transparent;
 }
 
 .driver-dashboard-page__panel {
@@ -38,16 +48,6 @@
 }
 
 @media (min-width: 900px) {
-  .driver-dashboard-page {
-    background:
-      radial-gradient(circle, #ece6d8 1.4px, transparent 1.4px) 0 0 / 22px 22px,
-      #faf6f0;
-  }
-
-  .driver-dashboard-page__content {
-    border-radius: 32px 32px 0 0;
-  }
-
   .driver-dashboard-page__panel {
     display: flex;
     flex-direction: column;
@@ -64,7 +64,7 @@
   }
 
   .driver-dashboard-page__nav-header {
-    padding: 16px 40px;
+    padding: 12px 40px;
   }
 
   .driver-dashboard-page__header,
@@ -92,6 +92,8 @@
   }
 }
 
+/* ===== Header: frosted bar, same as the landing page ===== */
+
 .driver-dashboard-page__nav-header {
   flex: none;
   position: relative;
@@ -99,8 +101,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: #faf6f0;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid var(--dd-line);
 }
 
 .driver-dashboard-page__brand {
@@ -113,25 +118,26 @@
   width: 32px;
   height: 32px;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .driver-dashboard-page__brand-text {
   display: inline-block;
+  margin-right: 10px;
   white-space: nowrap;
   font-family: "Quiapo", "DM Sans", sans-serif;
-  font-size: 1.44rem;
+  font-size: 1.3rem;
   line-height: 1;
   font-weight: 400;
   letter-spacing: -0.02em;
-  color: #d71920;
+  color: var(--dd-red);
   -webkit-text-stroke: 0.3px currentColor;
-  transform: scaleX(1.4);
+  transform: scaleX(1.5);
   transform-origin: left;
 }
 
 .driver-dashboard-page__brand-ai {
-  color: #1b3fa0;
+  color: var(--dd-blue);
 }
 
 @media (max-width: 380px) {
@@ -140,7 +146,7 @@
   }
 
   .driver-dashboard-page__brand-text {
-    font-size: 1.224rem;
+    font-size: 1.15rem;
   }
 
   .driver-dashboard-page__brand-logo {
@@ -157,51 +163,54 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 2px solid #000000;
-  border-top: 4px solid #1b3fa0;
-  border-left: 4px solid #d71920;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--dd-line);
+  border-radius: 12px;
   background: #ffffff;
-  color: #1b3fa0;
+  color: var(--dd-blue);
+  transition: background-color 0.15s ease;
 }
 
 .driver-dashboard-page__menu-button:hover {
-  background: #eef0f3;
+  background: #eef2fb;
 }
 
 .driver-dashboard-page__menu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 10px);
   right: 0;
   display: flex;
   flex-direction: column;
-  min-width: 170px;
+  min-width: 200px;
   padding: 6px;
-  border: 2px solid #000000;
-  border-radius: 12px;
-  background: #faf6f0;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+  border: 1px solid var(--dd-line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(20, 23, 31, 0.16);
 }
 
 .driver-dashboard-page__menu button {
   border: none;
+  border-radius: 10px;
   background: transparent;
-  color: #1a1a1a;
-  font-size: 0.84rem;
+  color: var(--dd-ink);
+  font-size: 0.86rem;
   font-weight: 700;
-  padding: 10px 12px;
+  padding: 11px 12px;
   text-align: left;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .driver-dashboard-page__menu button:hover {
-  background: #e8ecf9;
-  color: #1b3fa0;
+  background: #eef2fb;
+  color: var(--dd-blue);
 }
 
+/* ===== Body ===== */
+
 .driver-dashboard-page__header {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .driver-dashboard-page__title {
@@ -209,35 +218,36 @@
   font-family: "LL Karatula", "DM Sans", sans-serif;
   font-size: 1.55rem;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--dd-ink);
 }
 
 .driver-dashboard-page__subtitle {
   margin: 0;
   font-size: 0.85rem;
-  color: #6a6f79;
+  color: var(--dd-text);
 }
 
 .driver-dashboard-page__loading {
+  padding: 18px 20px;
+  border: 1px solid var(--dd-line);
+  border-radius: 20px;
+  background: #ffffff;
   font-size: 0.9rem;
-  color: #6a6f79;
+  line-height: 1.55;
+  color: var(--dd-text);
   text-align: center;
 }
 
-.driver-dashboard-page__footer {
+/* ===== Footer (shared site footer) ===== */
+
+.driver-dashboard-page__content > .landing-page__footer {
   flex: none;
   margin-top: 48px;
-  padding: 16px;
-  background: #0c1c47;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px 16px;
 }
 
-.driver-dashboard-page__footer-copyright,
-.driver-dashboard-page__footer-disclaimer {
-  font-size: 0.76rem;
-  color: #8b96b8;
+@media (prefers-reduced-motion: reduce) {
+  .driver-dashboard-page * {
+    transition: none !important;
+  }
 }
+

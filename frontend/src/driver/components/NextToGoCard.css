@@ -1,66 +1,108 @@
+/* Brand the shared card shell for this card only (the shell is also used by
+   the rider-side cards, which keep their own look). */
+.card-shell.next-to-go-card {
+  border: 1px solid rgba(20, 23, 31, 0.08);
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 -4px 30px rgba(0, 34, 122, 0.18);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+}
+
+@media (max-width: 640px) {
+  .card-shell.next-to-go-card {
+    border-radius: 28px 28px 0 0;
+    border-bottom: none;
+    padding: 0 18px 18px;
+  }
+
+  .card-shell.next-to-go-card .card-shell__drag-handle {
+    background: #ffffff;
+    padding: 10px 0 12px;
+  }
+}
+
 .next-to-go-card__queue-position {
-  margin: 0 0 6px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #9a9fa8;
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #fdeceb;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: #ce1126;
 }
 
 .next-to-go-card__heading {
-  margin: 0 0 10px;
-  font-family: "DM Sans", sans-serif;
-  font-size: 1.15rem;
+  margin: 0 0 8px;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.55rem;
   font-weight: 800;
-  color: #1a1a1a;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: #0a1f66;
 }
 
 .next-to-go-card__body {
-  margin: 0 0 20px;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: #6a6f79;
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: #3d4663;
 }
 
 .next-to-go-card__body strong {
-  color: #1a1a1a;
+  color: #0a1f66;
 }
 
 .next-to-go-card__actions {
   display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
+/* Flat primary button (house rule: never raised / 3D) */
 .next-to-go-card__wait-button {
-  flex: 1;
+  width: 100%;
   border: none;
-  border-radius: 10px;
-  background: #1b3fa0;
+  border-radius: 999px;
+  background: #0038a8;
   color: #ffffff;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
   padding: 14px;
+  transition: background-color 0.15s ease;
 }
 
-.next-to-go-card__wait-button:hover {
-  background: #142f7e;
+.next-to-go-card__wait-button:hover:not(:disabled) {
+  background: #00267f;
 }
 
 .next-to-go-card__wait-button:disabled {
-  background: #94a3b8;
+  background: #9aa4c0;
   cursor: default;
 }
 
 .next-to-go-card__status-pill {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   text-align: center;
-  border-radius: 10px;
-  background: #eef7f1;
-  color: #1a9e5c;
+  border-radius: 999px;
+  background: #e6f4ec;
+  color: #1f7a4a;
   font-size: 0.8rem;
   font-weight: 700;
-  padding: 14px 10px;
+  padding: 10px 14px;
 }
+
+.next-to-go-card__status-pill::before {
+  content: "";
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1f7a4a;
+}
+

@@ -173,3 +173,119 @@
     line-height: 1.35;
   }
 }
+
+/* ===== Brand refresh — visual layer only ===== */
+
+.ai-note {
+  border-radius: 18px;
+  padding: 12px 14px;
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+}
+
+.ai-note--calm {
+  background: #e6f4ec;
+}
+
+.ai-note--urgent {
+  background: #fdeceb;
+}
+
+.ai-note__badge {
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+}
+
+.ai-note--calm .ai-note__badge,
+.ai-note--calm .ai-note__listen-button {
+  background: #1f7a4a;
+}
+
+.ai-note--urgent .ai-note__badge,
+.ai-note--urgent .ai-note__listen-button {
+  background: #ce1126;
+}
+
+.ai-note__content p {
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.ai-note--calm .ai-note__content p {
+  color: #1f3b2c;
+}
+
+.ai-note--urgent .ai-note__content p {
+  color: #6b1620;
+}
+
+.ai-note--urgent .ai-note__content p strong {
+  color: #ce1126;
+}
+
+.ai-note__listen-row {
+  margin-top: 10px;
+}
+
+.ai-note__language-select {
+  border: 1.5px solid rgba(20, 23, 31, 0.14);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  color: #0a1f66;
+}
+
+.ai-note__listen-button {
+  font-size: 0.76rem;
+  padding: 6px 14px;
+  transition: opacity 0.15s ease;
+}
+
+.ai-note__listen-button:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+@media (max-width: 640px) {
+  .ai-note__content p {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+}
+
+
+/* Stacked layout: AI badge on top, then the text, then the language picker
+   and Listen button together on one line. */
+.ai-note {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.ai-note__badge {
+  align-self: flex-start;
+}
+
+.ai-note__listen-row {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.ai-note__language-select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ai-note__listen-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .ai-note {
+    gap: 8px;
+  }
+}
+

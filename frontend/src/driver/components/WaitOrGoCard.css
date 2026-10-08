@@ -1,29 +1,40 @@
 .wait-or-go-card {
+  --wg-accent: #8a909b;
+  --wg-tint: #eef0f5;
+  --wg-ink: #0a1f66;
   position: absolute;
-  top: 64px;
+  top: 62px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
   width: calc(100% - 32px);
   max-width: 420px;
-  /* Leave room for the bottom NextToGo card (about 400px tall, including the impact strip) so the two
-     never overlap, even in the stage's small phone frame. */
-  max-height: calc(100dvh - 64px - 415px);
-  min-height: 140px;
+  /* Leave room for the bottom NextToGo sheet so the two never overlap, even
+     in the stage's small phone frame. */
+  max-height: calc(100dvh - 62px - 410px);
+  min-height: 112px;
   overflow-y: auto;
+  scrollbar-width: none;
+  padding: 16px 18px 14px;
+  border: 1px solid rgba(20, 23, 31, 0.08);
+  border-radius: 24px;
   background: #ffffff;
-  border-radius: 16px;
-  padding: 16px 18px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
-  border-top: 4px solid #9a9fa8;
+  box-shadow: 0 1px 2px rgba(20, 23, 31, 0.04), 0 14px 32px rgba(0, 34, 122, 0.16);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+}
+
+.wait-or-go-card::-webkit-scrollbar {
+  display: none;
 }
 
 .wait-or-go-card--go {
-  border-top-color: #1a9e5c;
+  --wg-accent: #1f7a4a;
+  --wg-tint: #e6f4ec;
 }
 
 .wait-or-go-card--wait {
-  border-top-color: #e0a82e;
+  --wg-accent: #b7860b;
+  --wg-tint: #fdf1cc;
 }
 
 .wait-or-go-card--pending {
@@ -37,157 +48,203 @@
 
 .wait-or-go-card__pending-text {
   margin: 0;
-  font-size: 0.82rem;
-  color: #6a6f79;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #3d4663;
   text-align: center;
 }
 
 .wait-or-go-card__demo-button {
-  border: 1px dashed #9a9fa8;
-  border-radius: 8px;
+  border: 1.5px dashed #b4bbd0;
+  border-radius: 999px;
   background: none;
-  padding: 8px 14px;
+  padding: 8px 16px;
   font-size: 0.76rem;
   font-weight: 700;
-  color: #6a6f79;
+  color: #3d4663;
+  transition: border-color 0.15s ease, color 0.15s ease;
 }
 
 .wait-or-go-card__demo-button:hover {
-  border-color: #1a1a1a;
-  color: #1a1a1a;
+  border-color: #0038a8;
+  color: #0038a8;
 }
 
 .wait-or-go-card__demo-button--footer {
   display: block;
   width: 100%;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .wait-or-go-card__demo-button:disabled {
   opacity: 0.6;
 }
 
+/* ===== Head: kicker + status ===== */
+
 .wait-or-go-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 
 .wait-or-go-card__kicker {
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  color: #9a9fa8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a909b;
 }
 
 .wait-or-go-card__refreshing {
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  color: #9a9fa8;
+  color: #8a909b;
 }
 
 .wait-or-go-card__badge-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .wait-or-go-card__badge {
-  font-family: "DM Sans", sans-serif;
-  font-size: 1.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px 5px 10px;
+  border-radius: 999px;
+  background: var(--wg-tint);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+  font-size: 1.25rem;
   font-weight: 800;
-  color: #1a1a1a;
-}
-
-.wait-or-go-card__confidence {
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: #6a6f79;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  color: var(--wg-accent);
 }
 
 .wait-or-go-card__headline {
-  margin: 8px 0 2px;
-  font-size: 1rem;
+  margin: 10px 0 0;
+  font-size: 0.98rem;
   font-weight: 700;
   line-height: 1.4;
-  color: #1a1a1a;
+  color: var(--wg-ink);
 }
 
 .wait-or-go-card__body {
   margin: 0;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: #6a6f79;
-}
-
-.wait-or-go-card__why {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed rgba(0, 0, 0, 0.1);
-}
-
-.wait-or-go-card__why-label {
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  color: #1a1a1a;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: #3d4663;
 }
 
 .wait-or-go-card__reasons {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   padding-left: 18px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .wait-or-go-card__reasons li {
-  font-size: 0.78rem;
-  line-height: 1.4;
-  color: #4a4f59;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #3d4663;
 }
 
-.wait-or-go-card__action {
+.wait-or-go-card__details-toggle {
+  display: inline-block;
   margin: 10px 0 0;
-  font-size: 0.74rem;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #0038a8;
+  cursor: pointer;
+}
+
+.wait-or-go-card__details-toggle:hover {
+  text-decoration: underline;
+}
+
+.wait-or-go-card__details {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(20, 23, 31, 0.08);
+}
+
+.wait-or-go-card__fine-print {
+  margin: 10px 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #8a909b;
+}
+
+/* Short phone frames: the headline already says how many are waiting, so the
+   stat tiles give way to keep the card clear of the bottom sheet. */
+@media (max-height: 760px) {
+  .wait-or-go-card .demand-stat-grid {
+    display: none;
+  }
 }
 
 @media (max-width: 640px) {
   .wait-or-go-card {
     max-width: none;
-    padding: 14px 16px;
-  }
-
-  .wait-or-go-card__badge {
-    font-size: 1.15rem;
   }
 }
 
-.wait-or-go-card__details-toggle {
-  display: block;
-  margin: 12px 0 0;
-  padding: 4px 0;
+
+/* ===== Close / reopen ===== */
+
+.wait-or-go-card__header {
+  align-items: center;
+}
+
+.wait-or-go-card__kicker {
+  margin-right: auto;
+}
+
+.wait-or-go-card__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin: -4px -6px -4px 0;
   border: none;
-  background: none;
-  font-size: 0.76rem;
+  border-radius: 50%;
+  background: #eef2fb;
+  color: #3d4663;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.wait-or-go-card__close:hover {
+  background: #0038a8;
+  color: #ffffff;
+}
+
+.wait-or-go-card__reopen {
+  position: absolute;
+  top: 62px;
+  left: 16px;
+  z-index: 10;
+  border: 1px solid rgba(20, 23, 31, 0.08);
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 8px 14px;
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+  font-size: 0.8rem;
   font-weight: 700;
-  color: #6a6f79;
-  text-decoration: underline;
-  cursor: pointer;
+  color: #0a1f66;
+  box-shadow: 0 6px 18px rgba(0, 34, 122, 0.18);
+  transition: background-color 0.15s ease;
 }
 
-.wait-or-go-card__details {
-  margin-top: 6px;
-  padding-top: 8px;
-  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+.wait-or-go-card__reopen:hover {
+  background: #eef2fb;
 }
 
-.wait-or-go-card__fine-print {
-  margin: 8px 0 0;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #9a9fa8;
-}

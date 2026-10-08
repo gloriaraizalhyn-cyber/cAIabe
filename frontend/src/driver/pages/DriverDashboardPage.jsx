@@ -20,6 +20,7 @@ import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { haversineDistanceMeters } from "../../shared/utils/geo.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import { isDemoDriverFrame } from "../../demo/demoTripParams.js";
+import SiteFooter from "../../user/components/SiteFooter.jsx";
 import "./DriverDashboardPage.css";
 
 const TERMINAL_ARRIVAL_RADIUS_METERS = 150;
@@ -290,7 +291,7 @@ function DriverDashboardPage() {
             className="driver-dashboard-page__brand-logo"
           />
           <span className="driver-dashboard-page__brand-text">
-          C<span className="driver-dashboard-page__brand-ai">AI</span>ABE
+            c<span className="driver-dashboard-page__brand-ai">AI</span>abe
           </span>
         </div>
         <div className="driver-dashboard-page__menu-wrap">
@@ -315,14 +316,7 @@ function DriverDashboardPage() {
     </>
   );
 
-  const renderDashboardFooter = () => (
-    <footer className="driver-dashboard-page__footer">
-      <span className="driver-dashboard-page__footer-copyright">© 2026 cAIabe.</span>
-      <span className="driver-dashboard-page__footer-disclaimer">
-        A fully working system, built for hackathon purposes.
-      </span>
-    </footer>
-  );
+  const renderDashboardFooter = () => <SiteFooter />;
 
   if (loading) {
     return <LoadingScreen message="Waking up dispatch…" />;
@@ -480,3 +474,4 @@ function DriverDashboardPage() {
 }
 
 export default DriverDashboardPage;
+

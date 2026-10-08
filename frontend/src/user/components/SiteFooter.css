@@ -1,0 +1,33 @@
+/* The footer styles live in LandingPage.css and read the landing page's
+   palette variables, which are normally defined on `.landing-page`. Define
+   them on the footer itself so it renders the same on any page. */
+.landing-page__footer {
+  --lp-red: #ce1126;
+  --lp-blue: #0038a8;
+  --lp-navy: #00227a;
+  --lp-ink: #0a1f66;
+  --lp-text: #3d4663;
+  --lp-muted: #8a909b;
+  --lp-cream: #f1ebdd;
+  --lp-yellow: #fcd116;
+}
+
+
+/* Inner-page variant: the small brand tile band instead of the woven
+   band, and no gold keyline. */
+.landing-page__footer.site-footer {
+  --band: 38px;
+}
+
+.landing-page__footer.site-footer::before,
+.landing-page__footer.site-footer::after {
+  content: none;
+}
+
+.site-footer__pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 38px;
+}

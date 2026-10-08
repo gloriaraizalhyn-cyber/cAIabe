@@ -487,3 +487,390 @@
   background: #aab6d9;
   cursor: not-allowed;
 }
+
+/* "Saved Routes" header and empty state are buttons that open the saved-routes dialog */
+.trip-search-card__saved-routes-header {
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trip-search-card__saved-routes-header:hover .trip-search-card__quick-action-label {
+  color: #1b3fa0;
+}
+
+.trip-search-card__saved-routes-header:hover .trip-search-card__saved-routes-chevron {
+  color: #1b3fa0;
+  transform: translateX(2px);
+}
+
+.trip-search-card__saved-routes-chevron {
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.trip-search-card__saved-routes-header:focus-visible,
+.trip-search-card__saved-routes-empty:focus-visible,
+.trip-search-card__saved-routes-more:focus-visible {
+  outline: 3px solid #f4c430;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+button.trip-search-card__saved-routes-empty {
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.trip-search-card__saved-routes-empty:hover {
+  color: #6a6f79;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.trip-search-card__saved-routes-more {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 2px 0 0;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #1b3fa0;
+  cursor: pointer;
+}
+
+.trip-search-card__saved-routes-more:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* =====================================================================
+   Brand refresh — visual layer only. Layout, sheet-drag behaviour and class
+   names above are untouched; everything below restyles them with the
+   palette used across the landing page, log-in pages and driver dashboard.
+   ===================================================================== */
+
+.trip-search-card {
+  --ts-red: #ce1126;
+  --ts-blue: #0038a8;
+  --ts-navy: #00227a;
+  --ts-ink: #0a1f66;
+  --ts-text: #3d4663;
+  --ts-muted: #8a909b;
+  --ts-yellow: #fcd116;
+  --ts-line: rgba(20, 23, 31, 0.08);
+  border: 1px solid var(--ts-line);
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(20, 23, 31, 0.04), 0 18px 44px rgba(0, 34, 122, 0.18);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+}
+
+@media (max-width: 640px) {
+  .trip-search-card {
+    border-radius: 28px 28px 0 0;
+    border-bottom: none;
+    box-shadow: 0 -4px 30px rgba(0, 34, 122, 0.18);
+  }
+
+  .trip-search-card__drag-handle {
+    background: #ffffff;
+  }
+}
+
+/* ----- Header ----- */
+
+.trip-search-card__title {
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ts-ink);
+}
+
+.trip-search-card__instruction {
+  color: var(--ts-text);
+}
+
+/* ----- Current location ----- */
+
+.trip-search-card__current-location-button {
+  border: 1px solid rgba(0, 56, 168, 0.18);
+  background: #eef2fb;
+  color: var(--ts-blue);
+  font-weight: 700;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.trip-search-card__current-location-button:hover:not(:disabled) {
+  border-color: var(--ts-blue);
+  background: #e0e8fa;
+}
+
+.trip-search-card__current-location-button:disabled {
+  color: var(--ts-muted);
+}
+
+/* ----- From / To ----- */
+
+.trip-search-card__fields {
+  border: 1.5px solid #dfe3ee;
+  border-radius: 20px;
+  background: #f7f8fc;
+  box-shadow: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.trip-search-card__fields:focus-within {
+  border-color: var(--ts-blue);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(0, 56, 168, 0.12);
+}
+
+.trip-search-card__fields:focus-within .location-input + .location-input {
+  border-top-color: #c3cde8;
+}
+
+.trip-search-card .location-input + .location-input {
+  border-top-color: #e3e7f1;
+}
+
+.trip-search-card .location-input__label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ts-muted);
+}
+
+.trip-search-card .location-input__text {
+  font-weight: 600;
+  color: var(--ts-ink);
+}
+
+.trip-search-card .location-input__text::placeholder {
+  font-weight: 500;
+  color: #a3a9b8;
+}
+
+.trip-search-card__swap-button {
+  border: none;
+  background: var(--ts-blue);
+  color: #ffffff;
+  transition: background-color 0.15s ease;
+}
+
+.trip-search-card__swap-button:hover {
+  background: #00267f;
+}
+
+/* ----- Quick actions ----- */
+
+.trip-search-card__quick-action-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--ts-ink);
+}
+
+.trip-search-card__voice-card {
+  border: 1px solid transparent;
+  border-radius: 22px;
+  background: #fdf1cc;
+  box-shadow: none;
+  transition: background-color 0.15s ease;
+}
+
+.trip-search-card__voice-card:hover {
+  background: #fbe9a8;
+}
+
+.trip-search-card__voice-icon {
+  color: var(--ts-navy);
+}
+
+.trip-search-card__voice-ring {
+  background: var(--ts-yellow);
+}
+
+.trip-search-card__saved-routes-card {
+  border: 1px solid transparent;
+  border-radius: 22px;
+  background: #e9f0ff;
+  box-shadow: none;
+}
+
+.trip-search-card__saved-routes-chevron {
+  color: var(--ts-blue);
+}
+
+.trip-search-card__saved-routes-header:hover .trip-search-card__quick-action-label,
+.trip-search-card__saved-routes-header:hover .trip-search-card__saved-routes-chevron {
+  color: var(--ts-red);
+}
+
+.trip-search-card__saved-route-chip {
+  border: 1px solid rgba(0, 56, 168, 0.12);
+  background: #ffffff;
+  transition: border-color 0.15s ease;
+}
+
+.trip-search-card__saved-route-chip:hover {
+  border-color: var(--ts-blue);
+}
+
+.trip-search-card__saved-route-label {
+  font-weight: 700;
+  color: var(--ts-ink);
+}
+
+.trip-search-card__saved-route-bookmark {
+  border: none;
+  background: #eef0f5;
+  color: var(--ts-muted);
+}
+
+.trip-search-card__saved-route-bookmark--active {
+  border: none;
+  background: var(--ts-yellow);
+  color: var(--ts-navy);
+}
+
+.trip-search-card__saved-routes-empty,
+button.trip-search-card__saved-routes-empty {
+  font-size: 0.78rem;
+  color: var(--ts-text);
+}
+
+button.trip-search-card__saved-routes-empty:hover {
+  color: var(--ts-blue);
+}
+
+.trip-search-card__saved-routes-more {
+  color: var(--ts-blue);
+}
+
+.trip-search-card__saved-routes-header:focus-visible,
+.trip-search-card__saved-routes-empty:focus-visible,
+.trip-search-card__saved-routes-more:focus-visible {
+  outline-color: var(--ts-blue);
+}
+
+/* ----- Error + primary action ----- */
+
+.trip-search-card__error {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fdeceb;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #a30f1f;
+}
+
+/* Flat primary button (house rule: never raised / 3D) */
+.trip-search-card__find-button {
+  border-radius: 999px;
+  background: var(--ts-blue);
+  transition: background-color 0.15s ease;
+}
+
+.trip-search-card__find-button:hover:not(:disabled) {
+  background: #00267f;
+}
+
+.trip-search-card__find-button:disabled {
+  background: #9aa4c0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trip-search-card * {
+    transition: none !important;
+  }
+}
+
+
+/* ----- Button placement -----
+   Inputs first, then the primary action right under them, with the Voice
+   Assistant and Saved Routes shortcuts below as secondary options. Done with
+   flex `order` only, so the markup (and its handlers) stay exactly as is. */
+
+.trip-search-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.trip-search-card > * {
+  flex-shrink: 0;
+}
+
+.trip-search-card__drag-handle {
+  order: 0;
+}
+
+.trip-search-card__header-row {
+  order: 1;
+}
+
+.trip-search-card__fields-header {
+  order: 2;
+}
+
+.trip-search-card__fields {
+  order: 3;
+  margin-bottom: 14px;
+}
+
+.trip-search-card__error {
+  order: 4;
+}
+
+.trip-search-card__find-button {
+  order: 5;
+}
+
+.trip-search-card__quick-actions {
+  order: 6;
+  margin: 18px 0 0;
+}
+
+
+/* ----- Easier sheet handle ----- */
+
+@media (max-width: 640px) {
+  .trip-search-card {
+    padding: 0 20px 12px;
+  }
+
+  /* Bigger, easier-to-grab handle: taller bar area plus an invisible hit
+     zone that extends above and below it. */
+  .trip-search-card__drag-handle {
+    position: sticky;
+    padding: 14px 0 18px;
+    margin-top: 0;
+  }
+
+  .trip-search-card__drag-handle::after {
+    content: "";
+    position: absolute;
+    top: -12px;
+    bottom: -6px;
+    left: 0;
+    right: 0;
+  }
+
+  .trip-search-card__drag-handle-bar {
+    width: 56px;
+    height: 6px;
+    background: #b4bbd0;
+  }
+}
+
+
+
+

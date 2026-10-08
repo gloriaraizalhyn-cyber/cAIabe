@@ -24,12 +24,12 @@
 .driver-greeting__phrase {
   font-size: 0.72em;
   font-weight: 400;
-  color: #6a6f79;
+  color: #3d4663;
 }
 
 .driver-greeting__name {
   font-size: 2.015em;
-  color: #1b3fa0;
+  color: #0038a8;
 }
 
 .driver-greeting__animation {
@@ -73,3 +73,4 @@
     max-width: 32%;
   }
 }
+

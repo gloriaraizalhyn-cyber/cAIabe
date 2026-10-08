@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Bookmark, ArrowUpDown, LocateFixed, Mic, ChevronRight } from "lucide-react";
 import LocationAutocompleteInput from "./LocationAutocompleteInput.jsx";
 import MascotReveal from "./MascotReveal.jsx";
 import { savedRouteLabel } from "../../shared/utils/savedRoutesStorage.js";
+import SavedRoutesDialog from "./SavedRoutesDialog.jsx";
 import "./TripSearchCard.css";
 
 // How much of the sheet's total height stays off-screen (below the
@@ -30,6 +31,14 @@ function TripSearchCard({
   const canFindRoutes = origin.trim().length > 0 && destination.trim().length > 0 && !isSearching;
 
   const [isLocating, setIsLocating] = useState(false);
+
+  // "Saved Routes" card -> dialog listing everything saved on this device.
+  const [isSavedDialogOpen, setIsSavedDialogOpen] = useState(false);
+  const closeSavedDialog = useCallback(() => setIsSavedDialogOpen(false), []);
+  const handleApplyFromDialog = (savedRoute) => {
+    onApplySavedRoute?.(savedRoute);
+    setIsSavedDialogOpen(false);
+  };
 
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) return;
@@ -79,7 +88,19 @@ function TripSearchCard({
   const handleDragPointerUp = () => {
     if (!dragStateRef.current) return;
     const max = peekOffsetPx();
-    setIsSheetExpanded((liveDragY ?? dragStateRef.current.baseline) < max / 2);
+    const { baseline } = dragStateRef.current;
+    const finalY = liveDragY ?? baseline;
+    if (Math.abs(finalY - baseline) < 6) {
+      // A tap on the handle toggles the sheet.
+      setIsSheetExpanded(!isSheetExpanded);
+    } else if (isSheetExpanded) {
+      // Pulling down only closes it once it has been dragged a little way.
+      setIsSheetExpanded(finalY < max * 0.15);
+    } else {
+      // Pulling up opens it after roughly the first sixth of the travel,
+      // instead of needing to cross the halfway point.
+      setIsSheetExpanded(finalY < max * 0.85);
+    }
     dragStateRef.current = null;
     setLiveDragY(null);
   };
@@ -170,15 +191,24 @@ function TripSearchCard({
         </button>
 
         <div className="trip-search-card__saved-routes-card">
-          <div className="trip-search-card__saved-routes-header">
+          <button
+            type="button"
+            className="trip-search-card__saved-routes-header"
+            aria-haspopup="dialog"
+            onClick={() => setIsSavedDialogOpen(true)}
+          >
             <span className="trip-search-card__quick-action-label">Saved Routes</span>
             <ChevronRight size={15} strokeWidth={2.5} className="trip-search-card__saved-routes-chevron" />
-          </div>
+          </button>
           <div className="trip-search-card__saved-routes">
             {savedRoutes.length === 0 ? (
-              <p className="trip-search-card__saved-routes-empty">
+              <button
+                type="button"
+                className="trip-search-card__saved-routes-empty"
+                onClick={() => setIsSavedDialogOpen(true)}
+              >
                 No saved routes yet — tap Save on a route's results to add one here.
-              </p>
+              </button>
             ) : (
               savedRoutes.slice(0, 3).map((savedRoute) => (
                 <div key={savedRoute.id} className="trip-search-card__saved-route-chip">
@@ -201,6 +231,15 @@ function TripSearchCard({
                 </div>
               ))
             )}
+            {savedRoutes.length > 3 && (
+              <button
+                type="button"
+                className="trip-search-card__saved-routes-more"
+                onClick={() => setIsSavedDialogOpen(true)}
+              >
+                View all {savedRoutes.length}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -215,6 +254,15 @@ function TripSearchCard({
       >
         {isSearching ? "Finding routes…" : "Find routes"}
       </button>
+
+      {isSavedDialogOpen && (
+        <SavedRoutesDialog
+          routes={savedRoutes}
+          onClose={closeSavedDialog}
+          onApply={handleApplyFromDialog}
+          onRemove={(routeKey) => onRemoveSavedRoute?.(routeKey)}
+        />
+      )}
     </section>
   );
 }

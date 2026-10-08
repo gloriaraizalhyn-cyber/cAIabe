@@ -22,7 +22,11 @@ function RouteLeg({ leg }) {
     <div className="route-option-card__leg">
       <span
         className="route-option-card__leg-icon"
-        style={leg.kind === "jeep" ? { background: leg.color } : undefined}
+        style={
+          leg.kind === "jeep"
+            ? { background: isWhiteJeepColor(leg.color) ? "#555a66" : leg.color }
+            : undefined
+        }
       >
         {leg.kind === "jeep" ? <Bus size={14} strokeWidth={2.25} /> : <Footprints size={14} strokeWidth={2.25} />}
       </span>
@@ -88,6 +92,7 @@ function RouteOptionCard({
                     ? `route-option-card__sort-filter route-option-card__sort-filter--active${hasWhiteJeep ? " route-option-card__sort-filter--white" : ""}`
                     : "route-option-card__sort-filter"
                 }
+                aria-pressed={sortMetric === option.value}
                 onClick={() => onChangeSortMetric(option.value)}
               >
                 {option.label}
@@ -239,3 +244,4 @@ function RouteOptionCard({
 }
 
 export default RouteOptionCard;
+
