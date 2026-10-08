@@ -7,6 +7,10 @@
   padding: 24px 16px;
 }
 
+.driver-login-page__brand-panel {
+  display: none;
+}
+
 .driver-login-page__card {
   width: 100%;
   max-width: 380px;
@@ -16,6 +20,70 @@
   border-radius: 16px;
   background: #faf6f0;
   padding: 22px 20px;
+}
+
+@media (min-width: 900px) {
+  .driver-login-page {
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+  }
+
+  .driver-login-page__brand-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 50%;
+    gap: 8px;
+    padding: 48px;
+    background:
+      radial-gradient(circle, rgba(255, 255, 255, 0.16) 1.4px, transparent 1.4px) 0 0 / 22px 22px,
+      #12275e;
+  }
+
+  .driver-login-page__brand-mascot {
+    width: min(260px, 60%);
+    aspect-ratio: 583 / 905;
+    margin-bottom: 8px;
+  }
+
+  .driver-login-page__brand-wordmark {
+    margin: 0;
+    font-family: "Quiapo", "DM Sans", sans-serif;
+    font-size: 3rem;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+    -webkit-text-stroke: 0.4px currentColor;
+    transform: scaleX(1.4);
+  }
+
+  .driver-login-page__brand-wordmark span {
+    color: #f4c430;
+  }
+
+  .driver-login-page__brand-tagline {
+    margin: 8px 0 0;
+    max-width: 340px;
+    text-align: center;
+    font-size: 0.95rem;
+    color: #c3cce6;
+    line-height: 1.6;
+  }
+
+  .driver-login-page__card {
+    flex: 1 1 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 460px;
+    border-top: none;
+    border-left: none;
+    border-radius: 0;
+    border: none;
+    padding: 48px;
+  }
 }
 
 .driver-login-page__header {

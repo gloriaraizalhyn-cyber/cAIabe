@@ -1,67 +1,109 @@
 .about-you-page {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 24px;
+  background: #f5f6f8;
+  padding: 24px 16px;
+}
+
+.about-you-page__card {
+  width: 100%;
+  max-width: 380px;
+  border: 2px solid #000000;
+  border-left: 5px solid #d71920;
+  border-top: 5px solid #1b3fa0;
+  border-radius: 26px;
+  background: #faf6f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 28px 24px;
   text-align: center;
 }
 
 .about-you-page__question {
-  font-size: 1.8rem;
   margin: 0;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1.2;
 }
 
 .about-you-page__prompt {
-  margin: 0 0 12px;
-  font-size: 1.1rem;
-  color: #444444;
+  margin: 10px 0 24px;
+  font-size: 0.88rem;
+  color: #6a6f79;
+  line-height: 1.5;
 }
 
 .about-you-page__options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   width: 100%;
-  max-width: 320px;
 }
 
 .about-you-page__option {
-  padding: 14px 16px;
-  font-size: 1rem;
-  border: 2px solid #d7dbe3;
-  border-radius: 8px;
-  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 10px;
+  border: 2px solid #e2e4e9;
+  border-radius: 14px;
+  background: #ffffff;
   color: #1a1a1a;
+  font-size: 0.86rem;
+  font-weight: 700;
 }
 
 .about-you-page__option:hover {
-  border-color: #2f6fed;
+  border-color: #1b3fa0;
+}
+
+.about-you-page__option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f0f1f4;
+  color: #6a6f79;
 }
 
 .about-you-page__option--selected {
-  border-color: #2f6fed;
-  background-color: #eaf0ff;
-  font-weight: 600;
+  border-color: #1b3fa0;
+  background: #eaf0ff;
+  color: #1b3fa0;
 }
 
-.about-you-page__next-button {
-  margin-top: 24px;
-  padding: 14px 32px;
-  font-size: 1.1rem;
-  border: none;
-  border-radius: 8px;
-  background-color: #2f6fed;
+.about-you-page__option--selected .about-you-page__option-icon {
+  background: #1b3fa0;
   color: #ffffff;
 }
 
+.about-you-page__next-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 24px;
+  border: none;
+  border-radius: 10px;
+  background: #1b3fa0;
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 700;
+  padding: 14px;
+}
+
 .about-you-page__next-button:hover:not(:disabled) {
-  background-color: #2559c9;
+  background: #142f7e;
 }
 
 .about-you-page__next-button:disabled {
-  background-color: #b7c4dd;
+  background: #aab6d9;
   cursor: not-allowed;
 }

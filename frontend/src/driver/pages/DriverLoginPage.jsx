@@ -4,6 +4,7 @@ import TextField from "../components/TextField.jsx";
 import CheckboxField from "../components/CheckboxField.jsx";
 import { validateDriverLoginForm } from "../utils/validateDriverLoginForm.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
+import MascotReveal from "../../user/components/MascotReveal.jsx";
 import "./DriverLoginPage.css";
 
 const INITIAL_FORM_VALUES = {
@@ -72,6 +73,17 @@ function DriverLoginPage() {
 
   return (
     <main className="driver-login-page">
+      <div className="driver-login-page__brand-panel" aria-hidden="true">
+        <MascotReveal className="driver-login-page__brand-mascot" />
+        <p className="driver-login-page__brand-wordmark">
+          c<span>AI</span>abe
+        </p>
+        <p className="driver-login-page__brand-tagline">
+          The AI co-pilot for your route — track your queue, respond to riders, and see where the
+          demand is, all from one dashboard.
+        </p>
+      </div>
+
       <div className="driver-login-page__card">
         <header className="driver-login-page__header">
           <div className="driver-login-page__header-copy">
