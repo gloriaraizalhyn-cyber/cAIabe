@@ -415,6 +415,9 @@ enabled = true
 [functions.translate-to-voice]
 verify_jwt = false
 
+[functions.sms-webhook]
+verify_jwt = false
+
 [functions.speech-to-text]
 enabled = true
 verify_jwt = false

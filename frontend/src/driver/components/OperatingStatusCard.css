@@ -54,15 +54,8 @@
   text-align: left;
 }
 
-.operating-status-card__reasons {
+.operating-status-card__reason {
   margin: 10px 0 0;
-  padding-left: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.operating-status-card__reasons li {
   font-size: 0.76rem;
   line-height: 1.4;
   color: #4a4f59;

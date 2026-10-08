@@ -51,14 +51,11 @@ function OperatingStatusCard({ data, isLoading, onUseTerminalLocation }) {
       {expanded && (
         <>
           {operating.reasons?.length > 0 && (
-            <ul className="operating-status-card__reasons">
-              {operating.reasons.map((reason) => (
-                <li key={reason}>{reason}</li>
-              ))}
-            </ul>
+            <p className="operating-status-card__reason">
+              {operating.reasons.slice(0, 2).join(" ")}
+            </p>
           )}
           <DemandStatGrid
-            demandScore={data.demand_score}
             compatibleCount={data.compatible_passenger_count}
             nearestDistanceKm={data.nearest_distance_km}
             trend={data.trend}

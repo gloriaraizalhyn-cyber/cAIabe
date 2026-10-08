@@ -20,12 +20,19 @@
 create table if not exists demo_commands (
   id uuid primary key default gen_random_uuid(),
   type text not null check (
-    type in ('slow', 'resume', 'leave', 'return', 'lining_up', 'skip_temp', 'skip_done', 'send_sms')
+    type in ('slow', 'resume', 'idle', 'leave', 'return', 'lining_up', 'skip_temp', 'skip_done', 'send_sms')
   ),
   payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   consumed_at timestamptz
 );
+
+-- Keep this migration safe to re-run after the original table was created.
+alter table demo_commands drop constraint if exists demo_commands_type_check;
+alter table demo_commands add constraint demo_commands_type_check
+  check (
+    type in ('slow', 'resume', 'idle', 'leave', 'return', 'lining_up', 'skip_temp', 'skip_done', 'send_sms')
+  );
 
 -- The simulator's poll is "unconsumed, oldest first".
 create index if not exists idx_demo_commands_pending

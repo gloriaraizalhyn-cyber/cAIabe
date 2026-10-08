@@ -235,6 +235,13 @@ Open **`/demo/stage`**. Use **Space** or **→** to go to the next step and **�
 
 To keep it short, the jeeps are **fast-forwarded** (default ×8; tap the **Demo speed** chip to switch between ×1, ×4 and ×8). The passenger screen sends the speed to the fleet simulator through the `demo_commands` table (as a `resume` command with a `multiplier`), so the simulator must be running. A **Skip ahead (demo)** button on the riding screen moves to the next step if a jeep ever stalls.
 
+The presenter bar also has **Idle jeep** and **Throw traffic** controls. Both
+target a moving grey-route unit through the simulator. Idle holds it at its
+current roadside position and feeds the existing roadside-idle demand and fuel
+model, so the impact panel shows estimated fuel wasted. Resume the jeep before
+continuing the story. If these controls report that no unit is available, start
+the fleet simulator and rerun `demo-prep.js` if its mock accounts are missing.
+
 The Carbon Impact overlay starts at zero each day (Philippine time). Before presenting:
 - Take one passenger trip through to "I'm at the bay".
 - Have drivers queued at a terminal.

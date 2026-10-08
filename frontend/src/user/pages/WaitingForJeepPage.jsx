@@ -25,6 +25,44 @@ function haversineDistanceKm(p1, p2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function nearestPointOnPath(position, path) {
+  if (!position || !Array.isArray(path) || path.length === 0) return position;
+
+  const cosLat = Math.cos((position.lat * Math.PI) / 180);
+  let nearest = path[0];
+  let nearestDistance = Infinity;
+
+  for (let index = 0; index < path.length - 1; index += 1) {
+    const start = path[index];
+    const end = path[index + 1];
+    const startX = (start.lng - position.lng) * cosLat;
+    const startY = start.lat - position.lat;
+    const endX = (end.lng - position.lng) * cosLat;
+    const endY = end.lat - position.lat;
+    const segmentX = endX - startX;
+    const segmentY = endY - startY;
+    const segmentLengthSquared = segmentX * segmentX + segmentY * segmentY;
+    const fraction =
+      segmentLengthSquared === 0
+        ? 0
+        : Math.max(0, Math.min(1, -(startX * segmentX + startY * segmentY) / segmentLengthSquared));
+    const candidate = {
+      lat: start.lat + (end.lat - start.lat) * fraction,
+      lng: start.lng + (end.lng - start.lng) * fraction,
+    };
+    const distanceX = (candidate.lng - position.lng) * cosLat;
+    const distanceY = candidate.lat - position.lat;
+    const distance = distanceX * distanceX + distanceY * distanceY;
+
+    if (distance < nearestDistance) {
+      nearest = candidate;
+      nearestDistance = distance;
+    }
+  }
+
+  return nearest;
+}
+
 // Demo stage only: how close an open jeep must get to the waiting passenger
 // to pick her up, and how long the "picked up" message shows before the
 // screen switches to the riding view.
@@ -85,6 +123,7 @@ function WaitingForJeepPage() {
     return previous?.kind === "walk" ? previous : null;
   }, [isTransferLeg, routeData, activeLeg]);
 
+  const isDemoPassenger = isDemoPassengerFrame();
   const [livePassengerPosition, setLivePassengerPosition] = useState(null);
   useEffect(() => {
     if (!navigator.geolocation) return undefined;
@@ -101,7 +140,12 @@ function WaitingForJeepPage() {
   // A transfer waits at the next route's stop, not where she first searched
   // from (the stage's panes have no real GPS to override it either).
   const passengerPosition = isTransferLeg
-    ? { lat: activeLeg.from.lat, lng: activeLeg.from.lng }
+    ? (isDemoPassenger
+        ? nearestPointOnPath(
+            { lat: activeLeg.from.lat, lng: activeLeg.from.lng },
+            activeLeg.path
+          )
+        : { lat: activeLeg.from.lat, lng: activeLeg.from.lng })
     : (livePassengerPosition ?? searchedOriginPosition);
 
   // Track ALL active jeepneys strictly for this selected route
@@ -184,7 +228,6 @@ function WaitingForJeepPage() {
   // passenger has tapped "I'm here", the first live jeep that still has seats
   // open (not "full") and reaches her bay picks her up automatically. A full
   // jeep drives past, exactly as it would in real life.
-  const isDemoPassenger = isDemoPassengerFrame();
   const [pickedUpBy, setPickedUpBy] = useState(null);
 
   // A loop route can pass the same stop twice (the grey route passes Astro
@@ -228,7 +271,11 @@ function WaitingForJeepPage() {
       if (jeep.capacityState === "full") continue;
       if (haversineDistanceKm(passengerPosition, { lat: jeep.lat, lng: jeep.lng }) > DEMO_PICKUP_RADIUS_KM) continue;
 
-      if (legHeading) {
+      // Transfer legs already place the passenger on the active route's
+      // polyline. Their route-search leg can be oriented differently from
+      // the simulator's circuit direction, so a heading mismatch must not
+      // reject a yellow jeep that is physically arriving at the stop.
+      if (legHeading && !isTransferLeg) {
         if (!previous) continue;
         const moved = { x: (jeep.lng - previous.lng) * cosLat, y: jeep.lat - previous.lat };
         if (moved.x === 0 && moved.y === 0) continue;

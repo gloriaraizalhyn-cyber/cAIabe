@@ -1,36 +1,22 @@
 .demand-stat-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 14px 0 0;
-}
-
-.demand-stat-grid__item {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  margin: 14px 0 0;
   padding: 10px 12px;
-  border-radius: 16px;
+  border-radius: 14px;
   background: #f3f6fd;
 }
 
-.demand-stat-grid__label {
+.demand-stat-grid__summary,
+.demand-stat-grid__trend {
   margin: 0;
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #8a909b;
-}
-
-.demand-stat-grid__value {
-  margin: 0;
-  font-size: 0.98rem;
-  font-weight: 800;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.4;
   color: #0a1f66;
 }
 
-.demand-stat-grid__item--wide {
-  grid-column: 1 / -1;
+.demand-stat-grid__trend {
+  color: #3d4663;
 }
-

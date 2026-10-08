@@ -75,6 +75,7 @@ function DemoStagePage() {
 
   const [beatIndex, setBeatIndex] = useState(0);
   const [isTrafficThrown, setIsTrafficThrown] = useState(false);
+  const [isIdle, setIsIdle] = useState(false);
 
   const beat = DEMO_BEATS[beatIndex];
 
@@ -100,13 +101,22 @@ function DemoStagePage() {
   }, [goNext, goPrev]);
 
   const throwTraffic = useCallback(async () => {
-    await levers.throwTraffic();
-    setIsTrafficThrown(true);
+    if (await levers.throwTraffic()) setIsTrafficThrown(true);
   }, [levers]);
 
   const clearTraffic = useCallback(async () => {
-    await levers.clearTraffic();
-    setIsTrafficThrown(false);
+    if (await levers.clearTraffic()) setIsTrafficThrown(false);
+  }, [levers]);
+
+  const idle = useCallback(async () => {
+    if (await levers.idle()) setIsIdle(true);
+  }, [levers]);
+
+  const resume = useCallback(async () => {
+    if (await levers.resume()) {
+      setIsIdle(false);
+      setIsTrafficThrown(false);
+    }
   }, [levers]);
 
   const waitingPassengers = demand?.waiting_passengers ?? [];
@@ -217,9 +227,10 @@ function DemoStagePage() {
         onSelectBeat={setBeatIndex}
         onPrev={goPrev}
         onNext={goNext}
-        levers={{ ...levers, throwTraffic, clearTraffic }}
+        levers={{ ...levers, throwTraffic, clearTraffic, idle, resume }}
         activity={activity}
         isTrafficThrown={isTrafficThrown}
+        isIdle={isIdle}
       />
     </main>
   );

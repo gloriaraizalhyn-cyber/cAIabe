@@ -409,13 +409,21 @@ async function applyDemoAction(action, target, payload = {}) {
   const needle = String(target ?? "").trim().toLowerCase();
   if (!needle) return 0;
 
-  const matches =
+  let matches =
     needle === "all"
       ? [...activeUnits.entries()]
       : [...activeUnits.entries()].filter(
           ([label, state]) =>
             state.driverId.toLowerCase().includes(needle) || label.toLowerCase().includes(needle)
         );
+
+  // A browser can retain a live driver row after that simulator process has
+  // re-created the mock account. Fall back to the route label carried in the
+  // command so presenter controls still affect the active unit(s).
+  if (!matches.length && payload.route) {
+    const routeNeedle = String(payload.route).trim().toLowerCase();
+    matches = [...activeUnits.entries()].filter(([label]) => label.toLowerCase().includes(routeNeedle));
+  }
 
   if (!matches.length) {
     console.log(`No active unit matches "${target}". Try "list" to see active units.`);
@@ -427,7 +435,11 @@ async function applyDemoAction(action, target, payload = {}) {
     if (action === "slow") {
       state.delayMultiplier = 6;
       state.jumpBackRequested = true;
+      state.idleStartedAt = null;
       console.log(`🐢 [${tag}] simulating heavy traffic — jumped back on its path and slowed down.`);
+    } else if (action === "idle") {
+      state.idleStartedAt ??= Date.now();
+      console.log(`🛑 [${tag}] engine idling at its current roadside position.`);
     } else if (action === "resume") {
       // `multiplier` < 1 fast-forwards (the passenger demo's "demo speed"
       // control sends 1/8 for x8); `capacity` pins the unit's seats open/full
@@ -436,6 +448,7 @@ async function applyDemoAction(action, target, payload = {}) {
       const multiplier = Number(payload.multiplier);
       state.delayMultiplier = multiplier > 0 ? multiplier : 1;
       state.lockCapacity = payload.capacity === "available" || payload.capacity === "full" ? payload.capacity : null;
+      state.idleStartedAt = null;
       console.log(
         state.delayMultiplier === 1 && !state.lockCapacity
           ? `✅ [${tag}] back to normal speed.`
@@ -467,7 +480,7 @@ async function applyDemoAction(action, target, payload = {}) {
 async function setupDemoControls() {
   if (!process.stdin.isTTY) return; // no interactive terminal (e.g. piped/background run) — skip
   console.log('\nDemo controls (type a command + Enter):');
-  console.log('  slow / resume <driver id>   simulate heavy traffic on a driving unit');
+  console.log('  slow / idle / resume <driver id>   simulate traffic or roadside idling');
   console.log('  leave <driver id>           step a queued unit away from the terminal (keeps its slot)');
   console.log('  return <driver id>          bring a queued unit back to the terminal');
   console.log('  lining_up <driver id>       respond "lining up" to that unit\'s turn prompt');
@@ -504,12 +517,12 @@ async function setupDemoControls() {
     }
 
     const parsed = trimmed.match(
-      /^(slow|resume|leave|return|lining_up|skip_temp|skip_done)\s+(.+)$/i
+      /^(slow|idle|resume|leave|return|lining_up|skip_temp|skip_done)\s+(.+)$/i
     );
 
     if (!parsed) {
       console.log(
-        'Unrecognized command. Use "slow/resume/leave/return/lining_up/skip_temp/skip_done <driver id>", or "list".'
+        'Unrecognized command. Use "slow/idle/resume/leave/return/lining_up/skip_temp/skip_done <driver id>", or "list".'
       );
       return;
     }
@@ -803,6 +816,28 @@ async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps
       }
 
       const point = circuit[currentIdx];
+
+      if (demoState.idleStartedAt) {
+        const idleMinutes = (Date.now() - demoState.idleStartedAt) / 60000;
+        await callFunction(
+          "driver-location-update",
+          session.accessToken,
+          { lat: point.lat, lng: point.lng, capacity_state: capacityState },
+          { quiet: true },
+        );
+        await callFunction(
+          "driver-demand-check",
+          session.accessToken,
+          {
+            lat: point.lat,
+            lng: point.lng,
+            roadside_idle_minutes: idleMinutes,
+          },
+          { quiet: true },
+        );
+        await sleep(baseVehicleDelay);
+        continue;
+      }
 
       // Fast-forward (the passenger demo's "demo speed", see applyDemoAction's
       // "resume"): every update waits on a server round trip (~1 s), so

@@ -219,16 +219,41 @@ export function useDemoStage() {
       say("No moving unit on the boarding route yet — is the fleet simulator running?");
       return;
     }
-    if (await enqueue("slow", { target: trafficTarget.id })) {
+    if (await enqueue("slow", { target: trafficTarget.id, route: DEMO_LEAD_ROUTE.name })) {
       say("Heavy traffic on that unit — it just fell back along its route.");
+      return true;
     }
+    return false;
   }, [enqueue, say, trafficTarget]);
 
   const clearTraffic = useCallback(async () => {
-    if (!trafficTarget) return;
-    if (await enqueue("resume", { target: trafficTarget.id })) {
+    if (!trafficTarget) return false;
+    if (await enqueue("resume", { target: trafficTarget.id, route: DEMO_LEAD_ROUTE.name })) {
       say("Traffic cleared — back to normal speed.");
+      return true;
     }
+    return false;
+  }, [enqueue, say, trafficTarget]);
+
+  const idle = useCallback(async () => {
+    if (!trafficTarget) {
+      say("No moving unit on the boarding route yet — is the fleet simulator running?");
+      return false;
+    }
+    if (await enqueue("idle", { target: trafficTarget.id, route: DEMO_LEAD_ROUTE.name })) {
+      say("That unit is idling roadside — fuel waste is being measured.");
+      return true;
+    }
+    return false;
+  }, [enqueue, say, trafficTarget]);
+
+  const resume = useCallback(async () => {
+    if (!trafficTarget) return false;
+    if (await enqueue("resume", { target: trafficTarget.id, route: DEMO_LEAD_ROUTE.name })) {
+      say("That unit is moving again.");
+      return true;
+    }
+    return false;
   }, [enqueue, say, trafficTarget]);
 
   const sendSms = useCallback(
@@ -251,6 +276,6 @@ export function useDemoStage() {
     trafficTarget,
     smsThread,
     activity,
-    levers: { surge, clearDemand, throwTraffic, clearTraffic, sendSms },
+    levers: { surge, clearDemand, throwTraffic, clearTraffic, idle, resume, sendSms },
   };
 }

@@ -3,7 +3,16 @@ import { DEMO_BEATS } from "../constants/demoScript.js";
 // The presenter's whole control surface: the scripted beats on the left so
 // the narrative can't derail, and the live levers on the right so judges can
 // ask us to change something and watch the system genuinely react.
-function PresenterBar({ beatIndex, onSelectBeat, onPrev, onNext, levers, activity, isTrafficThrown }) {
+function PresenterBar({
+  beatIndex,
+  onSelectBeat,
+  onPrev,
+  onNext,
+  levers,
+  activity,
+  isTrafficThrown,
+  isIdle,
+}) {
   const beat = DEMO_BEATS[beatIndex];
 
   return (
@@ -53,6 +62,13 @@ function PresenterBar({ beatIndex, onSelectBeat, onPrev, onNext, levers, activit
           </button>
           <button type="button" className="presenter-bar__lever" onClick={levers.clearDemand}>
             Clear
+          </button>
+          <button
+            type="button"
+            className="presenter-bar__lever"
+            onClick={isIdle ? levers.resume : levers.idle}
+          >
+            {isIdle ? "Resume jeep" : "Idle jeep"}
           </button>
           <button
             type="button"
