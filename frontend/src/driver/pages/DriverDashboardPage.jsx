@@ -20,7 +20,7 @@ import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./DriverDashboardPage.css";
 
 const TERMINAL_ARRIVAL_RADIUS_METERS = 150;
-const LOCATION_UPDATE_MIN_INTERVAL_MS = 5000;
+const LOCATION_UPDATE_MIN_INTERVAL_MS = 10000;
 
 function DriverDashboardPage() {
   const navigate = useNavigate();
@@ -112,7 +112,7 @@ function DriverDashboardPage() {
       .on("broadcast", { event: "driver_departed" }, refreshQueueEntry)
       .subscribe();
 
-    const pollId = setInterval(refreshQueueEntry, 15000);
+    const pollId = setInterval(refreshQueueEntry, 30000);
 
     return () => {
       supabase.removeChannel(channel);

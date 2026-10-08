@@ -12,6 +12,7 @@ import NextToGoPage from "../driver/pages/NextToGoPage.jsx";
 import DriverQueueListPage from "../driver/pages/DriverQueueListPage.jsx";
 import DrivingPage from "../driver/pages/DrivingPage.jsx";
 import LiveTrackerPage from "../demo/pages/LiveTrackerPage.jsx";
+import DemoStagePage from "../demo/pages/DemoStagePage.jsx";
 import AdminLoginPage from "../admin/pages/AdminLoginPage.jsx";
 import AdminDashboardPage from "../admin/pages/AdminDashboardPage.jsx";
 
@@ -39,6 +40,9 @@ function AppRouter() {
       <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
 
       <Route path="/live-tracker" element={<LiveTrackerPage />} />
+      {/* Hackathon demo stage — passenger app, live map, and driver app on
+          one screen. Embeds the routes above in iframes; see DemoStagePage. */}
+      <Route path="/demo/stage" element={<DemoStagePage />} />
     </Routes>
   );
 }

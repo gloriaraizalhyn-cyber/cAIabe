@@ -6,7 +6,10 @@
   z-index: 10;
   width: calc(100% - 32px);
   max-width: 420px;
-  max-height: calc(100vh - 250px);
+  /* Leave room for the bottom NextToGo card (about 300px tall) so the two
+     never overlap, even in the stage's small phone frame. */
+  max-height: calc(100dvh - 64px - 310px);
+  min-height: 140px;
   overflow-y: auto;
   background: #ffffff;
   border-radius: 16px;

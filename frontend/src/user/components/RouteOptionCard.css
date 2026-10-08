@@ -286,6 +286,40 @@
   color: #9a9fa8;
 }
 
+.route-option-card__carbon {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #eef8f1;
+}
+
+.route-option-card__carbon-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #16a34a;
+}
+
+.route-option-card__carbon-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.route-option-card__carbon-headline {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #14532d;
+}
+
+.route-option-card__carbon-subline {
+  font-size: 0.7rem;
+  color: #4d7c5f;
+}
+
 .route-option-card__availability {
   display: flex;
   align-items: center;

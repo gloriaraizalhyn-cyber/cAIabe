@@ -111,6 +111,7 @@ async function checkJeepneyTrafficFuel(origin: LatLng, destination: LatLng) {
   const fuel = estimateFuelCost("jeepney", distanceKm, trafficDelaySeconds);
   const baselineFuel = estimateFuelCost("jeepney", distanceKm, 0);
   const extraCostFromTraffic = round(fuel.cost - baselineFuel.cost);
+  const extraCo2FromTraffic = round(fuel.co2_kg - baselineFuel.co2_kg);
 
   const warning = trafficDelayMin >= TRAFFIC_WARNING_DELAY_MINUTES;
 
@@ -122,9 +123,10 @@ async function checkJeepneyTrafficFuel(origin: LatLng, destination: LatLng) {
     traffic_delay_min: round(trafficDelayMin),
     fuel,
     extra_fuel_cost_from_traffic: extraCostFromTraffic,
+    extra_co2_kg_from_traffic: extraCo2FromTraffic,
     warning,
     message: warning
-      ? `Heavy traffic ahead on your route — about ${round(trafficDelayMin)} extra minutes, ~₱${extraCostFromTraffic} in extra fuel today.`
+      ? `Heavy traffic ahead on your route — about ${round(trafficDelayMin)} extra minutes, ~₱${extraCostFromTraffic} in extra fuel (~${extraCo2FromTraffic} kg CO₂) today.`
       : "Traffic on your route looks normal.",
   };
 }

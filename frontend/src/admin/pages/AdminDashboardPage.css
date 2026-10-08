@@ -851,3 +851,7 @@
 .admin-driver-table__icon-button--delete:hover:not(:disabled) {
   background: #f6d8d8;
 }
+
+.admin-dashboard-page__impact {
+  margin-bottom: 20px;
+}

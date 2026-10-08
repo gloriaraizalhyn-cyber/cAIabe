@@ -46,6 +46,15 @@ function RoadsideIdleCard({ roadsideIdle, liveMinutes }) {
           </span>
         </div>
       )}
+
+      {fuel && fuel.max_co2_kg !== undefined && (
+        <div className="roadside-idle-card__fuel roadside-idle-card__fuel--co2">
+          <span className="roadside-idle-card__fuel-label">Estimated CO₂ released</span>
+          <span className="roadside-idle-card__fuel-value roadside-idle-card__co2-value">
+            {fuel.min_co2_kg}–{fuel.max_co2_kg} kg
+          </span>
+        </div>
+      )}
     </section>
   );
 }

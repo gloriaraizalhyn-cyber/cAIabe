@@ -47,7 +47,7 @@ function DriverQueueListPage() {
       .on("broadcast", { event: "driver_departed" }, refreshQueue)
       .subscribe();
 
-    const pollId = setInterval(refreshQueue, 15000);
+    const pollId = setInterval(refreshQueue, 30000);
 
     return () => {
       supabase.removeChannel(channel);

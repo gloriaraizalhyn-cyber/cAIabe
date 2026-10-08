@@ -28,7 +28,7 @@
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getAuthedDriverId, getServiceClient } from "../_shared/client.ts";
-import { estimateIdleFuelRange, type FuelRangeEstimate } from "../_shared/fuel.ts";
+import { estimateIdleFuelMidpoint, estimateIdleFuelRange, type FuelRangeEstimate } from "../_shared/fuel.ts";
 
 const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY"); // optional
 
@@ -216,6 +216,9 @@ Deno.serve(async (req: Request) => {
       idleStatus === "idling" || idleStatus === "prolonged"
         ? estimateIdleFuelRange("jeepney", roadsideIdleMinutes ?? 0)
         : null;
+    if (idleFuel) {
+      await logRoadsideIdleEpisode(supabase, driverId, driver.route_id, roadsideIdleMinutes ?? 0);
+    }
 
     const reasons = buildGoWaitReasons({
       compatiblePassengerCount,
@@ -676,6 +679,57 @@ function buildFallbackCopy(input: {
   };
 }
 
+// ---------- carbon impact log (see add_carbon_impact.sql) ----------
+// One row per idling episode, kept current as the episode grows: the
+// client resends roadside_idle_minutes every poll, so the episode's start
+// time (now - minutes) is stable to within a few seconds of jitter, and a
+// row whose start falls within EPISODE_MATCH_TOLERANCE_MS of it is the
+// same episode. Best-effort — a failed write must never break the demand
+// check the driver is actually waiting on.
+const EPISODE_MATCH_TOLERANCE_MS = 90_000;
+
+async function logRoadsideIdleEpisode(
+  supabase: ReturnType<typeof getServiceClient>,
+  driverId: string,
+  routeId: string,
+  minutes: number,
+) {
+  try {
+    const startedAt = new Date(Date.now() - minutes * 60000);
+    const fuel = estimateIdleFuelMidpoint("jeepney", minutes);
+    const values = {
+      minutes: round(minutes),
+      liters: fuel.liters,
+      co2_kg: fuel.co2_kg,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: existing } = await supabase
+      .from("carbon_impact_events")
+      .select("id")
+      .eq("kind", "roadside_idle")
+      .eq("driver_id", driverId)
+      .gte("episode_started_at", new Date(startedAt.getTime() - EPISODE_MATCH_TOLERANCE_MS).toISOString())
+      .lte("episode_started_at", new Date(startedAt.getTime() + EPISODE_MATCH_TOLERANCE_MS).toISOString())
+      .order("episode_started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { error } = existing
+      ? await supabase.from("carbon_impact_events").update(values).eq("id", existing.id)
+      : await supabase.from("carbon_impact_events").insert({
+        ...values,
+        kind: "roadside_idle",
+        driver_id: driverId,
+        route_id: routeId,
+        episode_started_at: startedAt.toISOString(),
+      });
+    if (error) console.error("carbon impact log failed:", error.message);
+  } catch (err) {
+    console.error("carbon impact log failed:", err);
+  }
+}
+
 // ---------- roadside-idle reasons/copy ----------
 // Mirrors buildOperatingReasons/buildFallbackCopy's style exactly: plain
 // deterministic bullets built from real facts, with an optional Gemini pass
@@ -697,7 +751,7 @@ function buildRoadsideIdleReasons(input: {
   reasons.push(`Passenger demand nearby: ${demandLevel.toUpperCase()}`);
 
   if (idleFuel) {
-    reasons.push(`Estimated fuel used while idling: ${idleFuel.min_liters}-${idleFuel.max_liters} L (₱${idleFuel.min_cost}-₱${idleFuel.max_cost})`);
+    reasons.push(`Estimated fuel used while idling: ${idleFuel.min_liters}-${idleFuel.max_liters} L (₱${idleFuel.min_cost}-₱${idleFuel.max_cost}, ${idleFuel.min_co2_kg}-${idleFuel.max_co2_kg} kg CO₂)`);
   }
 
   // Farther-cluster redirect only matters when nearby demand is weak —
@@ -731,7 +785,7 @@ function buildRoadsideIdleFallbackCopy(input: {
   }
 
   const fuelLine = idleFuel
-    ? `Estimated fuel used: ${idleFuel.min_liters}-${idleFuel.max_liters} L (₱${idleFuel.min_cost}-₱${idleFuel.max_cost}).`
+    ? `Estimated fuel used: ${idleFuel.min_liters}-${idleFuel.max_liters} L (₱${idleFuel.min_cost}-₱${idleFuel.max_cost}, ${idleFuel.min_co2_kg}-${idleFuel.max_co2_kg} kg CO₂).`
     : "";
   const statusLabel = idleStatus === "prolonged" ? "PROLONGED IDLING" : "POTENTIAL IDLING";
 
@@ -799,6 +853,9 @@ async function getPhrasedCopy(input: {
     facts.roadside_idle_estimated_fuel_cost_php = input.roadsideIdle.fuel
       ? `${input.roadsideIdle.fuel.min_cost}-${input.roadsideIdle.fuel.max_cost}`
       : null;
+    facts.roadside_idle_estimated_co2_kg = input.roadsideIdle.fuel
+      ? `${input.roadsideIdle.fuel.min_co2_kg}-${input.roadsideIdle.fuel.max_co2_kg}`
+      : null;
     facts.roadside_idle_farther_strong_cluster_km = input.roadsideIdle.fartherStrongClusterKm;
   }
 
@@ -835,9 +892,9 @@ async function getPhrasedCopy(input: {
                   ? "roadside_idle_headline/body explain the roadside-idling situation described by the " +
                     "roadside_idle_* facts (the driver is stopped outside the terminal, not queueing) — if " +
                     "demand there is low, gently suggest continuing along the route instead of idling and " +
-                    "mention the estimated fuel cost; if demand is moderate/high, be reassuring, not alarming, " +
+                    "mention the estimated fuel cost and CO2; if demand is moderate/high, be reassuring, not alarming, " +
                     "and note waiting briefly may be reasonable. Never claim to detect the engine directly — " +
-                    "the fuel figure is always an estimate. "
+                    "the fuel and CO2 figures are always estimates. "
                   : "") +
                 "Headlines <= 60 characters, bodies <= 140 characters, plain text, no markdown, no exclamation points.",
             }],

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MapView from "../../shared/components/MapView.jsx";
 import WalkToBayCard from "../components/WalkToBayCard.jsx";
@@ -7,6 +7,9 @@ import { useLiveDriverPositions } from "../../shared/hooks/useLiveDriverPosition
 import { useMovementDetector } from "../../shared/hooks/useMovementDetector.js";
 import { getRouteColorMeta } from "../../shared/utils/routeColorHelpers.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
+import { isDemoPassengerFrame } from "../../demo/demoTripParams.js";
+import { getDemoSpeed, sendFleetSpeed, setDemoSpeed } from "../../demo/lib/demoFleetCommands.js";
+import DemoSpeedChip from "../components/DemoSpeedChip.jsx";
 import "./WaitingForJeepPage.css";
 
 function haversineDistanceKm(p1, p2) {
@@ -21,6 +24,14 @@ function haversineDistanceKm(p1, p2) {
       Math.sin(dLng / 2);
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
+
+// Demo stage only: how close an open jeep must get to the waiting passenger
+// to pick her up, and how long the "picked up" message shows before the
+// screen switches to the riding view.
+const DEMO_PICKUP_RADIUS_KM = 0.1;
+const DEMO_PICKUP_NOTICE_MS = 2500;
+// Transfer: how long the "walk to the next stop" step shows before she starts waiting there.
+const DEMO_TRANSFER_WALK_MS = 4500;
 
 function WaitingForJeepPage() {
   const location = useLocation();
@@ -56,6 +67,24 @@ function WaitingForJeepPage() {
     }
   }, [realRouteId, routeData]);
 
+  // Multi-leg trips (demo stage): which jeep leg of the itinerary this screen
+  // is for. 0 is the first jeep she boards; 1+ are transfers, where she walks
+  // to the next route's stop instead of waiting where she searched from.
+  const legIndex = location.state?.legIndex ?? 0;
+  const jeepLegs = useMemo(
+    () => (routeData?.itinerary ?? []).filter((leg) => leg.kind === "jeep"),
+    [routeData]
+  );
+  const activeLeg = jeepLegs[legIndex] ?? null;
+  const isTransferLeg = legIndex > 0 && Boolean(activeLeg);
+  const transferWalk = useMemo(() => {
+    if (!isTransferLeg) return null;
+    const itinerary = routeData?.itinerary ?? [];
+    const legPosition = itinerary.indexOf(activeLeg);
+    const previous = itinerary[legPosition - 1];
+    return previous?.kind === "walk" ? previous : null;
+  }, [isTransferLeg, routeData, activeLeg]);
+
   const [livePassengerPosition, setLivePassengerPosition] = useState(null);
   useEffect(() => {
     if (!navigator.geolocation) return undefined;
@@ -69,7 +98,11 @@ function WaitingForJeepPage() {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  const passengerPosition = livePassengerPosition ?? searchedOriginPosition;
+  // A transfer waits at the next route's stop, not where she first searched
+  // from (the stage's panes have no real GPS to override it either).
+  const passengerPosition = isTransferLeg
+    ? { lat: activeLeg.from.lat, lng: activeLeg.from.lng }
+    : (livePassengerPosition ?? searchedOriginPosition);
 
   // Track ALL active jeepneys strictly for this selected route
   const { jeepneys, isConnected } = useLiveDriverPositions(realRouteId);
@@ -119,7 +152,7 @@ function WaitingForJeepPage() {
     };
 
     fetchEta();
-    const intervalId = setInterval(fetchEta, 15000);
+    const intervalId = setInterval(fetchEta, 30000);
     return () => {
       cancelled = true;
       clearInterval(intervalId);
@@ -140,6 +173,87 @@ function WaitingForJeepPage() {
       .subscribe();
     return () => supabase.removeChannel(channel);
   }, [realRouteId]);
+
+  // Demo stage only. The stage's panes have geolocation blocked, so the
+  // GPS-speed boarding detection below can never fire there. Instead, once the
+  // passenger has tapped "I'm here", the first live jeep that still has seats
+  // open (not "full") and reaches her bay picks her up automatically. A full
+  // jeep drives past, exactly as it would in real life.
+  const isDemoPassenger = isDemoPassengerFrame();
+  const [pickedUpBy, setPickedUpBy] = useState(null);
+
+  // A loop route can pass the same stop twice (the grey route passes Astro
+  // Park once heading toward the transfer, and again near the end of its
+  // lap, where the jeep finishes its route at the terminal before ever
+  // reaching her destination). Only a jeep heading the way the planned ride
+  // goes can pick her up, so each jeep's heading is compared with the first
+  // stretch of the leg's own path. Needs a previous position, so a jeep is
+  // judged from its second update onward.
+  const lastJeepPositionsRef = useRef({});
+
+  useEffect(() => {
+    if (!isDemoPassenger || waitingPhase !== "waiting_for_jeep" || pickedUpBy || !passengerPosition) return;
+
+    const legPath = activeLeg?.path ?? [];
+    const cosLat = Math.cos((passengerPosition.lat * Math.PI) / 180);
+    const legStart = legPath[0];
+    const legAhead = legPath[Math.min(8, legPath.length - 1)];
+    const legHeading =
+      legStart && legAhead
+        ? { x: (legAhead.lng - legStart.lng) * cosLat, y: legAhead.lat - legStart.lat }
+        : null;
+
+    let arriving = null;
+    for (const jeep of jeepneys) {
+      // This effect re-runs on every render, so only shift a jeep's stored
+      // position when it has actually moved; otherwise "previous" would
+      // always equal "current" and no heading could ever be read.
+      const tracked = lastJeepPositionsRef.current[jeep.id];
+      if (!tracked) {
+        lastJeepPositionsRef.current[jeep.id] = { lat: jeep.lat, lng: jeep.lng, previous: null };
+      } else if (tracked.lat !== jeep.lat || tracked.lng !== jeep.lng) {
+        lastJeepPositionsRef.current[jeep.id] = {
+          lat: jeep.lat,
+          lng: jeep.lng,
+          previous: { lat: tracked.lat, lng: tracked.lng },
+        };
+      }
+      const previous = lastJeepPositionsRef.current[jeep.id].previous;
+
+      if (jeep.capacityState === "full") continue;
+      if (haversineDistanceKm(passengerPosition, { lat: jeep.lat, lng: jeep.lng }) > DEMO_PICKUP_RADIUS_KM) continue;
+
+      if (legHeading) {
+        if (!previous) continue;
+        const moved = { x: (jeep.lng - previous.lng) * cosLat, y: jeep.lat - previous.lat };
+        if (moved.x === 0 && moved.y === 0) continue;
+        const goesTheRightWay = moved.x * legHeading.x + moved.y * legHeading.y > 0;
+        if (!goesTheRightWay) continue;
+      }
+      arriving = jeep;
+      break;
+    }
+    if (arriving) setPickedUpBy(arriving.id);
+  }, [isDemoPassenger, waitingPhase, pickedUpBy, passengerPosition, jeepneys, activeLeg]);
+
+  useEffect(() => {
+    if (!pickedUpBy) return undefined;
+    const timer = setTimeout(async () => {
+      await clearWaitingState();
+      navigate("/on-route", {
+        state: {
+          routeId: realRouteId,
+          route: routeData,
+          passengerType,
+          tripSearch: location.state?.tripSearch,
+          pickedUpBy,
+          legIndex,
+        },
+      });
+    }, DEMO_PICKUP_NOTICE_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickedUpBy]);
 
   const clearWaitingState = async () => {
     if (!waitingIdRef.current) return;
@@ -183,12 +297,42 @@ function WaitingForJeepPage() {
         lat: passengerPosition.lat,
         lng: passengerPosition.lng,
         discount_type: passengerType,
+        // Feeds the carbon impact panel's "rider trips" count — distance
+        // only, never location. Absent for fixture routes (no carbon).
+        // A transfer leg sends none: the trip is already counted once, at the
+        // first boarding.
+        ride_distance_km: isTransferLeg ? undefined : passedRoute?.carbon?.ride_distance_km,
       },
     });
     if (!error && data?.waiting_id) {
       waitingIdRef.current = data.waiting_id;
     }
   };
+
+  // ---- demo stage: transfer walk + fast-forward ----
+  const [demoSpeed, setDemoSpeedState] = useState(getDemoSpeed);
+  const handleDemoSpeedChange = (speed) => {
+    setDemoSpeed(speed);
+    setDemoSpeedState(speed);
+  };
+
+  // After getting off the first jeep she walks to the next route's stop;
+  // the walk is shown for a few seconds, then she starts waiting there
+  // exactly as if she had tapped "I'm here".
+  useEffect(() => {
+    if (!isDemoPassenger || !isTransferLeg || waitingPhase !== "walking_to_bay") return undefined;
+    const timer = setTimeout(handleArrivedAtBay, DEMO_TRANSFER_WALK_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemoPassenger, isTransferLeg, waitingPhase]);
+
+  // While she waits, fast-forward the route's jeeps toward her and keep their
+  // seats open, so the unit that reaches her can actually pick her up. The
+  // speed is reset when she boards (see DemoOnRoute).
+  useEffect(() => {
+    if (!isDemoPassenger || waitingPhase !== "waiting_for_jeep" || pickedUpBy) return;
+    sendFleetSpeed(activeLeg?.route_name, demoSpeed, { openSeats: true });
+  }, [isDemoPassenger, waitingPhase, pickedUpBy, activeLeg?.route_name, demoSpeed]);
 
   const handleSeeOtherOptions = async () => {
     await clearWaitingState();
@@ -201,10 +345,12 @@ function WaitingForJeepPage() {
 
   // Authoritative Route Metadata & Seed Colors
   const routeMeta = getRouteColorMeta(
-    routeData?.accentColor || routeData?.color,
-    routeData?.title || routeData?.name
+    isTransferLeg ? activeLeg.color : routeData?.accentColor || routeData?.color,
+    isTransferLeg ? activeLeg.route_name : routeData?.title || routeData?.name
   );
-  const routeName = routeData?.title || routeData?.name || `${routeMeta.name} Line`;
+  const routeName = isTransferLeg
+    ? activeLeg.route_name
+    : routeData?.title || routeData?.name || `${routeMeta.name} Line`;
   const jeepColorName = routeMeta.name;
 
   // Origin (A) and Destination (B) Markers
@@ -219,7 +365,7 @@ function WaitingForJeepPage() {
     routeData?.mapSegments?.[0]?.points?.slice(-1)[0] ??
     null;
 
-  const originLabel = location.state?.tripSearch?.origin || "Current Location";
+  const originLabel = isTransferLeg ? "Transfer stop" : location.state?.tripSearch?.origin || "Current Location";
   const destinationLabel = location.state?.tripSearch?.destination || "Destination Point";
 
   // AI Estimated Travel & Arrival Time
@@ -358,6 +504,31 @@ function WaitingForJeepPage() {
           </div>
         )}
       </div>
+
+      {isDemoPassenger && isTransferLeg && waitingPhase === "walking_to_bay" && !pickedUpBy && (
+        <div className="waiting-for-jeep-page__pickup-banner waiting-for-jeep-page__pickup-banner--transfer" role="status">
+          <span aria-hidden="true">🚶</span>
+          <div>
+            <strong>Transfer — walk to the {jeepColorName} jeep stop</strong>
+            <span>
+              {transferWalk ? `About ${Math.round(transferWalk.distance_m)} m (${Math.round(transferWalk.duration_min)} min). ` : ""}
+              Then wait for the next {jeepColorName} jeep.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {isDemoPassenger && <DemoSpeedChip speed={demoSpeed} onChange={handleDemoSpeedChange} />}
+
+      {pickedUpBy && (
+        <div className="waiting-for-jeep-page__pickup-banner" role="status">
+          <span aria-hidden="true">🚐</span>
+          <div>
+            <strong>Picked up — you're on the {jeepColorName} jeep</strong>
+            <span>The driver has you on board. Starting your ride…</span>
+          </div>
+        </div>
+      )}
 
       {realRouteId && jeepneys.length === 0 && (
         <p className="waiting-for-jeep-page__live-status">

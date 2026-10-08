@@ -27,6 +27,7 @@ import LogOutConfirmModal from "../components/LogOutConfirmModal.jsx";
 import DriverAttachments from "../components/DriverAttachments.jsx";
 import JeepColorCell from "../components/JeepColorCell.jsx";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
+import CarbonImpactPanel from "../../shared/components/CarbonImpactPanel.jsx";
 import "./AdminDashboardPage.css";
 
 const STATUS_TABS = [
@@ -765,6 +766,10 @@ function AdminDashboardPage() {
         </nav>
 
         <div className="admin-dashboard-page__content">
+          <div className="admin-dashboard-page__impact">
+            <CarbonImpactPanel />
+          </div>
+
           <h1 className="admin-dashboard-page__title">
             {isSearching ? "Search Results" : `${activeTabLabel} Applications`}
           </h1>

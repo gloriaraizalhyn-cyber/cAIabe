@@ -16,6 +16,7 @@
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
+import { estimateTripCarbon } from "../_shared/fuel.ts";
 
 const GOOGLE_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY")!;
 const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY"); // optional
@@ -481,6 +482,9 @@ async function buildResult(
     traffic_multiplier: round(avgTrafficMultiplier),
     discount_type: discountType,
     discount_rate: discountRate,
+    // Per-rider jeepney CO2 vs driving the same ride distance alone —
+    // estimated, see estimateTripCarbon's assumptions.
+    carbon: estimateTripCarbon(rideDistancesKm.reduce((sum, km) => sum + km, 0)),
     legs,
   };
 }

@@ -37,9 +37,10 @@ export const PLACE_SUGGESTIONS_FIXTURE = [
   { id: "land-3", label: "JENRA Grand Mall", subtitle: "Sto. Rosario St, Angeles City", category: "landmark", lat: 15.1453, lng: 120.5931 },
   { id: "land-4", label: "Nepo Mall", subtitle: "Nepo Quad, Angeles City", category: "landmark", lat: 15.1352, lng: 120.5880 },
   { id: "land-5", label: "Marquee Mall", subtitle: "Pulung Maragul, Angeles City", category: "landmark", lat: 15.1620, lng: 120.6082 },
-  { id: "land-6", label: "SM City Telabastagan", subtitle: "MacArthur Hwy, Telabastagan", category: "landmark", lat: 15.1227, lng: 120.5996 },
+  { id: "land-6", label: "SM City Telabastagan", subtitle: "MacArthur Hwy, Telabastagan", category: "landmark", lat: 15.120246, lng: 120.6018769 },
   { id: "land-7", label: "Bayanihan Park (Astro Park)", subtitle: "Balibago, Angeles City", category: "landmark", lat: 15.1695, lng: 120.5880 },
   { id: "land-8", label: "Balibago (Fields Ave)", subtitle: "Balibago, Angeles City", category: "landmark", lat: 15.1685, lng: 120.5895 },
+  { id: "land-9", label: "SM City Clark", subtitle: "M.A. Roxas Hwy, Malabanias, Angeles City", category: "landmark", lat: 15.16845, lng: 120.58018 },
 
   // Route Stops & Neighborhoods
   { id: "stop-1", label: "Pampang Public Market", subtitle: "Pampang, Angeles City", category: "stop", lat: 15.1418, lng: 120.5879 },

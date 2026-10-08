@@ -8,9 +8,10 @@ import { useDriverDemand } from "../hooks/useDriverDemand.js";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
+import { isDemoDriverFrame } from "../../demo/demoTripParams.js";
 import "./NextToGoPage.css";
 
-const LOCATION_UPDATE_MIN_INTERVAL_MS = 5000;
+const LOCATION_UPDATE_MIN_INTERVAL_MS = 10000;
 
 function NextToGoPage() {
   const navigate = useNavigate();
@@ -61,6 +62,16 @@ function NextToGoPage() {
     supabase.functions.invoke("driver-location-update", { body: driver.terminal.position });
   };
 
+  // The stage's driver panes have geolocation blocked, so there would be no
+  // position (and no AI card) until someone tapped "Use terminal location" in
+  // each one. Park them at their terminal on their own instead.
+  const demoTerminalPosition = driver?.terminal?.position;
+  useEffect(() => {
+    if (!isDemoDriverFrame() || !demoTerminalPosition || isUsingDemoPosition) return;
+    handleUseTerminalLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoTerminalPosition, isUsingDemoPosition]);
+
   const refreshQueueEntry = useCallback(async () => {
     if (!driver?.route?.id || !session?.user?.id) return;
     const entry = await fetchOwnQueueEntry(driver.route.id, session.user.id);
@@ -84,7 +95,8 @@ function NextToGoPage() {
   // moment our own status flips, move straight to the driving screen.
   useEffect(() => {
     if (ownQueueEntry?.status === "driving") {
-      navigate("/driver/driving");
+      // Keep the query string so the stage's driver iframe stays in demo mode.
+      navigate({ pathname: "/driver/driving", search: window.location.search });
     }
   }, [ownQueueEntry?.status, navigate]);
 
@@ -117,7 +129,7 @@ function NextToGoPage() {
       .on("broadcast", { event: "driver_departed" }, refreshQueueEntry)
       .subscribe();
 
-    const pollId = setInterval(refreshQueueEntry, 15000);
+    const pollId = setInterval(refreshQueueEntry, 30000);
 
     return () => {
       supabase.removeChannel(channel);
@@ -136,13 +148,35 @@ function NextToGoPage() {
     await supabase.functions.invoke("driver-notify-wait", { body: {} });
   };
 
-  // Testing/demo bypass — invokes queue-advance directly (the exact same
-  // function the cron calls) instead of waiting for its next tick, so
-  // next_to_go -> driving promotion happens immediately. The existing
-  // "status === driving" effect above handles navigating away once
-  // refreshQueueEntry picks up the change.
+  // Testing/demo bypass — makes this driver dispatch-ready, then invokes
+  // queue-advance directly (the exact same function the cron calls) so
+  // next_to_go -> driving promotion happens immediately instead of waiting on
+  // its next tick. The existing "status === driving" effect above handles
+  // navigating away once refreshQueueEntry picks up the change.
+  //
+  // "Dispatch-ready" matters because queue-advance only promotes a
+  // next_to_go entry whose geofence_status is "inside": this joins the queue
+  // if the driver has no entry yet (the stage's driver pane lands here
+  // directly, never via the dashboard), then marks the driver's own entry
+  // next_to_go + inside — the same state a real driver reaches by lining up
+  // at the terminal. Drivers may update their own queue entry (RLS).
   const handleSkipToDriving = async () => {
     setIsSkippingToDriving(true);
+    if (driver?.terminal?.id && session?.user?.id) {
+      await supabase.functions.invoke("driver-queue-join", { body: { terminal_id: driver.terminal.id } });
+      const now = new Date().toISOString();
+      await supabase
+        .from("queue_entries")
+        .update({
+          status: "next_to_go",
+          geofence_status: "inside",
+          last_inside_at: now,
+          notified_at: now,
+          responded_at: now,
+        })
+        .eq("driver_id", session.user.id)
+        .in("status", ["waiting", "next_to_go"]);
+    }
     await supabase.functions.invoke("queue-advance", { body: {} });
     await refreshQueueEntry();
     setIsSkippingToDriving(false);
