@@ -96,7 +96,8 @@ cAIabe/
 ├── mock-fleet-simulator.js       drives several looping jeepneys per route
 ├── mock-passenger-simulator.js   places waiting-passenger clusters (live "surge"/"clear")
 ├── mock-driver-simulator.js      single scripted driver
-└── demo-prep.js                  one-shot setup for the demo stage
+├── demo-prep.js                  one-shot setup for the demo stage
+└── fuel-factors.js               reads fuel studies with Gemini into reviewed, sourced figures
 ```
 
 ### Edge Functions
@@ -147,7 +148,7 @@ In the Supabase SQL Editor, run the files in [`supabase/sql/`](supabase/sql) in 
 | 8 | `add_sms_log.sql`, `add_sms_sessions.sql`, then `add_demo_control.sql` |
 | 9 | `add_vehicle_type.sql`, `add_discount_type.sql`, `add_driver_license_permit_numbers.sql`, `add_driver_document_photos.sql`, `add_driver_rejection_reason.sql` |
 | 10 | `add_admins.sql`, `add_admin_driver_delete_policy.sql` |
-| 11 | `add_performance_indexes.sql`, `storage_setup.sql`, `add_carbon_impact.sql` |
+| 11 | `add_performance_indexes.sql`, `storage_setup.sql`, `add_fuel_factors.sql`, `add_carbon_impact.sql`, then `add_driver_fuel_impact.sql` |
 | 12 | `queue_advance_cron.sql`, **after** step 2 below. First change the project URL and anon key inside it to your own. |
 | 13 | `add_cron_history_cleanup.sql`: nightly cleanup of pg_cron's run history, which otherwise grows until it fills the free plan's database space |
 
@@ -244,21 +245,69 @@ That way the panel shows real numbers.
 
 Every figure is an **estimate**, and the UI labels it that way. All of it comes from one module, [`supabase/functions/_shared/fuel.ts`](supabase/functions/_shared/fuel.ts).
 
-| Input | Value | Basis |
-|---|---|---|
-| Diesel → CO₂ | 2.68 kg/L | IPCC 2006 default emission factor |
-| Gasoline → CO₂ | 2.31 kg/L | IPCC 2006 default emission factor |
-| Jeepney idle burn | 1.2–1.8 L/hr | Published range for idling jeepney engines |
-| Diesel price | ₱85/L | Placeholder; update before relying on it |
-| Jeepney mileage | 4 km/L | Assumption for the pitch |
-| Average jeepney load | 12 riders | Assumption |
-| Comparison car | 10 km/L, gasoline, one occupant | Assumption |
+Each figure except CO₂ comes from approved sources in the `fuel_factors` table when there are any (see [Sourcing fuel figures](#sourcing-fuel-figures)). Otherwise it uses the built-in default. Run `fuel-factors.js summary` to see what the app is using right now.
+
+**In use as of 8 Oct 2026:**
+
+| Input | In use | Default | Source |
+|---|---|---|---|
+| Diesel → CO₂ | 2.68 kg/L | 2.68 kg/L | [IPCC 2006 Guidelines, Vol. 2 Ch. 3](https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/2_Volume2/V2_3_Ch3_Mobile_Combustion.pdf) (fixed; combustion chemistry) |
+| Gasoline → CO₂ | 2.31 kg/L | 2.31 kg/L | IPCC 2006 (fixed) |
+| Diesel price | **₱92.77/L** | ₱85/L | DOE North Luzon report, 29 Sep – 5 Oct 2026, Angeles City: ₱89.33–₱96.20 (midpoint) |
+| Gasoline (RON 91) price | **₱85.32/L** | ₱65/L | Same DOE report: ₱82.24–₱88.40 (midpoint) |
+| Jeepney mileage | **5.86 km/L** | 4 km/L | Median of 3 on-road measurements, 5.53–6.7 km/L ([EASTS LPG benchmark](https://easts.info/on-line/proceedings/vol10/pdf/1325.pdf); [CME-diesel blend study](https://www.jstage.jst.go.jp/article/easts/11/0/11_44/_pdf)) |
+| Tricycle mileage | **27.59 km/L** | 30 km/L | 2-stroke 23.4 and 4-stroke 31.77 km/L ([ASEAN Engineering Journal, Tuguegarao](https://journals.utm.my/aej/article/download/20477/8419/80794)) |
+| Jeepney idle burn | 1.2–1.8 L/hr | 1.2–1.8 L/hr | **No source yet.** No jeepney-specific study found; a tank-refill test is the best option |
+| Average jeepney load | 12 riders | 12 riders | **Default kept on purpose.** Baguio's measured 17.32 is pending; its jeepneys run unusually full (82%) |
+| Comparison car | 10 km/L | 10 km/L | **No source yet.** Gasoline car, one occupant |
+
+Prices change every week. Update them from the newest DOE report (see below).
 
 What the **Carbon Impact panel** counts ([`add_carbon_impact.sql`](supabase/sql/add_carbon_impact.sql)):
-- **CO₂ avoided** = riders' savings compared with driving alone, **plus** engine-off queue time at terminals. The queue part assumes engines are switched off while queued.
+- **CO₂ avoided** = engine-off queue time at terminals. It assumes engines are switched off while queued. **Riders are not counted**: the app can't know how many people actually chose to ride, so the panel shows no rider tile and none of its numbers depend on one. (The backend still logs `rider_trip` events; nothing reads them into this panel.)
 - **Idling caught** = roadside idle burn that Sak.AI flagged. This fuel was already wasted, so it is reported separately and **never** added to "avoided".
 
-Quick conversion for the pitch: at ₱85/L, **₱100 of diesel saved ≈ 1.2 L ≈ 3.2 kg CO₂ not emitted.**
+The panel above is fleet-wide (admin dashboard and the demo stage map). Each driver sees their **own** version on their phone: **Your impact today** on the queue screen and while driving (CO₂ avoided, engine-off queue time, idling caught), and the fuller "Your Fuel & CO₂" card on their dashboard. These come from `get_driver_impact_summary` and are the driver's own figures only.
+
+Quick conversion for the pitch: at ₱92.77/L, **₱100 of diesel saved ≈ 1.08 L ≈ 2.9 kg CO₂ not emitted.**
+
+### Sourcing fuel figures
+
+[`fuel-factors.js`](fuel-factors.js) sends a study or DOE price report (PDF) to Gemini, which returns each matching figure along with the exact sentence it came from. The script rejects figures whose number isn't in that quote or that fall outside a plausible range, and saves the rest to `fuel_factors` as **pending**. Nothing is used until a person finds the quote in the document and approves it.
+
+```bash
+node --env-file=supabase/.env fuel-factors.js extract <pdf path or URL> --dry-run   # see what Gemini finds, saves nothing
+node --env-file=supabase/.env fuel-factors.js extract <pdf path or URL>             # save findings as pending
+node --env-file=supabase/.env fuel-factors.js list                                  # review: value, page, quote
+node --env-file=supabase/.env fuel-factors.js approve <id> ...                      # or: reject <id> --notes="why"
+node --env-file=supabase/.env fuel-factors.js summary                               # what the app is using now
+```
+
+- **How approved figures are used:** for each factor, the app takes the median of all approved sources. For the idle range, it uses the lowest and highest. Prices only use the newest `--date`, so approving this week's DOE report replaces last week's.
+- **Where they take effect:** edge functions pick up approvals within 10 minutes. The SQL impact summaries pick them up immediately. Any factor without an approved source keeps its default.
+- **Your own measurements:** for example, a tank-refill idle test. Add them with `add --key=jeepney.idle_liters_per_hour --value=1.4 --title="..." --quote="..."`.
+- **When reviewing:** reject lab constant-speed mileage tests, seating capacity mistaken for riders, and prices for cities other than Angeles. Approve **one** figure per study and condition (its overall average, not every row of its table), so no single study outweighs the rest in the median.
+- **Model:** extraction uses `gemini-3.5-flash`. `gemini-3.5-flash-lite` missed figures stated plainly in the text. To try another model, set `GEMINI_EXTRACT_MODEL`.
+
+**Weekly price update** (run from the `cAIabe` folder):
+
+1. On the [DOE North Luzon page](https://doe.gov.ph/data-and-prices/liquid-fuels/retail-pump-prices/north-luzon-pump-prices), right-click the newest week and copy the link address. A report is posted after its week ends.
+2. Extract the prices:
+   ```bash
+   node --env-file=supabase/.env fuel-factors.js extract "<pdf link>" --date=<first day of that week, e.g. 2026-10-06>
+   ```
+3. Run `list`. In the PDF, find the Angeles City rows in the Central Luzon (Region III) table. If diesel and RON 91 match, `approve` those IDs.
+4. Run `summary` to confirm the new prices. The older week stops being used automatically.
+
+Re-running `extract` on a report that's already loaded is harmless: rows already on file are skipped.
+
+Documents already processed (re-running them is harmless):
+- [EASTS LPG jeepney benchmark](https://easts.info/on-line/proceedings/vol10/pdf/1325.pdf): jeepney mileage
+- [CME-diesel blend study, EASTS Vol. 11](https://www.jstage.jst.go.jp/article/easts/11/0/11_44/_pdf): jeepney mileage; per-jeepney occupancy is pending
+- [NCTS Baguio jeepney study](https://ncts.upd.edu.ph/tssp/wp-content/uploads/2017/07/TSSP2017-06-Ranosa-Fillone-and-De-Guzman.pdf): average riders, pending
+- [ASEAN Engineering Journal tricycle study](https://journals.utm.my/aej/article/download/20477/8419/80794): tricycle mileage
+- [Philippine Transportation Journal 2023](https://ncts.upd.edu.ph/tssp/wp-content/uploads/2023/07/TSSP2023_Vol6-No1_02-Sigua-Briones-Macamus-Pongos-Tumaliuan-Vitug.pdf): rejected; its figures are model assumptions, not measurements. Use the address without `www.`, which has a certificate error.
+- DOE North Luzon report, 29 Sep – 5 Oct 2026: Angeles City diesel and RON 91 prices. These PDFs are scans, so check prices against the page image, not by text search.
 
 ---
 

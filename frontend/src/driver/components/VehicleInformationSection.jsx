@@ -26,6 +26,13 @@ function VehicleInformationSection({ values, errors, onChange }) {
         placeholder="OR/CR number"
         error={errors.vehicleRegistrationNumber}
       />
+      <TextField
+        label="Fuel Efficiency (km per liter) — optional"
+        value={values.vehicleKmPerLiter}
+        onChange={(value) => onChange("vehicleKmPerLiter", value)}
+        placeholder="e.g. 4 — leave blank if not sure"
+        error={errors.vehicleKmPerLiter}
+      />
       <FileUploadField
         label="Vehicle Registration Photo"
         required

@@ -16,7 +16,7 @@
 
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
-import { estimateTripCarbon } from "../_shared/fuel.ts";
+import { estimateTripCarbon, loadFuelFactors } from "../_shared/fuel.ts";
 
 const GOOGLE_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY")!;
 const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY"); // optional
@@ -130,6 +130,7 @@ Deno.serve(async (req: Request) => {
     const discountRate = DISCOUNT_RATES[discountType];
 
     const supabase = getServiceClient();
+    await loadFuelFactors(supabase);
 
     const [routesRes, boardOriginRes, boardDestRes, transfersRes] = await Promise.all([
       supabase.from("routes").select("id, name, color, fare_reference(base_fare, per_km_rate)"),
@@ -500,28 +501,51 @@ function round(n: number) {
   return Math.round(n * 100) / 100;
 }
 
+// Routes API computeRouteMatrix, not the legacy Distance Matrix API: Google
+// no longer enables legacy Maps APIs on projects, and the legacy endpoint
+// returned REQUEST_DENIED for every walk leg (which surfaced only as
+// "could not compute any candidate routes"). Failures are logged with
+// Google's own message so the next one is visible in the function logs.
 async function distanceMatrix(
   from: LatLng,
   to: LatLng,
   mode: "driving" | "walking",
 ): Promise<{ distanceMeters: number; durationSeconds: number } | null> {
-  const url = new URL(
-    "https://maps.googleapis.com/maps/api/distancematrix/json",
-  );
-  url.searchParams.set("origins", `${from.lat},${from.lng}`);
-  url.searchParams.set("destinations", `${to.lat},${to.lng}`);
-  url.searchParams.set("mode", mode);
-  url.searchParams.set("key", GOOGLE_KEY);
+  try {
+    const res = await fetch("https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_KEY,
+        "X-Goog-FieldMask": "originIndex,destinationIndex,distanceMeters,duration,condition",
+      },
+      body: JSON.stringify({
+        origins: [{ waypoint: { location: { latLng: { latitude: from.lat, longitude: from.lng } } } }],
+        destinations: [{ waypoint: { location: { latLng: { latitude: to.lat, longitude: to.lng } } } }],
+        travelMode: mode === "walking" ? "WALK" : "DRIVE",
+      }),
+    });
+    if (!res.ok) {
+      console.error(`distanceMatrix: Routes API ${res.status}:`, await res.text());
+      return null;
+    }
 
-  const res = await fetch(url.toString());
-  const data = await res.json();
-  const element = data?.rows?.[0]?.elements?.[0];
-  if (!element || element.status !== "OK") return null;
+    const data = await res.json();
+    const cell = Array.isArray(data) ? data.find((c: any) => c.condition === "ROUTE_EXISTS") : null;
+    if (!cell) {
+      console.error("distanceMatrix: no route between points:", JSON.stringify(data));
+      return null;
+    }
 
-  return {
-    distanceMeters: element.distance.value,
-    durationSeconds: element.duration.value,
-  };
+    // Both fields are omitted when zero (origin == destination).
+    return {
+      distanceMeters: cell.distanceMeters ?? 0,
+      durationSeconds: parseInt(String(cell.duration ?? "0s").replace("s", ""), 10) || 0,
+    };
+  } catch (err) {
+    console.error("distanceMatrix: Routes API call threw:", err);
+    return null;
+  }
 }
 
 function trafficDescriptor(multiplier: number): string {

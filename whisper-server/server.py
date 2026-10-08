@@ -19,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_ID = "openai/whisper-small"
+MODEL_ID = "rbcurzon/whisper-medium-ph"
 
 print("Loading Whisper...")
 print("Model:", MODEL_ID)
@@ -95,8 +95,10 @@ async def transcribe(file: UploadFile = File(...)):
             output_path,
             generate_kwargs={
                 "task": "transcribe",
+                "language": None,
             },
         )
+
 
         print("\n==============================")
         print("RAW WHISPER RESULT:")

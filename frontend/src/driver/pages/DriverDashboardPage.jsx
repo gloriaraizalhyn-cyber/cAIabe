@@ -14,6 +14,8 @@ import LogOutConfirmModal from "../components/LogOutConfirmModal.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
 import { useFcmRegistration } from "../hooks/useFcmRegistration.js";
 import { useDriverDemand } from "../hooks/useDriverDemand.js";
+import { useDriverImpactSummary } from "../hooks/useDriverImpactSummary.js";
+import DriverImpactCard from "../components/DriverImpactCard.jsx";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { haversineDistanceMeters } from "../../shared/utils/geo.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
@@ -129,6 +131,12 @@ function DriverDashboardPage() {
     position: driverPosition,
     isActive: shiftStage === "arrived" && ownQueueEntry?.status !== "temporarily_away",
   });
+
+  const {
+    summary: impactSummary,
+    isLoading: isImpactLoading,
+    error: impactError,
+  } = useDriverImpactSummary(driver?.verificationStatus === "approved");
 
   const handleStartShift = () => {
     setShiftStage("awaiting_location_permission");
@@ -387,6 +395,10 @@ function DriverDashboardPage() {
                 assignedTerminalName={assignedTerminalName}
                 onStartShift={handleStartShift}
               />
+            )}
+
+            {(showShiftSummaryCard || shiftStage === "arrived") && (
+              <DriverImpactCard summary={impactSummary} isLoading={isImpactLoading} error={impactError} />
             )}
 
             {shiftStage === "heading_to_terminal" && (

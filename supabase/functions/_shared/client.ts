@@ -1,4 +1,6 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// npm: specifier instead of esm.sh — esm.sh timed out during `functions
+// deploy` bundling ("Fetch ... timed out after 10s").
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 // Service-role client: bypasses RLS entirely. Use this ONLY inside Edge
 // Functions (never shipped to a browser/frontend) for operations that must

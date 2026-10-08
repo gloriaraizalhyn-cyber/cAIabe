@@ -1,4 +1,5 @@
 import DemandStatGrid from "./DemandStatGrid.jsx";
+import { describeWaitOrGo } from "../utils/plainDemand.js";
 import "./ParkedDemandCard.css";
 
 const RECOMMENDATION_META = {
@@ -37,7 +38,7 @@ function ParkedDemandCard({ data, isLoading, error }) {
   return (
     <section className="parked-demand-card">
       <div className="parked-demand-card__header">
-        <span className="parked-demand-card__kicker">PASSENGER DEMAND ON YOUR ROUTE</span>
+        <span className="parked-demand-card__kicker">PASSENGERS ON YOUR ROUTE</span>
         {isLoading && <span className="parked-demand-card__refreshing">Updating…</span>}
       </div>
 
@@ -47,11 +48,15 @@ function ParkedDemandCard({ data, isLoading, error }) {
         </span>
       </div>
 
-      <p className="parked-demand-card__headline">{data.headline}</p>
-      <p className="parked-demand-card__body">{data.body}</p>
+      <p className="parked-demand-card__headline">
+        {describeWaitOrGo({
+          recommendation: data.recommendation,
+          compatibleCount: data.compatible_passenger_count,
+          nearestDistanceKm: data.nearest_distance_km,
+        })}
+      </p>
 
       <DemandStatGrid
-        demandScore={data.demand_score}
         compatibleCount={data.compatible_passenger_count}
         nearestDistanceKm={data.nearest_distance_km}
         trend={data.trend}

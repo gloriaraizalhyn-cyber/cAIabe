@@ -16,6 +16,18 @@ const REGISTRATION_STEPS = [
   { stepNumber: 4, title: "Route & Terminal Assignment" },
 ];
 
+// Rejects instead of hanging forever, so "Submitting…" can never get stuck.
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${label} timed out. Check your connection and try again.`)),
+      ms
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -41,6 +53,7 @@ const INITIAL_FORM_VALUES = {
   vehicleRegistrationNumber: "",
   vehicleRegistrationPhotoFile: null,
   jeepneyColor: "",
+  vehicleKmPerLiter: "",
   assignedRouteId: "",
   assignedTerminalId: "",
 };
@@ -108,39 +121,43 @@ function DriverRegistrationPage() {
     setSubmitError(null);
     setIsSubmitting(true);
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: formValues.emailAddress,
-      password: formValues.password,
-      options: {
-        data: {
-          full_name: [formValues.firstName, formValues.middleName, formValues.lastName]
-            .filter(Boolean)
-            .join(" "),
-          mobile_number: formValues.mobileNumber,
-          plate_number: formValues.plateNumber,
-          vehicle_registration_number: formValues.vehicleRegistrationNumber,
-        },
-      },
-    });
-
-    if (signUpError) {
-      setSubmitError(signUpError.message);
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (!signUpData.session) {
-      // The project requires email confirmation before issuing a session,
-      // and driver-onboarding needs an authenticated caller — so onboarding
-      // can't happen until after the driver confirms and logs in.
-      setIsSubmitting(false);
-      setSubmitError(
-        "Account created — check your email to confirm it, then log in to finish your application."
-      );
-      return;
-    }
-
     try {
+      const { data: signUpData, error: signUpError } = await withTimeout(
+        supabase.auth.signUp({
+          email: formValues.emailAddress,
+          password: formValues.password,
+          options: {
+            data: {
+              full_name: [formValues.firstName, formValues.middleName, formValues.lastName]
+                .filter(Boolean)
+                .join(" "),
+              mobile_number: formValues.mobileNumber,
+              plate_number: formValues.plateNumber,
+              vehicle_registration_number: formValues.vehicleRegistrationNumber,
+            },
+          },
+        }),
+        30000,
+        "Sign-up"
+      );
+
+      if (signUpError) {
+        setSubmitError(signUpError.message);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!signUpData.session) {
+        // The project requires email confirmation before issuing a session,
+        // and driver-onboarding needs an authenticated caller — so onboarding
+        // can't happen until after the driver confirms and logs in.
+        setIsSubmitting(false);
+        setSubmitError(
+          "Account created — check your email to confirm it, then log in to finish your application."
+        );
+        return;
+      }
+
       const [license_photo_base64, franchise_permit_photo_base64, vehicle_registration_photo_base64] =
         await Promise.all([
           fileToBase64(formValues.driversLicensePhotoFile),
@@ -148,13 +165,15 @@ function DriverRegistrationPage() {
           fileToBase64(formValues.vehicleRegistrationPhotoFile),
         ]);
 
-      const { data: onboardData, error: onboardError } = await supabase.functions.invoke(
-        "driver-onboarding",
-        {
+      const { data: onboardData, error: onboardError } = await withTimeout(
+        supabase.functions.invoke("driver-onboarding", {
           body: {
             route_id: formValues.assignedRouteId,
             home_terminal_id: formValues.assignedTerminalId,
             jeep_color: formValues.jeepneyColor,
+            vehicle_km_per_liter: formValues.vehicleKmPerLiter.trim()
+              ? Number(formValues.vehicleKmPerLiter)
+              : null,
             license_number: normalizeIdNumber(formValues.driversLicenseNumber),
             license_photo_base64,
             license_photo_mime: formValues.driversLicensePhotoFile.type,
@@ -164,7 +183,9 @@ function DriverRegistrationPage() {
             vehicle_registration_photo_base64,
             vehicle_registration_photo_mime: formValues.vehicleRegistrationPhotoFile.type,
           },
-        }
+        }),
+        90000,
+        "Submitting your documents"
       );
 
       if (onboardError || onboardData?.error) {

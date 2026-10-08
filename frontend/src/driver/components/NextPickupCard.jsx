@@ -1,8 +1,9 @@
 import useBottomSheetDrag from "../../shared/hooks/useBottomSheetDrag.js";
 import "../../shared/styles/cardShell.css";
+import DriverImpactStrip from "./DriverImpactStrip.jsx";
 import "./NextPickupCard.css";
 
-function NextPickupCard({ nextPickup, capacityStatus, onSetCapacityStatus }) {
+function NextPickupCard({ nextPickup, capacityStatus, onSetCapacityStatus, impactSummary = null }) {
   const { isExpanded, liveDragY, handlePointerDown, handlePointerMove, handlePointerUp } = useBottomSheetDrag();
 
   return (
@@ -30,6 +31,8 @@ function NextPickupCard({ nextPickup, capacityStatus, onSetCapacityStatus }) {
       <p className="next-pickup-card__meta">
         {nextPickup.distanceMeters} m ahead &middot; arriving in ~{nextPickup.etaMinutes} min
       </p>
+
+      {impactSummary && <DriverImpactStrip summary={impactSummary} />}
 
       <div className="next-pickup-card__toggle">
         <button

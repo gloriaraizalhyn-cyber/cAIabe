@@ -1,0 +1,64 @@
+.driver-impact-card {
+  border-left: 5px solid #2e8b57;
+  border-radius: 16px;
+  background: #faf6f0;
+  padding: 20px;
+  margin-bottom: 14px;
+  font-family: "DM Sans", sans-serif;
+}
+
+.driver-impact-card__title {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.driver-impact-card__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.driver-impact-card__period {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6a6f79;
+}
+
+.driver-impact-card__label {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #6a6f79;
+}
+
+.driver-impact-card__big {
+  margin: 0;
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.driver-impact-card__big--good {
+  color: #1f7a4a;
+}
+
+.driver-impact-card__big--bad {
+  color: #c0392b;
+}
+
+.driver-impact-card__sub {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: #6a6f79;
+}
+
+.driver-impact-card__footnote {
+  margin: 14px 0 0;
+  font-size: 0.72rem;
+  color: #9a9fa8;
+}

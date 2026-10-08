@@ -9,6 +9,7 @@ const LANGUAGES = [
   { code: "Filipino (Tagalog)", label: "Filipino" },
   { code: "Cebuano (Bisaya)", label: "Bisaya" },
   { code: "Ilocano", label: "Ilocano" },
+  { code: "Kapampangan", label: "Kapampangan"},
 ];
 
 // Renders an AI-generated note (a single `text` string, a `headline`/`body`

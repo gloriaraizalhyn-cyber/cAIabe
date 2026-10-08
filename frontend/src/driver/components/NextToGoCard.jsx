@@ -1,8 +1,9 @@
 import useBottomSheetDrag from "../../shared/hooks/useBottomSheetDrag.js";
 import "../../shared/styles/cardShell.css";
+import DriverImpactStrip from "./DriverImpactStrip.jsx";
 import "./NextToGoCard.css";
 
-function NextToGoCard({ waitingCount, queuePosition, onWaitForMore, waitNoticeSent = false }) {
+function NextToGoCard({ waitingCount, queuePosition, onWaitForMore, waitNoticeSent = false, impactSummary = null }) {
   const { isExpanded, liveDragY, handlePointerDown, handlePointerMove, handlePointerUp } = useBottomSheetDrag();
 
   return (
@@ -22,11 +23,14 @@ function NextToGoCard({ waitingCount, queuePosition, onWaitForMore, waitNoticeSe
       {queuePosition != null && (
         <p className="next-to-go-card__queue-position">Queue position #{queuePosition}</p>
       )}
-      <h1 className="next-to-go-card__heading">{waitingCount} waiting along your route</h1>
+      <h1 className="next-to-go-card__heading">
+        {waitingCount} {waitingCount === 1 ? "passenger" : "passengers"} waiting
+      </h1>
       <p className="next-to-go-card__body">
-        Choosing <strong>Wait</strong> tells them this unit likely won't leave within 30 min. They
-        never see your passenger count.
+        Tap <strong>Wait</strong> if you want to wait for more passengers. They will be told this
+        jeep won't leave soon.
       </p>
+      {impactSummary && <DriverImpactStrip summary={impactSummary} />}
       <div className="next-to-go-card__actions">
         <button
           type="button"
@@ -36,7 +40,7 @@ function NextToGoCard({ waitingCount, queuePosition, onWaitForMore, waitNoticeSe
         >
           {waitNoticeSent ? "Waiting passengers notified" : "Wait for more"}
         </button>
-        <div className="next-to-go-card__status-pill">Starts automatically when it's your turn</div>
+        <div className="next-to-go-card__status-pill">You leave automatically on your turn</div>
       </div>
     </section>
   );

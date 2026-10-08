@@ -13,6 +13,7 @@ import {
   DEMO_PANE_DRIVER_UNIT,
   DEMO_ROUTES,
   DEMO_YELLOW_PANE_DRIVER_UNIT,
+  fillBeatText,
   simDriverEmail,
 } from "../constants/demoScript.js";
 import "./DemoStagePage.css";
@@ -161,7 +162,7 @@ function DemoStagePage() {
             <span className="demo-stage__caption-step">
               {beatIndex + 1}/{DEMO_BEATS.length}
             </span>
-            <p className="demo-stage__caption-text">{beat.caption}</p>
+            <p className="demo-stage__caption-text">{fillBeatText(beat.caption, journey?.fare)}</p>
           </div>
 
           {journeyError && (
