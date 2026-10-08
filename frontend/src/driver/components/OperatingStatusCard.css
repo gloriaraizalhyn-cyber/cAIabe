@@ -9,6 +9,10 @@
   padding: 10px 14px 12px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
   border-left: 4px solid #9a9fa8;
+  /* Stays clear of the bottom card, which includes the impact strip. */
+  max-height: calc(100dvh - 168px - 390px);
+  min-height: 72px;
+  overflow-y: auto;
 }
 
 .operating-status-card--continue {
@@ -110,5 +114,6 @@
   .operating-status-card {
     top: 148px;
     padding: 8px 12px 10px;
+    max-height: calc(100dvh - 148px - 390px);
   }
 }

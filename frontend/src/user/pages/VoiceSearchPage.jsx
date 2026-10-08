@@ -4,10 +4,69 @@ import { supabase } from "../../shared/lib/supabaseClient.js";
 import { ChevronLeft, Mic, RotateCcw, Check, Square, Quote } from "lucide-react";
 //import { mockTranscribeAndParseVoice } from "../utils/mockVoiceParse.js";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
+import { useGoogleMapsLoader } from "../../shared/hooks/useGoogleMapsLoader.js";
+import { SERVICE_AREA_BOUNDS } from "../../shared/constants/tripSearchFixtures.js";
 import "./VoiceSearchPage.css";
+
+// Resolves a spoken place name with Google's geocoder, biased to the area the
+// seeded routes cover. Resolves null (never rejects) when Maps isn't loaded or
+// nothing matches, so a missing lookup can't sink the voice request.
+function geocodePlace(query) {
+  return new Promise((resolve) => {
+    if (!window.google?.maps?.Geocoder) {
+      resolve(null);
+      return;
+    }
+    new window.google.maps.Geocoder().geocode(
+      {
+        address: query,
+        region: "ph",
+        bounds: new window.google.maps.LatLngBounds(
+          { lat: SERVICE_AREA_BOUNDS.south, lng: SERVICE_AREA_BOUNDS.west },
+          { lat: SERVICE_AREA_BOUNDS.north, lng: SERVICE_AREA_BOUNDS.east }
+        ),
+      },
+      (results, status) => {
+        if (status !== "OK" || !results?.length) {
+          resolve(null);
+          return;
+        }
+        const location = results[0].geometry.location;
+        resolve({
+          label: results[0].formatted_address || query,
+          lat: location.lat(),
+          lng: location.lng(),
+        });
+      }
+    );
+  });
+}
+
+// The phone's position, or null if location is denied, unavailable or slow.
+function getCurrentPlace() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve(null);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) =>
+        resolve({
+          label: "Current location",
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        }),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
+  });
+}
 
 function VoiceSearchPage() {
   const navigate = useNavigate();
+  // Loads the Maps script (and its geocoder) while the user is speaking — this
+  // page doesn't draw a map, so nothing else would have loaded it.
+  useGoogleMapsLoader();
 
   const [stage, setStage] = useState("idle");
   const [parsedResult, setParsedResult] = useState(null);
@@ -173,70 +232,34 @@ if (!parsedData) {
   throw new Error("Gemini returned no parsing result.");
 }
 
-/*setParsedResult({
-  transcript: parsedData.transcript || transcript,
-  originQuery: parsedData.originQuery || "Current Location",
-  destinationQuery: parsedData.destinationQuery || "",
-  originPlace: null,
-  destinationPlace: null,
-});*/
+const spokenOrigin = (parsedData.originQuery || "").trim();
+const spokenDestination = (parsedData.destinationQuery || "").trim();
 
-const currentLocation = await new Promise((resolve, reject) => {
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      resolve({
-        label: "Current location",
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      });
-    },
-    (error) => reject(error),
-    {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0,
-    }
-  );
-});
+// Neither lookup below is allowed to fail the whole request: whatever can't
+// be resolved here is handed to the search page as plain text, which asks
+// the user (and tries the phone's location) itself.
+let originPlace = null;
+let originLabel = spokenOrigin;
 
-const destinationPlace = await new Promise((resolve, reject) => {
-  if (!window.google?.maps?.Geocoder) {
-    reject(new Error("Google Maps Geocoder is not available."));
-    return;
+if (spokenOrigin) {
+  originPlace = await geocodePlace(spokenOrigin);
+}
+if (!originPlace) {
+  // Nothing usable was said (or it couldn't be found): where the phone is.
+  const here = await getCurrentPlace();
+  if (here) {
+    originPlace = here;
+    originLabel = here.label;
   }
+}
 
-  const geocoder = new window.google.maps.Geocoder();
-
-  geocoder.geocode(
-    {
-      address: parsedData.destinationQuery,
-    },
-    (results, status) => {
-      if (status === "OK" && results?.length > 0) {
-        const result = results[0];
-        const location = result.geometry.location;
-
-        resolve({
-          label: result.formatted_address || parsedData.destinationQuery,
-          lat: location.lat(),
-          lng: location.lng(),
-        });
-      } else {
-        reject(
-          new Error(
-            `Could not find the destination "${parsedData.destinationQuery}".`
-          )
-        );
-      }
-    }
-  );
-});
+const destinationPlace = spokenDestination ? await geocodePlace(spokenDestination) : null;
 
 setParsedResult({
   transcript: parsedData.transcript || transcript,
-  originQuery: "Current Location",
-  destinationQuery: parsedData.destinationQuery || "",
-  originPlace: currentLocation,
+  originQuery: originLabel,
+  destinationQuery: spokenDestination,
+  originPlace,
   destinationPlace,
 });
 

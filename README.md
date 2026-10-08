@@ -264,8 +264,10 @@ Each figure except CO₂ comes from approved sources in the `fuel_factors` table
 Prices change every week. Update them from the newest DOE report (see below).
 
 What the **Carbon Impact panel** counts ([`add_carbon_impact.sql`](supabase/sql/add_carbon_impact.sql)):
-- **CO₂ avoided** = riders' savings compared with driving alone, **plus** engine-off queue time at terminals. The queue part assumes engines are switched off while queued.
+- **CO₂ avoided** = engine-off queue time at terminals. It assumes engines are switched off while queued. **Riders are not counted**: the app can't know how many people actually chose to ride, so the panel shows no rider tile and none of its numbers depend on one. (The backend still logs `rider_trip` events; nothing reads them into this panel.)
 - **Idling caught** = roadside idle burn that Sak.AI flagged. This fuel was already wasted, so it is reported separately and **never** added to "avoided".
+
+The panel above is fleet-wide (admin dashboard and the demo stage map). Each driver sees their **own** version on their phone: **Your impact today** on the queue screen and while driving (CO₂ avoided, engine-off queue time, idling caught), and the fuller "Your Fuel & CO₂" card on their dashboard. These come from `get_driver_impact_summary` and are the driver's own figures only.
 
 Quick conversion for the pitch: at ₱92.77/L, **₱100 of diesel saved ≈ 1.08 L ≈ 2.9 kg CO₂ not emitted.**
 

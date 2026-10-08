@@ -18,9 +18,11 @@ function formatMinutes(minutes) {
 // the app (fuel.ts); the footnote says so. variant="dark" matches the demo
 // stage's projector theme, "light" the admin dashboard.
 //
-// "Avoided" (headline) = riders choosing a jeepney over driving alone +
-// queue time at the terminal with engines off. Roadside idling is shown
-// separately as burn CAUGHT, never added to the avoided total.
+// "Avoided" (headline) = queue time at the terminal with engines off.
+// Roadside idling is shown separately as burn CAUGHT, never added to the
+// avoided total. Riders are deliberately NOT counted here: the app can't
+// know how many people actually chose to ride (the backend still logs
+// rider_trip events, but nothing reads them into this panel).
 function CarbonImpactPanel({ variant = "light", compact = false }) {
   const { summary, error } = useCarbonImpact();
 
@@ -32,7 +34,6 @@ function CarbonImpactPanel({ variant = "light", compact = false }) {
     );
   }
 
-  const riders = summary?.rider_trips;
   const queue = summary?.queue_engine_off;
   const idle = summary?.roadside_idle;
 
@@ -47,20 +48,12 @@ function CarbonImpactPanel({ variant = "light", compact = false }) {
           Impact today
         </span>
         <span className="carbon-impact__total">
-          {summary ? formatKg(summary.total_co2_avoided_kg) : "…"}
+          {queue ? formatKg(queue.co2_kg) : "…"}
           <span className="carbon-impact__unit"> kg CO₂ avoided</span>
         </span>
       </div>
 
       <div className="carbon-impact__tiles">
-        <div className="carbon-impact__tile">
-          <span className="carbon-impact__tile-label">Riders chose the jeep</span>
-          <span className="carbon-impact__tile-value">{riders?.count ?? "…"}</span>
-          <span className="carbon-impact__tile-detail">
-            {riders ? `${formatKg(riders.co2_saved_kg)} kg CO₂ vs driving alone` : ""}
-          </span>
-        </div>
-
         <div className="carbon-impact__tile">
           <span className="carbon-impact__tile-label">Engine-off queue time</span>
           <span className="carbon-impact__tile-value">{queue ? formatMinutes(queue.minutes) : "…"}</span>
@@ -80,8 +73,8 @@ function CarbonImpactPanel({ variant = "light", compact = false }) {
 
       {!compact && (
         <p className="carbon-impact__footnote">
-          Estimated. Diesel 2.68 kg CO₂/L, gasoline 2.31 kg CO₂/L; jeepney idle burn 1.2–1.8 L/hr;
-          a rider&apos;s share assumes 12 riders per jeep vs a 10 km/L car.
+          Estimated. Diesel 2.68 kg CO₂/L, gasoline 2.31 kg CO₂/L; jeepney idle burn 1.2–1.8 L/hr.
+          Engine-off time assumes drivers switch their engines off while queued.
         </p>
       )}
     </section>

@@ -11,6 +11,7 @@ import IdleEngineOffToast from "../components/IdleEngineOffToast.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
 import { useDriverFuelCheck } from "../hooks/useDriverFuelCheck.js";
 import { useDriverDemand } from "../hooks/useDriverDemand.js";
+import { useDriverImpactSummary } from "../hooks/useDriverImpactSummary.js";
 import { useRoadsideIdleTracker } from "../hooks/useRoadsideIdleTracker.js";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
@@ -37,6 +38,7 @@ const LOCATION_UPDATE_MIN_INTERVAL_MS = 10000;
 function DrivingPage() {
   const navigate = useNavigate();
   const { driver, loading, session } = useDriverSession();
+  const { summary: impactSummary } = useDriverImpactSummary(Boolean(driver), { refreshMs: 60000 });
   const [capacityStatus, setCapacityStatus] = useState("seats_open");
   const [currentPosition, setCurrentPosition] = useState(null);
   const [isTripComplete, setIsTripComplete] = useState(false);
@@ -294,6 +296,7 @@ function DrivingPage() {
         nextPickup={NEXT_WAITING_PICKUP_FIXTURE}
         capacityStatus={capacityStatus}
         onSetCapacityStatus={handleSetCapacityStatus}
+        impactSummary={impactSummary}
       />
 
       {isTripComplete && (

@@ -4,9 +4,9 @@ import DemandStatGrid from "./DemandStatGrid.jsx";
 import "./OperatingStatusCard.css";
 
 const STATUS_META = {
-  continue: { emoji: "🟢", label: "CONTINUE OPERATING" },
-  continue_caution: { emoji: "🟡", label: "CONTINUE WITH CAUTION" },
-  garage: { emoji: "🔵", label: "GARAGE" },
+  continue: { emoji: "🟢", label: "KEEP DRIVING" },
+  continue_caution: { emoji: "🟡", label: "KEEP DRIVING, WATCH DEMAND" },
+  garage: { emoji: "🔵", label: "TIME TO PARK" },
 };
 
 // Sak.AI's "CONTINUE or GARAGE?" panel — shown while the driver is out on
@@ -64,7 +64,7 @@ function OperatingStatusCard({ data, isLoading, onUseTerminalLocation }) {
             trend={data.trend}
           />
           <p className="operating-status-card__disclaimer">
-            A suggestion, not a command — you decide when to head back.
+            Just a suggestion — you decide.
           </p>
         </>
       )}

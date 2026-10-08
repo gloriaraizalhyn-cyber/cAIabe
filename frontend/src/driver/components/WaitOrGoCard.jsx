@@ -1,16 +1,25 @@
+import { useState } from "react";
 import DemandStatGrid from "./DemandStatGrid.jsx";
+import { describeWaitOrGo } from "../utils/plainDemand.js";
 import "./WaitOrGoCard.css";
 
 const RECOMMENDATION_META = {
-  go: { emoji: "🟢", label: "GO", action: "LEAVE TERMINAL" },
-  wait: { emoji: "🟡", label: "WAIT", action: "WAIT FOR MORE PASSENGERS" },
+  go: { emoji: "🟢", label: "GO" },
+  wait: { emoji: "🟡", label: "WAIT" },
 };
 
 // Sak.AI's "WAIT or GO?" panel — shown while the driver is next up at the
 // terminal. Every number here comes straight from driver-demand-check
 // (real passenger_waiting_state rows on this driver's route, scored by
 // calculateDriverDemand()); nothing is invented client-side.
+//
+// What a driver sees by default is deliberately small: the call (GO or WAIT),
+// one plain sentence, how many passengers are waiting and how far the nearest
+// is. The score, confidence, AI explanation and reasons are one tap away under
+// "More details" for anyone who wants to see how the call was made.
 function WaitOrGoCard({ data, isLoading, error, onUseTerminalLocation, onSkipToDriving, isSkippingToDriving }) {
+  const [showDetails, setShowDetails] = useState(false);
+
   if (error) {
     return (
       <section className="wait-or-go-card wait-or-go-card--pending">
@@ -43,11 +52,16 @@ function WaitOrGoCard({ data, isLoading, error, onUseTerminalLocation, onSkipToD
   }
 
   const meta = RECOMMENDATION_META[data.recommendation] ?? RECOMMENDATION_META.wait;
+  const sentence = describeWaitOrGo({
+    recommendation: data.recommendation,
+    compatibleCount: data.compatible_passenger_count,
+    nearestDistanceKm: data.nearest_distance_km,
+  });
 
   return (
     <section className={`wait-or-go-card wait-or-go-card--${data.recommendation}`}>
       <div className="wait-or-go-card__header">
-        <span className="wait-or-go-card__kicker">AI RECOMMENDATION</span>
+        <span className="wait-or-go-card__kicker">WAIT OR GO?</span>
         {isLoading && <span className="wait-or-go-card__refreshing">Updating…</span>}
       </div>
 
@@ -55,31 +69,40 @@ function WaitOrGoCard({ data, isLoading, error, onUseTerminalLocation, onSkipToD
         <span className="wait-or-go-card__badge">
           {meta.emoji} {meta.label}
         </span>
-        <span className="wait-or-go-card__confidence">Confidence: {data.confidence}%</span>
       </div>
 
-      <p className="wait-or-go-card__headline">{data.headline}</p>
-      <p className="wait-or-go-card__body">{data.body}</p>
-
-      {data.reasons?.length > 0 && (
-        <div className="wait-or-go-card__why">
-          <span className="wait-or-go-card__why-label">Why?</span>
-          <ul className="wait-or-go-card__reasons">
-            {data.reasons.map((reason) => (
-              <li key={reason}>{reason}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <p className="wait-or-go-card__action">Recommended action: {meta.action}</p>
+      <p className="wait-or-go-card__headline">{sentence}</p>
 
       <DemandStatGrid
-        demandScore={data.demand_score}
         compatibleCount={data.compatible_passenger_count}
         nearestDistanceKm={data.nearest_distance_km}
         trend={data.trend}
       />
+
+      <button
+        type="button"
+        className="wait-or-go-card__details-toggle"
+        onClick={() => setShowDetails((value) => !value)}
+        aria-expanded={showDetails}
+      >
+        {showDetails ? "Hide details" : "More details"}
+      </button>
+
+      {showDetails && (
+        <div className="wait-or-go-card__details">
+          <p className="wait-or-go-card__body">{data.body}</p>
+          {data.reasons?.length > 0 && (
+            <ul className="wait-or-go-card__reasons">
+              {data.reasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          )}
+          <p className="wait-or-go-card__fine-print">
+            Demand score {data.demand_score}/100 · Confidence {data.confidence}%
+          </p>
+        </div>
+      )}
 
       {onSkipToDriving && (
         <button

@@ -29,3 +29,7 @@
   font-weight: 800;
   color: #1a1a1a;
 }
+
+.demand-stat-grid__item--wide {
+  grid-column: 1 / -1;
+}

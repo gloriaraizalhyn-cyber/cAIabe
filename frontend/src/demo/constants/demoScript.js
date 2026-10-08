@@ -138,12 +138,22 @@ export const DEMO_SURGE_CLUSTERS = [
   { count: 3, km: 1.5 },
 ];
 
+// Beat text may contain {fare}, filled in from the trip route-search actually
+// planned (the base fare lives in the database and has changed before, so it
+// must never be typed in here). Until the trip has loaded it says "priced as
+// a student" instead of showing a stale or missing number.
+export function fillBeatText(text, fare) {
+  const fareText =
+    typeof fare === "number" && Number.isFinite(fare) ? `₱${fare.toFixed(2)} as a student` : "priced as a student";
+  return text.replace("{fare}", fareText);
+}
+
 export const DEMO_BEATS = [
   {
     id: "search",
     title: "Search",
     focus: "passenger",
-    caption: "Astro Park → SM City Telabastagan. Two jeepneys, one transfer, ₱21.12 as a student.",
+    caption: "Astro Park → SM City Telabastagan. Two jeepneys, one transfer, {fare}.",
     narration:
       "The passenger picks Astro Park and a mall. cAIabe plans it across two different jeepney routes and prices the whole thing — this is real PostGIS route planning, not a lookup table.",
   },

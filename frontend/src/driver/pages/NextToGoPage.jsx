@@ -5,6 +5,7 @@ import NextToGoCard from "../components/NextToGoCard.jsx";
 import WaitOrGoCard from "../components/WaitOrGoCard.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
 import { useDriverDemand } from "../hooks/useDriverDemand.js";
+import { useDriverImpactSummary } from "../hooks/useDriverImpactSummary.js";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
@@ -71,6 +72,10 @@ function NextToGoPage() {
     handleUseTerminalLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoTerminalPosition, isUsingDemoPosition]);
+
+  // The driver's own fuel / CO2 numbers for today, refreshed every minute
+  // while they sit in the queue.
+  const { summary: impactSummary } = useDriverImpactSummary(Boolean(driver), { refreshMs: 60000 });
 
   const refreshQueueEntry = useCallback(async () => {
     if (!driver?.route?.id || !session?.user?.id) return;
@@ -219,6 +224,7 @@ function NextToGoPage() {
         queuePosition={ownQueueEntry?.position ?? null}
         onWaitForMore={handleWaitForMore}
         waitNoticeSent={waitNoticeSent}
+        impactSummary={impactSummary}
       />
     </main>
   );
