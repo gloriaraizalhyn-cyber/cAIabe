@@ -173,12 +173,71 @@ if (!parsedData) {
   throw new Error("Gemini returned no parsing result.");
 }
 
-setParsedResult({
+/*setParsedResult({
   transcript: parsedData.transcript || transcript,
-  originQuery: parsedData.originQuery || "",
+  originQuery: parsedData.originQuery || "Current Location",
   destinationQuery: parsedData.destinationQuery || "",
   originPlace: null,
   destinationPlace: null,
+});*/
+
+const currentLocation = await new Promise((resolve, reject) => {
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      resolve({
+        label: "Current location",
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      });
+    },
+    (error) => reject(error),
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    }
+  );
+});
+
+const destinationPlace = await new Promise((resolve, reject) => {
+  if (!window.google?.maps?.Geocoder) {
+    reject(new Error("Google Maps Geocoder is not available."));
+    return;
+  }
+
+  const geocoder = new window.google.maps.Geocoder();
+
+  geocoder.geocode(
+    {
+      address: parsedData.destinationQuery,
+    },
+    (results, status) => {
+      if (status === "OK" && results?.length > 0) {
+        const result = results[0];
+        const location = result.geometry.location;
+
+        resolve({
+          label: result.formatted_address || parsedData.destinationQuery,
+          lat: location.lat(),
+          lng: location.lng(),
+        });
+      } else {
+        reject(
+          new Error(
+            `Could not find the destination "${parsedData.destinationQuery}".`
+          )
+        );
+      }
+    }
+  );
+});
+
+setParsedResult({
+  transcript: parsedData.transcript || transcript,
+  originQuery: "Current Location",
+  destinationQuery: parsedData.destinationQuery || "",
+  originPlace: currentLocation,
+  destinationPlace,
 });
 
 setStage("confirm");
