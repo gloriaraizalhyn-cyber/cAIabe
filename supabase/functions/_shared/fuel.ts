@@ -79,9 +79,13 @@ export function estimateFuelCost(
   vehicleType: string,
   distanceKm: number,
   trafficDelaySeconds = 0,
+  // The driver's own reported mileage (drivers.vehicle_km_per_liter); null /
+  // undefined falls back to the profile's assumption.
+  kmPerLiterOverride?: number | null,
 ): FuelEstimate {
   const profile = FUEL_PROFILES[vehicleType] ?? FUEL_PROFILES.jeepney;
-  const movingLiters = distanceKm / profile.kmPerLiter;
+  const kmPerLiter = kmPerLiterOverride && kmPerLiterOverride > 0 ? kmPerLiterOverride : profile.kmPerLiter;
+  const movingLiters = distanceKm / kmPerLiter;
   const idleLiters = (Math.max(0, trafficDelaySeconds) / 60) * idleLitersPerMinuteMidpoint(profile);
   const liters = movingLiters + idleLiters;
 

@@ -696,17 +696,10 @@ async function logRoadsideIdleEpisode(
 ) {
   try {
     const startedAt = new Date(Date.now() - minutes * 60000);
-    const fuel = estimateIdleFuelMidpoint("jeepney", minutes);
-    const values = {
-      minutes: round(minutes),
-      liters: fuel.liters,
-      co2_kg: fuel.co2_kg,
-      updated_at: new Date().toISOString(),
-    };
 
     const { data: existing } = await supabase
       .from("carbon_impact_events")
-      .select("id")
+      .select("id, engine_off_after_minutes")
       .eq("kind", "roadside_idle")
       .eq("driver_id", driverId)
       .gte("episode_started_at", new Date(startedAt.getTime() - EPISODE_MATCH_TOLERANCE_MS).toISOString())
@@ -714,6 +707,22 @@ async function logRoadsideIdleEpisode(
       .order("episode_started_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    // Once the driver taps "ENGINE OFF" (driver-idle-response) the episode
+    // keeps growing, but only the minutes BEFORE that tap were burned —
+    // the rest is fuel saved.
+    const engineOffAfter = existing?.engine_off_after_minutes;
+    const burnedMinutes = engineOffAfter != null ? Math.min(minutes, Number(engineOffAfter)) : minutes;
+    const burned = estimateIdleFuelMidpoint("jeepney", burnedMinutes);
+    const saved = estimateIdleFuelMidpoint("jeepney", Math.max(0, minutes - burnedMinutes));
+    const values = {
+      minutes: round(minutes),
+      liters: burned.liters,
+      co2_kg: burned.co2_kg,
+      saved_liters: saved.liters,
+      saved_co2_kg: saved.co2_kg,
+      updated_at: new Date().toISOString(),
+    };
 
     const { error } = existing
       ? await supabase.from("carbon_impact_events").update(values).eq("id", existing.id)

@@ -12,6 +12,7 @@
 //   franchise_permit_photo_mime?: string,
 //   vehicle_registration_photo_base64: string,
 //   vehicle_registration_photo_mime?: string,
+//   vehicle_km_per_liter?: number | null,       // optional own mileage, 1-60
 // }
 //
 // Uploads all three verification photos to the private `license-photos`
@@ -43,6 +44,7 @@ Deno.serve(async (req: Request) => {
       franchise_permit_photo_mime,
       vehicle_registration_photo_base64,
       vehicle_registration_photo_mime,
+      vehicle_km_per_liter,
     } = await req.json() as {
       route_id: string;
       home_terminal_id: string;
@@ -55,7 +57,14 @@ Deno.serve(async (req: Request) => {
       franchise_permit_photo_mime?: string;
       vehicle_registration_photo_base64: string;
       vehicle_registration_photo_mime?: string;
+      vehicle_km_per_liter?: number | null;
     };
+
+    // Optional — null means "use the default for the vehicle type".
+    const kmPerLiter = vehicle_km_per_liter == null ? null : Number(vehicle_km_per_liter);
+    if (kmPerLiter !== null && (!isFinite(kmPerLiter) || kmPerLiter < 1 || kmPerLiter > 60)) {
+      return json({ error: "vehicle_km_per_liter must be between 1 and 60" }, 400);
+    }
 
     const normalizedLicenseNumber = license_number?.trim();
     const normalizedFranchisePermitNumber = franchise_permit_number?.trim();
@@ -129,6 +138,7 @@ Deno.serve(async (req: Request) => {
           route_id,
           home_terminal_id,
           jeep_color: jeep_color ?? null,
+          vehicle_km_per_liter: kmPerLiter,
           license_number: normalizedLicenseNumber,
           // storage paths, not public URLs — the bucket is private
           license_photo_url: licensePath.path,

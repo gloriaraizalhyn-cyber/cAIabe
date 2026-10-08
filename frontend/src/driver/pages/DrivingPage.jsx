@@ -7,6 +7,7 @@ import TripCompleteModal from "../components/TripCompleteModal.jsx";
 import TripInfoPanel from "../components/TripInfoPanel.jsx";
 import OperatingStatusCard from "../components/OperatingStatusCard.jsx";
 import RoadsideIdleCard from "../components/RoadsideIdleCard.jsx";
+import IdleEngineOffToast from "../components/IdleEngineOffToast.jsx";
 import { useDriverSession } from "../hooks/useDriverSession.js";
 import { useDriverFuelCheck } from "../hooks/useDriverFuelCheck.js";
 import { useDriverDemand } from "../hooks/useDriverDemand.js";
@@ -198,6 +199,29 @@ function DrivingPage() {
     };
   }, [isDemoDrive, driver?.route?.id, session?.user?.id, isTripComplete]);
 
+  // Big "ENGINE OFF" prompt — shown once per idling episode, when the server
+  // says the stop is long enough to count as idling. Resets when the driver
+  // moves again (local status back to "none").
+  const [isIdlePromptClosed, setIsIdlePromptClosed] = useState(false);
+  const [isEngineOffConfirmed, setIsEngineOffConfirmed] = useState(false);
+  useEffect(() => {
+    if (localIdleStatus === "none") {
+      setIsIdlePromptClosed(false);
+      setIsEngineOffConfirmed(false);
+    }
+  }, [localIdleStatus]);
+
+  const idleStatus = demand?.roadside_idle?.status;
+  const showIdlePrompt =
+    (idleStatus === "idling" || idleStatus === "prolonged") && !isIdlePromptClosed && !isTripComplete;
+
+  const handleEngineOff = () => {
+    setIsEngineOffConfirmed(true);
+    supabase.functions.invoke("driver-idle-response", {
+      body: { response: "engine_off", minutes: roadsideIdleMinutes },
+    });
+  };
+
   const handleSetCapacityStatus = (state) => {
     setCapacityStatus(state);
     // The UI's "seats_open" doesn't match the backend/DB's "available" —
@@ -253,7 +277,18 @@ function DrivingPage() {
         isLoading={isDemandLoading}
         onUseTerminalLocation={!currentPosition ? handleUseTerminalLocation : null}
       />
-      <RoadsideIdleCard roadsideIdle={demand?.roadside_idle} liveMinutes={roadsideIdleMinutes} />
+      {!isEngineOffConfirmed && (
+        <RoadsideIdleCard roadsideIdle={demand?.roadside_idle} liveMinutes={roadsideIdleMinutes} />
+      )}
+
+      {showIdlePrompt && (
+        <IdleEngineOffToast
+          roadsideIdle={demand?.roadside_idle}
+          liveMinutes={roadsideIdleMinutes}
+          onEngineOff={handleEngineOff}
+          onClose={() => setIsIdlePromptClosed(true)}
+        />
+      )}
 
       <NextPickupCard
         nextPickup={NEXT_WAITING_PICKUP_FIXTURE}

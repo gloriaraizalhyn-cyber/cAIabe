@@ -105,6 +105,15 @@ export function validateDriverRegistrationForm(formValues) {
     errors.vehicleRegistrationPhotoFile = "Only JPG or PNG files are accepted.";
   }
 
+  // Optional — blank falls back to the default for the vehicle type.
+  const kmPerLiterText = formValues.vehicleKmPerLiter.trim();
+  if (kmPerLiterText) {
+    const kmPerLiter = Number(kmPerLiterText);
+    if (!Number.isFinite(kmPerLiter) || kmPerLiter < 1 || kmPerLiter > 60) {
+      errors.vehicleKmPerLiter = "Enter a number from 1 to 60, or leave blank.";
+    }
+  }
+
   if (!formValues.jeepneyColor) {
     errors.jeepneyColor = "Select a jeepney color.";
   }

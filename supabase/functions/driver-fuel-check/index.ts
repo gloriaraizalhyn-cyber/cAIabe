@@ -50,7 +50,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: driver, error: driverErr } = await supabase
       .from("drivers")
-      .select("route_id, vehicle_type")
+      .select("route_id, vehicle_type, vehicle_km_per_liter")
       .eq("id", driverId)
       .single();
     if (driverErr || !driver) return json({ error: "driver not found" }, 404);
@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
       if (!destination) {
         return json({ error: "destination is required for tricycle route comparison" }, 400);
       }
-      return json(await compareTricycleRoutes(origin, destination));
+      return json(await compareTricycleRoutes(origin, destination, driver.vehicle_km_per_liter));
     }
 
     // Default / jeepney path — needs the route's fixed terminus.
@@ -86,7 +86,11 @@ Deno.serve(async (req: Request) => {
     if (!dest) return json({ error: "route has no terminus on file" }, 500);
 
     return json({
-      ...(await checkJeepneyTrafficFuel(origin, { lat: dest.lat, lng: dest.lng })),
+      ...(await checkJeepneyTrafficFuel(
+        origin,
+        { lat: dest.lat, lng: dest.lng },
+        driver.vehicle_km_per_liter,
+      )),
       waiting_passenger_count: waitingCount,
     });
   } catch (err) {
@@ -96,7 +100,11 @@ Deno.serve(async (req: Request) => {
 
 // ---------- jeepney: fixed-route traffic-timing fuel warning ----------
 
-async function checkJeepneyTrafficFuel(origin: LatLng, destination: LatLng) {
+async function checkJeepneyTrafficFuel(
+  origin: LatLng,
+  destination: LatLng,
+  kmPerLiter: number | null,
+) {
   const route = await computeRoute(origin, destination, { alternatives: false });
   if (!route) {
     return { vehicle_type: "jeepney", warning: false, message: "Could not reach the routing service." };
@@ -108,8 +116,8 @@ async function checkJeepneyTrafficFuel(origin: LatLng, destination: LatLng) {
   const trafficDelaySeconds = Math.max(0, route.durationSeconds - route.staticDurationSeconds);
   const trafficDelayMin = trafficDelaySeconds / 60;
 
-  const fuel = estimateFuelCost("jeepney", distanceKm, trafficDelaySeconds);
-  const baselineFuel = estimateFuelCost("jeepney", distanceKm, 0);
+  const fuel = estimateFuelCost("jeepney", distanceKm, trafficDelaySeconds, kmPerLiter);
+  const baselineFuel = estimateFuelCost("jeepney", distanceKm, 0, kmPerLiter);
   const extraCostFromTraffic = round(fuel.cost - baselineFuel.cost);
   const extraCo2FromTraffic = round(fuel.co2_kg - baselineFuel.co2_kg);
 
@@ -133,7 +141,7 @@ async function checkJeepneyTrafficFuel(origin: LatLng, destination: LatLng) {
 
 // ---------- tricycle: alternative-route comparison ----------
 
-async function compareTricycleRoutes(origin: LatLng, destination: LatLng) {
+async function compareTricycleRoutes(origin: LatLng, destination: LatLng, kmPerLiter: number | null) {
   const routes = await computeRoutes(origin, destination, { alternatives: true });
   if (!routes.length) {
     return { vehicle_type: "tricycle", routes: [], message: "Could not reach the routing service." };
@@ -145,7 +153,7 @@ async function compareTricycleRoutes(origin: LatLng, destination: LatLng) {
       index,
       distance_km: round(distanceKm),
       duration_min: round(route.durationSeconds / 60),
-      fuel: estimateFuelCost("tricycle", distanceKm, 0),
+      fuel: estimateFuelCost("tricycle", distanceKm, 0, kmPerLiter),
     };
   });
 
