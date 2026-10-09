@@ -64,11 +64,35 @@ function nearestPointOnPath(position, path) {
   return nearest;
 }
 
+// Shortest distance from `point` to the straight stretch a → b, in km. Small
+// distances only (a local flat projection), which is all a pickup needs.
+function distanceToSegmentKm(point, a, b) {
+  const kmPerDegLat = 111.32;
+  const kmPerDegLng = 111.32 * Math.cos((point.lat * Math.PI) / 180);
+  const ax = (a.lng - point.lng) * kmPerDegLng;
+  const ay = (a.lat - point.lat) * kmPerDegLat;
+  const bx = (b.lng - point.lng) * kmPerDegLng;
+  const by = (b.lat - point.lat) * kmPerDegLat;
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lengthSquared = dx * dx + dy * dy;
+  const t = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / lengthSquared));
+  return Math.hypot(ax + t * dx, ay + t * dy);
+}
+
 // Demo stage only: how close an open jeep must get to the waiting passenger
 // to pick her up, and how long the "picked up" message shows before the
 // screen switches to the riding view.
 const DEMO_PICKUP_RADIUS_KM = 0.1;
 const DEMO_PICKUP_NOTICE_MS = 2500;
+// Jeeps report every ~120-150 m when fast-forwarded, so a jeep can drive
+// right past her between two reports without either report landing inside
+// the radius. The stretch between consecutive reports is checked instead —
+// but only a short one: a longer gap (a requeued unit reappearing at its
+// terminal) isn't a road it actually drove.
+const DEMO_PICKUP_MAX_SEGMENT_KM = 0.3;
+// How long the "that jeep is heading back to its terminal" note stays up.
+const DEMO_WRONG_WAY_NOTICE_MS = 8000;
 // Transfer: how long the "walk to the next stop" step shows before she starts waiting there.
 const DEMO_TRANSFER_WALK_MS = 4500;
 
@@ -230,14 +254,17 @@ function WaitingForJeepPage() {
   // open (not "full") and reaches her bay picks her up automatically. A full
   // jeep drives past, exactly as it would in real life.
   const [pickedUpBy, setPickedUpBy] = useState(null);
+  // An open jeep that just passed her going the OTHER way (see below) — shown
+  // as a note so a jeep driving straight past her doesn't look like a bug.
+  const [wrongWayJeepId, setWrongWayJeepId] = useState(null);
 
   // A loop route can pass the same stop twice (the grey route passes Astro
-  // Park once heading toward the transfer, and again near the end of its
-  // lap, where the jeep finishes its route at the terminal before ever
-  // reaching her destination). Only a jeep heading the way the planned ride
-  // goes can pick her up, so each jeep's heading is compared with the first
-  // stretch of the leg's own path. Needs a previous position, so a jeep is
-  // judged from its second update onward.
+  // Park once heading toward the transfer, ~1.7 km into its loop, and again
+  // ~9.8 km in, heading back to its terminal 600 m away, where it finishes its
+  // route before ever reaching her destination). Only a jeep heading the way
+  // the planned ride goes can pick her up, so each jeep's heading is compared
+  // with the first stretch of the leg's own path. Needs a previous position,
+  // so a jeep is judged from its second update onward.
   const lastJeepPositionsRef = useRef({});
 
   useEffect(() => {
@@ -253,6 +280,7 @@ function WaitingForJeepPage() {
         : null;
 
     let arriving = null;
+    let wrongWay = null;
     for (const jeep of jeepneys) {
       // This effect re-runs on every render, so only shift a jeep's stored
       // position when it has actually moved; otherwise "previous" would
@@ -270,7 +298,13 @@ function WaitingForJeepPage() {
       const previous = lastJeepPositionsRef.current[jeep.id].previous;
 
       if (jeep.capacityState === "full") continue;
-      if (haversineDistanceKm(passengerPosition, { lat: jeep.lat, lng: jeep.lng }) > DEMO_PICKUP_RADIUS_KM) continue;
+      const current = { lat: jeep.lat, lng: jeep.lng };
+      const hasDrivenStretch =
+        previous && haversineDistanceKm(previous, current) <= DEMO_PICKUP_MAX_SEGMENT_KM;
+      const closestKm = hasDrivenStretch
+        ? distanceToSegmentKm(passengerPosition, previous, current)
+        : haversineDistanceKm(passengerPosition, current);
+      if (closestKm > DEMO_PICKUP_RADIUS_KM) continue;
 
       // Transfer legs already place the passenger on the active route's
       // polyline. Their route-search leg can be oriented differently from
@@ -281,13 +315,24 @@ function WaitingForJeepPage() {
         const moved = { x: (jeep.lng - previous.lng) * cosLat, y: jeep.lat - previous.lat };
         if (moved.x === 0 && moved.y === 0) continue;
         const goesTheRightWay = moved.x * legHeading.x + moved.y * legHeading.y > 0;
-        if (!goesTheRightWay) continue;
+        if (!goesTheRightWay) {
+          wrongWay ??= jeep;
+          continue;
+        }
       }
       arriving = jeep;
       break;
     }
     if (arriving) setPickedUpBy(arriving.id);
+    // Same id → React skips the re-render, so this can't loop.
+    else if (wrongWay) setWrongWayJeepId(wrongWay.id);
   }, [isDemoPassenger, waitingPhase, pickedUpBy, passengerPosition, jeepneys, activeLeg]);
+
+  useEffect(() => {
+    if (!wrongWayJeepId) return undefined;
+    const timer = setTimeout(() => setWrongWayJeepId(null), DEMO_WRONG_WAY_NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [wrongWayJeepId]);
 
   useEffect(() => {
     if (!pickedUpBy) return undefined;
@@ -613,6 +658,16 @@ function WaitingForJeepPage() {
       )}
 
       {isDemoPassenger && <DemoSpeedChip speed={demoSpeed} onChange={handleDemoSpeedChange} />}
+
+      {isDemoPassenger && wrongWayJeepId && !pickedUpBy && (
+        <div className="waiting-for-jeep-page__pickup-banner waiting-for-jeep-page__pickup-banner--transfer" role="status">
+          <span aria-hidden="true">↩️</span>
+          <div>
+            <strong>That {jeepColorName} jeep is heading the other way</strong>
+            <span>It's finishing its loop back to the terminal. The next one going your way will pick you up.</span>
+          </div>
+        </div>
+      )}
 
       {pickedUpBy && (
         <div className="waiting-for-jeep-page__pickup-banner" role="status">

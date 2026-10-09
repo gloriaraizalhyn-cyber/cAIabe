@@ -389,11 +389,11 @@ async function getRoadPath(origin, destination, label) {
 // Keyed by the same label printed next to each unit at startup
 // ("<route name> (Unit #N)") so the presenter can target one by name during
 // a live demo instead of editing code. Slowing a unit is a REAL change —
-// it jumps the unit backward along its road path (so the next live GPS
-// broadcast is genuinely farther from any waiting passenger) and multiplies
-// its step delay, so every AI recommendation that reads live position
-// (nearby-jeepney-eta) reacts to real, changed data rather than a faked
-// label.
+// it multiplies its step delay, so it crawls along its road path and every
+// AI recommendation that reads live position (nearby-jeepney-eta) sees a
+// unit that has stopped closing in, rather than a faked label. It used to
+// also jump the unit back a third of its loop, which on the demo route
+// could land it at — or wrap it round to — its terminal, ending its trip.
 const activeUnits = new Map();
 
 // The single implementation behind BOTH presenter surfaces: the stdin
@@ -437,9 +437,8 @@ async function applyDemoAction(action, target, payload = {}) {
       // the traffic puts it back there rather than at real time.
       state.speedBeforeTraffic ??= state.delayMultiplier;
       state.delayMultiplier = 6;
-      state.jumpBackRequested = true;
       state.idleStartedAt = null;
-      console.log(`🐢 [${tag}] simulating heavy traffic — jumped back on its path and slowed down.`);
+      console.log(`🐢 [${tag}] simulating heavy traffic — slowed to a crawl.`);
     } else if (action === "idle") {
       // `time_scale` (the stage's fast-forward) makes the idle clock run that
       // many times faster. Re-sending "idle" only updates the scale — the
@@ -820,7 +819,6 @@ async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps
   const demoState = {
     delayMultiplier: 1,
     lockCapacity: null, // "available" | "full" while pinned by the passenger demo
-    jumpBackRequested: false,
     speedBeforeTraffic: null, // delayMultiplier to restore when traffic clears
     idleStartedAt: null, // wall-clock start of a roadside idle (the "idle" lever)
     idleLastAt: null,
@@ -838,13 +836,6 @@ async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps
     await driveThroughQueue(driverLabel, session, demoState);
 
     while (true) {
-      if (demoState.jumpBackRequested) {
-        // Jump back a third of the loop so the next broadcast position is
-        // genuinely farther from wherever this unit already was.
-        currentIdx = (currentIdx - Math.floor(circuitLength / 3) + circuitLength) % circuitLength;
-        demoState.jumpBackRequested = false;
-      }
-
       const point = circuit[currentIdx];
 
       if (demoState.idleStartedAt) {

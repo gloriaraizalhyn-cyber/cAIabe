@@ -209,13 +209,13 @@ function LandingPage() {
             </button>
 
             <a
-              href="sms:09472301496?body=ROUTE "
+              href="sms:09983241519?body=ROUTE "
               className="landing-page__sms-teaser"
             >
               <MessageSquareText size={16} strokeWidth={2.5} />
               <span>
                 No load or data? Text<br />
-                <strong>ROUTE</strong> to <strong>0947 230 1496</strong>
+                <strong>ROUTE</strong> to <strong>0998 324 1519</strong>
               </span>
             </a>
           </div>

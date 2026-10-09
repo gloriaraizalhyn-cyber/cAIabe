@@ -304,7 +304,7 @@ export function useDemoStage() {
   const throwTraffic = useCallback(async () => {
     if (isLeadPaneDriving) {
       if ((await paneLever("slow")) !== "slow") return false;
-      say("Heavy traffic on the driver's jeep — it just fell back along its route and slowed to a crawl.");
+      say("Heavy traffic on the driver's jeep — it slowed to a crawl.");
       return true;
     }
     if (!trafficTarget) {
@@ -315,7 +315,7 @@ export function useDemoStage() {
       simTrafficTargetRef.current = trafficTarget.id;
       // "slow" also ends an idle on that unit (see applyDemoAction).
       if (simIdleTargetRef.current === trafficTarget.id) simIdleTargetRef.current = null;
-      say("Heavy traffic on that unit — it just fell back along its route.");
+      say("Heavy traffic on that unit — it slowed to a crawl.");
       return true;
     }
     return false;

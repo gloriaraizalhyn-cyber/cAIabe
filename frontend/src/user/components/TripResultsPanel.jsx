@@ -46,7 +46,14 @@ function TripResultsPanel({
     );
   }, [routes, recommendedRoute, hasChosenSort, sortMetric]);
 
+  // "Time" is already highlighted when the results open, so tapping it again
+  // changes nothing the rider can see — it must not count as choosing a
+  // filter. It used to, which silently swapped the pick from the recommended
+  // route to whichever was fastest by any margin (on the Astro Park demo trip:
+  // a 2-transfer grey -> blue -> yellow route, under a minute faster but
+  // P11 dearer than the recommended grey -> yellow).
   const handleChangeSortMetric = (metric) => {
+    if (metric === sortMetric) return;
     setSortMetric(metric);
     setHasChosenSort(true);
   };

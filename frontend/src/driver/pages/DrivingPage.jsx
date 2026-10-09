@@ -20,6 +20,8 @@ import { NEXT_WAITING_PICKUP_FIXTURE } from "../../shared/constants/driverDashbo
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import { isDemoDriverFrame } from "../../demo/demoTripParams.js";
 import {
+  DEMO_DRIVE_MAX_STEP_METERS,
+  DEMO_DRIVE_MIN_INTERVAL_MS,
   DEMO_DRIVE_STEP_INTERVAL_MS,
   DEMO_DRIVE_STEP_METERS,
   DEMO_DRIVE_ROUTES,
@@ -67,10 +69,9 @@ function DrivingPage() {
   const startedAtRef = useRef(Date.now());
 
   // Presenter levers for the scripted drive ("normal" | "idle" | "slow"), set
-  // from the stage's "Idle jeep" / "Throw traffic" buttons. Refs, because the
-  // drive loop's interval reads them on every tick without restarting.
+  // from the stage's "Idle jeep" / "Throw traffic" buttons. A ref, because the
+  // drive loop reads it on every tick without restarting.
   const demoLeverModeRef = useRef("normal");
-  const demoJumpBackRef = useRef(false);
 
   // The stage's fast-forward (1 = real time). Speeds up the scripted drive
   // and the roadside-idle clock, so a 2-minute demo can reach the idle
@@ -193,32 +194,50 @@ function DrivingPage() {
     if (!geometry) return undefined;
     let distance = geometry.startAlongMeters;
     let lastPoint = null;
-    let inFlight = false;
+    let lastTickAt = null;
+    let timerId = null;
 
+    // Current speed in metres per millisecond: the normal scripted pace, sped
+    // up by the stage's fast-forward, slowed to a crawl by "Throw traffic".
+    const currentSpeed = () =>
+      ((DEMO_DRIVE_STEP_METERS / DEMO_DRIVE_STEP_INTERVAL_MS) * demoTimeScaleRef.current) /
+      (demoLeverModeRef.current === "slow" ? DEMO_TRAFFIC_SLOWDOWN : 1);
+
+    // Fast-forward ticks MORE OFTEN rather than taking bigger steps, so no
+    // report is ever more than DEMO_DRIVE_MAX_STEP_METERS from the last one —
+    // a 560 m jump could hop straight past a waiting passenger.
+    const nextDelay = () =>
+      Math.min(
+        DEMO_DRIVE_STEP_INTERVAL_MS,
+        Math.max(DEMO_DRIVE_MIN_INTERVAL_MS, DEMO_DRIVE_MAX_STEP_METERS / currentSpeed())
+      );
+
+    const finishTrip = async () => {
+      const entry =
+        driver?.route?.id && session?.user?.id
+          ? await fetchOwnQueueEntry(driver.route.id, session.user.id)
+          : null;
+      setNewQueuePosition(entry?.position ?? null);
+      setTripTimeMinutes(Math.round((Date.now() - startedAtRef.current) / 60000));
+      setIsTripComplete(true);
+    };
+
+    // Returns true when the trip has ended (no further ticks).
     const tick = async () => {
-      if (inFlight) return;
-      inFlight = true;
-
       // Presenter levers (see the stage-lever listener below). Idling keeps
       // reporting the SAME point, so the server, the map and the roadside-idle
       // tracker all see a genuinely stopped jeepney rather than a silent one.
       const mode = demoLeverModeRef.current;
-      // Fast-forward covers more ground per tick rather than ticking faster:
-      // every tick already waits on two server round trips.
-      const step = DEMO_DRIVE_STEP_METERS * demoTimeScaleRef.current;
-      if (demoJumpBackRef.current) {
-        demoJumpBackRef.current = false;
-        distance = Math.max(
-          geometry.clearOfStartMeters ?? geometry.startAlongMeters,
-          distance - geometry.lengthMeters / 3
-        );
-      } else if (mode === "slow") {
-        distance += step / DEMO_TRAFFIC_SLOWDOWN;
-      } else if (mode !== "idle" || !lastPoint) {
-        distance += step;
+      const now = Date.now();
+      // Advance by the time actually elapsed, so server latency doesn't slow
+      // the drive down; capped so a stalled tab can't jump half the route.
+      const elapsed = lastTickAt === null ? DEMO_DRIVE_STEP_INTERVAL_MS : now - lastTickAt;
+      lastTickAt = now;
+      if (mode !== "idle" || !lastPoint) {
+        distance += Math.min(currentSpeed() * elapsed, DEMO_DRIVE_MAX_STEP_METERS);
       }
-      // A big fast-forward step must land ON the route's end (which finishes
-      // the trip), never past it, where there is no point to report.
+      // Land ON the route's end (which finishes the trip), never past it,
+      // where there is no point to report.
       distance = Math.min(distance, geometry.lengthMeters);
 
       let point = mode === "idle" ? lastPoint : null;
@@ -229,10 +248,7 @@ function DrivingPage() {
         });
         point = points?.[0];
       }
-      if (!isMounted || !point) {
-        inFlight = false;
-        return;
-      }
+      if (!isMounted || !point) return false;
       lastPoint = point;
       const here = { lat: point.lat, lng: point.lng };
       setCurrentPosition(here);
@@ -244,29 +260,27 @@ function DrivingPage() {
       const isNearTerminus =
         haversineDistanceMeters(here, geometry.terminal) <= DEMO_TERMINUS_RADIUS_METERS;
       const isRealEnd = distance >= geometry.lengthMeters - DEMO_ROUTE_END_ZONE_METERS;
-      if (isNearTerminus && !isRealEnd) {
-        inFlight = false;
-        return;
-      }
+      if (isNearTerminus && !isRealEnd) return false;
 
       const { data } = await supabase.functions.invoke("driver-location-update", { body: here });
-      inFlight = false;
-      if (!isMounted || !data?.end_of_route) return;
-
-      const entry =
-        driver?.route?.id && session?.user?.id
-          ? await fetchOwnQueueEntry(driver.route.id, session.user.id)
-          : null;
-      setNewQueuePosition(entry?.position ?? null);
-      setTripTimeMinutes(Math.round((Date.now() - startedAtRef.current) / 60000));
-      setIsTripComplete(true);
+      if (!isMounted || !data?.end_of_route) return false;
+      await finishTrip();
+      return true;
     };
 
-    tick();
-    const id = setInterval(tick, DEMO_DRIVE_STEP_INTERVAL_MS);
+    // Self-scheduling rather than setInterval: the delay depends on the
+    // current speed, and a tick never overlaps the previous one.
+    const loop = async () => {
+      const startedAt = Date.now();
+      const isDone = await tick();
+      if (!isMounted || isDone) return;
+      timerId = setTimeout(loop, Math.max(0, nextDelay() - (Date.now() - startedAt)));
+    };
+    loop();
+
     return () => {
       isMounted = false;
-      clearInterval(id);
+      clearTimeout(timerId);
     };
   }, [isDemoDrive, driver?.route?.id, session?.user?.id, isTripComplete]);
 
@@ -296,10 +310,8 @@ function DrivingPage() {
         demoLeverModeRef.current = "idle";
       } else if (message.action === "slow") {
         demoLeverModeRef.current = "slow";
-        demoJumpBackRef.current = true;
       } else if (message.action === "resume") {
         demoLeverModeRef.current = "normal";
-        demoJumpBackRef.current = false;
       } else {
         return;
       }
@@ -313,7 +325,6 @@ function DrivingPage() {
       unsubscribe();
       clearInterval(presenceId);
       demoLeverModeRef.current = "normal";
-      demoJumpBackRef.current = false;
       announce(false);
     };
   }, [isStageDrive, demoSlot, driverId]);

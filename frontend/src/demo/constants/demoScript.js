@@ -79,26 +79,28 @@ export const DEMO_YELLOW_PANE_DRIVER_UNIT = 3;
 //   grey:   within 100 m of its end point at 0-314 m, 1,086-1,220 m (a small
 //           loop around SM City Clark) and 10,422-10,530 m; length 10,530 m
 //   yellow: within 100 m at 0-127 m and 4,737-4,815 m only; length 4,815 m
-// `clearOfStartMeters` is the first distance past that opening stretch — the
-// "Throw traffic" lever never pushes a unit back further than this, because
-// inside it the drive stops reporting and the unit would go stale on the map.
 export const DEMO_DRIVE_ROUTES = {
   "e5f1a7fe-d258-44ca-a823-0360df2d1221": {
     terminal: { lat: 15.1682564, lng: 120.5823745 },
     lengthMeters: 10530,
     startAlongMeters: 0,
-    clearOfStartMeters: 320,
   },
   "f821d810-ef7e-43f9-9b8a-b419d6309615": {
     terminal: { lat: 15.122755, lng: 120.599655 },
     lengthMeters: 4815,
     startAlongMeters: 0,
-    clearOfStartMeters: 135,
   },
 };
 export const DEMO_DRIVE_STEP_INTERVAL_MS = 2000;
-// "Throw traffic" on a pane driver: same as the simulator's "slow" — jump back
-// a third of the route, then crawl at 1/6 speed until resumed.
+// Fast-forward ticks the drive more often instead of taking bigger steps:
+// reports stay at most this far apart (so the passenger's pickup check, which
+// looks at the stretch between two reports, stays accurate on curvy roads),
+// and ticks no faster than this.
+export const DEMO_DRIVE_MAX_STEP_METERS = 150;
+export const DEMO_DRIVE_MIN_INTERVAL_MS = 400;
+// "Throw traffic" on a pane driver: same as the simulator's "slow" — crawl at
+// 1/6 speed until resumed. It used to jump the unit back a third of its route
+// too, which on the grey route put it straight back at its terminal.
 export const DEMO_TRAFFIC_SLOWDOWN = 6;
 // The presenter bar's "Fast-forward": how many times faster the driver panes'
 // drives and every roadside-idle clock run. At x8 the idle card shows after
@@ -152,9 +154,18 @@ export const DEMO_SMS_SCRIPT = [
 // (GOOD DEMAND). Placing them too close to the driver's own projection makes
 // the signed distance wrap around the loop and read as "behind", which reads
 // as LOW/IRRELEVANT on screen.
+//
+// The last three are single riders on the stretch the grey jeep drives AFTER
+// picking her up at Astro Park (its pickup pass is ~1.75 km along the route,
+// her transfer stop ~5.6 km, measured with get_route_point_at_distance) — so
+// demand keeps showing ahead of the jeep she is riding. Spread ~1 km apart so
+// waiting-start's 80-150 m fuzzing can't merge them.
 export const DEMO_SURGE_CLUSTERS = [
   { count: 5, km: 0.7 },
   { count: 3, km: 1.5 },
+  { count: 1, km: 2.5 },
+  { count: 1, km: 3.5 },
+  { count: 1, km: 4.5 },
 ];
 
 // Beat text may contain {fare}, filled in from the trip route-search actually
@@ -199,7 +210,7 @@ export const DEMO_BEATS = [
     focus: "passenger",
     caption: "Real traffic. Real recompute.",
     narration:
-      "Now we put that jeepney in traffic — it genuinely moves back along its route and slows down. Her ETA goes up, because it's measured against a real moving vehicle with traffic-aware routing.",
+      "Now we put that jeepney in traffic — it genuinely slows to a crawl. Her ETA stops counting down, because it's measured against the real vehicle's live position with traffic-aware routing, not a timer.",
     lever: "traffic",
   },
   {
