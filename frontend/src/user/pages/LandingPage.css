@@ -3380,3 +3380,51 @@ html:has(.landing-page) {
     --band: 36px;
   }
 }
+
+/* ===== "Why cAIabe" heading: centered, pill tucked up against the title ===== */
+#features .landing-page__features-head {
+  text-align: center;
+  align-items: center;
+}
+
+#features .landing-page__eyebrow {
+  align-self: center;
+  margin-bottom: 0;
+}
+
+#features .landing-page__section-title {
+  margin-top: 4px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+
+/* Desktop: sit the pill + heading lower in the glass, nearer the cards. A
+   visual shift only (transform), so the cards and the window artwork stay
+   where they are. */
+@media (min-width: 860px) {
+  #features .landing-page__features-head {
+    transform: translateY(clamp(8px, 0.9vw, 18px));
+  }
+}
+
+
+/* ===== Hero "cAIabe" wordmark: bolder and larger ===== */
+/* Desktop: larger, with a heavier stroke. The wordmark is stretched 1.5x wide
+   and still fits comfortably inside the 480px text column. */
+@media (min-width: 860px) {
+  .landing-page__wordmark {
+    font-size: clamp(4.2rem, 15vh, 8rem);
+    -webkit-text-stroke: 1.8px currentColor;
+  }
+}
+
+/* Phones: a little larger (the short-screen size in the 600px-tall rule
+   above is left alone). */
+@media (max-width: 859px) and (min-height: 601px) {
+  .landing-page__wordmark {
+    font-size: clamp(3.2rem, 9.5svh, 4.6rem);
+  }
+}
+

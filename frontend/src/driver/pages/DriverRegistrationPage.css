@@ -1,151 +1,331 @@
 .driver-registration-page {
+  --dr-red: #ce1126;
+  --dr-blue: #0038a8;
+  --dr-navy: #00227a;
+  --dr-ink: #0a1f66;
+  --dr-text: #3d4663;
+  --dr-muted: #8a909b;
+  --dr-yellow: #fcd116;
+  --dr-line: rgba(20, 23, 31, 0.08);
   min-height: 100vh;
-  background: #f5f6f8;
-  padding: 32px 16px 60px;
+  background:
+    url("/images/background_no-gradient.png") center / cover no-repeat fixed,
+    #fbf6ec;
+  color: var(--dr-ink);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
 }
 
 .driver-registration-page__layout {
-  max-width: 720px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
+/* ===== Brand panel (a compact banner on phones, a side panel on desktop) ===== */
+
 .driver-registration-page__sidebar {
+  position: relative;
+  padding: 22px 22px 62px;
+  color: #ffffff;
+  background:
+    linear-gradient(90deg, rgba(0, 24, 90, 0.88) 0%, rgba(0, 34, 122, 0.72) 100%),
+    url("/images/background-blueMetalFloor.png") center / cover no-repeat,
+    var(--dr-navy);
+}
+
+.driver-registration-page__pattern {
+  position: absolute;
+}
+
+.driver-registration-page__pattern--base {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 38px;
+}
+
+.driver-registration-page__pattern--side {
   display: none;
 }
 
-.driver-registration-page__form {
-  max-width: 720px;
-  margin: 0 auto;
+.driver-registration-page__sidebar > :not(.driver-registration-page__pattern) {
+  position: relative;
 }
 
-@media (min-width: 900px) {
-  .driver-registration-page {
-    padding: 56px 40px 80px;
-  }
+.driver-registration-page__sidebar-eyebrow {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dr-yellow);
+}
 
-  .driver-registration-page__layout {
-    display: flex;
-    align-items: flex-start;
-    gap: 40px;
-    max-width: 1040px;
-  }
+.driver-registration-page__sidebar-title {
+  margin: 0;
+  max-width: 420px;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
 
-  .driver-registration-page__sidebar {
-    display: block;
-    position: sticky;
-    top: 40px;
-    flex: 0 0 260px;
-    padding: 24px 20px;
-    border: 2px solid #000000;
-    border-top: 5px solid #1b3fa0;
-    border-radius: 16px;
-    background: #eef2fb;
-  }
+/* The step list and note only show on desktop. */
+.driver-registration-page__sidebar-steps,
+.driver-registration-page__sidebar-note {
+  display: none;
+}
 
-  .driver-registration-page__sidebar-eyebrow {
-    margin: 0 0 6px;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #d71920;
-  }
+/* ===== Form column ===== */
 
-  .driver-registration-page__sidebar-title {
-    margin: 0;
-    font-family: "LL Karatula", "DM Sans", sans-serif;
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: #1a1a1a;
-    line-height: 1.3;
-  }
+.driver-registration-page__form {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 18px 16px 56px;
+}
 
-  .driver-registration-page__sidebar-steps {
-    list-style: none;
-    margin: 20px 0 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .driver-registration-page__sidebar-step {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: #1a1a1a;
-  }
-
-  .driver-registration-page__sidebar-step-number {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #1b3fa0;
-    color: #ffffff;
-    font-size: 0.74rem;
-    font-weight: 800;
-  }
-
-  .driver-registration-page__sidebar-note {
-    margin: 20px 0 0;
-    padding-top: 16px;
-    border-top: 1px solid #d7deef;
-    font-size: 0.78rem;
-    line-height: 1.5;
-    color: #4a4f58;
-  }
-
-  .driver-registration-page__form {
-    flex: 1 1 auto;
-    max-width: 620px;
-    margin: 0;
-  }
+.driver-registration-page__back {
+  margin: 0 0 10px -2px;
 }
 
 .driver-registration-page__header {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .driver-registration-page__title {
-  margin: 0 0 4px;
+  display: none;
+  margin: 0;
   font-family: "LL Karatula", "DM Sans", "Segoe UI", sans-serif;
   font-size: 2.2rem;
   font-weight: 800;
-  color: #1a1a1a;
   line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--dr-ink);
 }
 
 .driver-registration-page__subtitle {
   margin: 0;
-  font-size: 0.85rem;
-  color: #6a6f79;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--dr-text);
 }
 
-.driver-registration-page__review-notice {
-  margin: 20px 0 0;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  color: #6a6f79;
-  background: #eef0f3;
+/* ===== Section cards ===== */
+
+.driver-registration-page .form-section {
+  padding: 20px;
+  border: 1px solid var(--dr-line);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(20, 23, 31, 0.04), 0 10px 28px rgba(0, 56, 168, 0.08);
+}
+
+.driver-registration-page .form-section + .form-section {
+  margin-top: 16px;
+}
+
+.driver-registration-page .form-section__header {
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e3e7f1;
+}
+
+.driver-registration-page .form-section__step-number {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--dr-blue);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.driver-registration-page .form-section:nth-of-type(2) .form-section__step-number {
+  background: var(--dr-red);
+}
+
+.driver-registration-page .form-section:nth-of-type(3) .form-section__step-number {
+  background: var(--dr-yellow);
+  color: var(--dr-navy);
+}
+
+.driver-registration-page .form-section:nth-of-type(4) .form-section__step-number {
+  background: var(--dr-navy);
+}
+
+.driver-registration-page .form-section__title {
+  margin: 0 0 2px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--dr-ink);
+}
+
+.driver-registration-page .form-section__description {
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--dr-text);
+}
+
+/* ===== Fields (scoped here: the same fields are used in the admin modal) ===== */
+
+.driver-registration-page .text-field__label,
+.driver-registration-page .select-field__label,
+.driver-registration-page .file-upload-field__label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--dr-ink);
+}
+
+.driver-registration-page .text-field__required-mark,
+.driver-registration-page .select-field__required-mark,
+.driver-registration-page .file-upload-field__required-mark,
+.driver-registration-page .text-field__error,
+.driver-registration-page .select-field__error,
+.driver-registration-page .file-upload-field__error {
+  color: var(--dr-red);
+}
+
+.driver-registration-page .text-field__input,
+.driver-registration-page .select-field__select {
+  padding: 13px 14px;
+  border: 1.5px solid #dfe3ee;
+  border-radius: 14px;
+  background-color: #f7f8fc;
+  font-size: 0.95rem;
+  color: var(--dr-ink);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.driver-registration-page .select-field__select {
+  padding-right: 38px;
+}
+
+.driver-registration-page .text-field__input::placeholder {
+  color: #a3a9b8;
+}
+
+.driver-registration-page .text-field__input:focus,
+.driver-registration-page .select-field__select:focus {
+  border-color: var(--dr-blue);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(0, 56, 168, 0.12);
+}
+
+.driver-registration-page .text-field__input--error,
+.driver-registration-page .select-field__select--error {
+  border-color: var(--dr-red);
+  background-color: #fff8f8;
+}
+
+.driver-registration-page .select-field__select:disabled {
+  background-color: #eef0f5;
+  color: var(--dr-muted);
+}
+
+.driver-registration-page .text-field__password-toggle {
+  right: 8px;
+  padding: 8px;
   border-radius: 10px;
+  color: var(--dr-muted);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.driver-registration-page .text-field__password-toggle:hover {
+  background: #eef2fb;
+  color: var(--dr-blue);
+}
+
+/* File upload drop zones */
+.driver-registration-page .file-upload-field__dropzone {
+  gap: 6px;
+  padding: 22px 14px;
+  border: 2px dashed #c3cde8;
+  border-radius: 18px;
+  background: #f3f6fd;
+  color: var(--dr-blue);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.driver-registration-page .file-upload-field__dropzone:hover {
+  border-color: var(--dr-blue);
+  background: #e9f0ff;
+  color: var(--dr-blue);
+}
+
+.driver-registration-page .file-upload-field__dropzone--error {
+  border-color: var(--dr-red);
+  background: #fff8f8;
+}
+
+.driver-registration-page .file-upload-field__upload-text {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--dr-ink);
+}
+
+.driver-registration-page .file-upload-field__accepted-types {
+  font-size: 0.76rem;
+  color: var(--dr-text);
+}
+
+.driver-registration-page .file-upload-field__preview {
+  gap: 10px;
   padding: 12px 14px;
+  border: 1.5px solid #cfe5d8;
+  border-radius: 16px;
+  background: #e6f4ec;
+}
+
+.driver-registration-page .file-upload-field__preview-icon {
+  color: #1f7a4a;
+}
+
+.driver-registration-page .file-upload-field__file-name {
+  font-weight: 700;
+  color: var(--dr-ink);
+}
+
+.driver-registration-page .file-upload-field__replace-button {
+  color: var(--dr-blue);
+}
+
+.driver-registration-page .file-upload-field__remove-button:hover {
+  color: var(--dr-red);
+}
+
+/* ===== Review notice, errors, actions ===== */
+
+.driver-registration-page__review-notice {
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #e9f0ff;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--dr-text);
 }
 
 .driver-registration-page__submit-error {
   margin: 16px 0 0;
-  font-size: 0.85rem;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fdeceb;
+  font-size: 0.86rem;
   font-weight: 600;
-  color: #c0392b;
-}
-
-.driver-registration-page__submit-button:disabled {
-  opacity: 0.6;
+  line-height: 1.45;
+  color: #a30f1f;
 }
 
 .driver-registration-page__actions {
@@ -155,31 +335,152 @@
   margin-top: 20px;
 }
 
+/* Flat buttons (house rule: never raised / 3D) */
 .driver-registration-page__submit-button {
   border: none;
-  border-radius: 10px;
-  background: #1b3fa0;
+  border-radius: 999px;
+  background: var(--dr-blue);
   color: #ffffff;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   padding: 15px;
+  transition: background-color 0.15s ease;
 }
 
-.driver-registration-page__submit-button:hover {
-  background: #142f7e;
+.driver-registration-page__submit-button:hover:not(:disabled) {
+  background: #00267f;
+}
+
+.driver-registration-page__submit-button:disabled {
+  background: #9aa4c0;
+  opacity: 1;
+  cursor: not-allowed;
 }
 
 .driver-registration-page__cancel-button {
-  border: 1px solid #d71920;
-  border-radius: 10px;
-  background: #fdecec;
-  color: #b3211a;
-  font-size: 0.9rem;
+  border: 1.5px solid var(--dr-blue);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--dr-blue);
+  font-size: 0.95rem;
   font-weight: 700;
   padding: 13px;
+  transition: background-color 0.15s ease;
 }
 
 .driver-registration-page__cancel-button:hover {
-  border-color: #b3211a;
-  background: #fbdcdc;
+  border-color: var(--dr-blue);
+  background: #eef2fb;
+  color: var(--dr-blue);
+}
+
+/* ===== Desktop: split screen ===== */
+
+@media (min-width: 900px) {
+  .driver-registration-page__layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .driver-registration-page__sidebar {
+    position: sticky;
+    top: 0;
+    flex: 0 0 clamp(400px, 38vw, 540px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100vh;
+    padding: 48px 124px 48px 48px;
+  }
+
+  .driver-registration-page__pattern--base {
+    display: none;
+  }
+
+  .driver-registration-page__pattern--side {
+    display: block;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 96px;
+    height: 100%;
+  }
+
+  .driver-registration-page__sidebar-title {
+    font-size: clamp(1.8rem, 2.6vw, 2.4rem);
+  }
+
+  .driver-registration-page__sidebar-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 28px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .driver-registration-page__sidebar-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .driver-registration-page__sidebar-step-number {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    background: #ffffff;
+    color: var(--dr-navy);
+    font-size: 0.85rem;
+    font-weight: 800;
+  }
+
+  .driver-registration-page__sidebar-note {
+    display: block;
+    margin: 28px 0 0;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.86rem;
+    line-height: 1.55;
+    color: #c3cce6;
+  }
+
+  .driver-registration-page__form {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 40px 40px 80px;
+  }
+
+  .driver-registration-page__title {
+    display: block;
+  }
+
+  .driver-registration-page__subtitle {
+    margin-top: 10px;
+  }
+
+  .driver-registration-page__header {
+    margin-bottom: 22px;
+  }
+
+  .driver-registration-page__actions {
+    flex-direction: row-reverse;
+  }
+
+  .driver-registration-page__actions > button {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .driver-registration-page * {
+    transition: none !important;
+  }
 }

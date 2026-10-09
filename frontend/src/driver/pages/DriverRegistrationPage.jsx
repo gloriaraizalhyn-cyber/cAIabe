@@ -5,6 +5,8 @@ import DriverVerificationSection from "../components/DriverVerificationSection.j
 import VehicleInformationSection from "../components/VehicleInformationSection.jsx";
 import RouteTerminalAssignmentSection from "../components/RouteTerminalAssignmentSection.jsx";
 import RegistrationSubmittedNotice from "../components/RegistrationSubmittedNotice.jsx";
+import AuthPattern from "../../shared/components/AuthPattern.jsx";
+import BackButton from "../../shared/components/BackButton.jsx";
 import { validateDriverRegistrationForm, normalizeIdNumber } from "../utils/validateDriverRegistrationForm.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import "./DriverRegistrationPage.css";
@@ -222,6 +224,8 @@ function DriverRegistrationPage() {
     <main className="driver-registration-page">
       <div className="driver-registration-page__layout">
         <aside className="driver-registration-page__sidebar" aria-hidden="true">
+          <AuthPattern className="driver-registration-page__pattern driver-registration-page__pattern--side" id="registration-tile-side" />
+          <AuthPattern className="driver-registration-page__pattern driver-registration-page__pattern--base" id="registration-tile-base" scale={0.4} />
           <p className="driver-registration-page__sidebar-eyebrow">Driver Registration</p>
           <h2 className="driver-registration-page__sidebar-title">
             A few steps to get you on the road.
@@ -243,6 +247,8 @@ function DriverRegistrationPage() {
         </aside>
 
         <form className="driver-registration-page__form" onSubmit={handleSubmit} noValidate>
+          <BackButton fallback="/driver/login" variant="link" className="driver-registration-page__back" />
+
           <header className="driver-registration-page__header">
             <h1 className="driver-registration-page__title">Driver Registration</h1>
             <p className="driver-registration-page__subtitle">
@@ -287,3 +293,4 @@ function DriverRegistrationPage() {
 }
 
 export default DriverRegistrationPage;
+
