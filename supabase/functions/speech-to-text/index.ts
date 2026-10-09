@@ -1,6 +1,7 @@
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
-const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY");
+const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY");
+const GEMINI_MODEL = "gemini-3.5-flash-lite";
 
 Deno.serve(async (req: Request) => {
   // Handle browser CORS preflight request
@@ -11,9 +12,9 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    if (!OPENAI_KEY) {
+    if (!GEMINI_KEY) {
       return json(
-        { error: "OpenAI API key is not configured" },
+        { error: "Gemini API key is not configured" },
         500
       );
     }
@@ -41,44 +42,84 @@ Deno.serve(async (req: Request) => {
       `Received audio: ${audio.name}, ${audio.type}, ${audio.size} bytes`
     );
 
-    // Prepare the file for OpenAI transcription
-    const whisperForm = new FormData();
+    // Gemini wants the bare mime type ("audio/webm", not "audio/webm;codecs=opus")
+    const mimeType = (audio.type || "audio/webm").split(";")[0].trim();
 
-    whisperForm.append("file", audio);
-    whisperForm.append("model", "whisper-1");
+    const audioBase64 = toBase64(
+      new Uint8Array(await audio.arrayBuffer())
+    );
 
-    // Send audio to OpenAI
-    const transcriptionResponse = await fetch(
-      "https://api.openai.com/v1/audio/transcriptions",
+    // Send audio to Gemini for transcription
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${OPENAI_KEY}`,
+          "Content-Type": "application/json",
         },
-        body: whisperForm,
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [
+              {
+                text: `
+You transcribe short voice requests for a jeepney navigation app in Pampanga, Philippines.
+
+The speaker may use Kapampangan, Tagalog, English, or a mixture.
+
+Rules:
+- Transcribe exactly what was said, in the language it was spoken.
+- Do not translate.
+- Preserve local place names as spoken.
+- Return only the transcript text, with no explanations or quotes.
+- If there is no intelligible speech, return an empty response.
+                `.trim(),
+              },
+            ],
+          },
+
+          contents: [
+            {
+              parts: [
+                {
+                  inlineData: {
+                    mimeType,
+                    data: audioBase64,
+                  },
+                },
+                {
+                  text: "Transcribe this audio.",
+                },
+              ],
+            },
+          ],
+
+          generationConfig: {
+            temperature: 0,
+          },
+        }),
       }
     );
 
-    const transcriptionData =
-      await transcriptionResponse.json();
+    const data = await response.json();
 
-    if (!transcriptionResponse.ok) {
+    if (!response.ok) {
       console.error(
-        "OpenAI transcription error:",
-        transcriptionData
+        "Gemini transcription error:",
+        JSON.stringify(data)
       );
 
       return json(
         {
           error:
-            transcriptionData?.error?.message ??
+            data?.error?.message ??
             "Transcription request failed",
         },
         502
       );
     }
 
-    const text = transcriptionData?.text?.trim();
+    const text =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!text) {
       return json(
@@ -103,6 +144,18 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+// Chunked so large recordings don't overflow String.fromCharCode's argument limit
+function toBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000;
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+
+  return btoa(binary);
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

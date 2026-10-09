@@ -171,40 +171,32 @@ console.log(
         const formData = new FormData();
 
         formData.append(
-          "file",
+          "audio",
           audioBlob,
           "kapampangan-voice.webm"
         );
 
-        console.log("Sending audio to local Whisper...");
+        console.log("Sending audio to speech-to-text...");
 
-        const response = await fetch(
-          "http://localhost:8000/transcribe",
-          {
-            method: "POST",
+        const { data, error: sttError } =
+          await supabase.functions.invoke("speech-to-text", {
             body: formData,
-          }
-        );
+          });
 
-        console.log("Whisper HTTP status:", response.status);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-
+        if (sttError) {
+          console.error("speech-to-text error:", sttError);
           throw new Error(
-            `Whisper server returned ${response.status}: ${errorText}`
+            sttError.message || "Failed to transcribe audio."
           );
         }
 
-        const data = await response.json();
-
-        console.log("Whisper response:", data);
+        console.log("speech-to-text response:", data);
 
         const transcript = data?.text?.trim();
 
         if (!transcript) {
           throw new Error(
-            "Whisper returned no transcription."
+            "Speech-to-text returned no transcription."
           );
         }
 
