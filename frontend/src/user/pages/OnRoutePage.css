@@ -35,3 +35,12 @@
 .on-route-page__panel .journey-timeline {
   flex: 1;
 }
+
+/* Back to the previous screen, floating over the map. */
+.on-route-page__back {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 5;
+}
+

@@ -121,7 +121,13 @@ function adaptOneRoute(result, isRecommended) {
     path: result.legs.flatMap(legPathPoints),
     // One entry per leg, so the map can draw walk legs as dashed and ride
     // legs as solid instead of one uniform line — see MapView.jsx.
-    pathSegments: result.legs.map((leg) => ({ kind: leg.kind, path: legPathPoints(leg) })),
+    pathSegments: result.legs.map((leg) => ({
+      kind: leg.kind,
+      path: legPathPoints(leg),
+      // Each ride leg is its own jeepney line, so it carries its own color
+      // (route.accentColor is only the first leg's).
+      ...(leg.kind === "jeep" ? { color: hexForColorName(leg.color) } : {}),
+    })),
   };
 }
 

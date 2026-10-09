@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { GoogleMap, Marker, Polyline, InfoWindow, DirectionsRenderer, OverlayView } from "@react-google-maps/api";
+import { GoogleMap, Marker, PolylineF as Polyline, InfoWindow, DirectionsRenderer, OverlayView } from "@react-google-maps/api";
 import { useGoogleMapsLoader, HAS_GOOGLE_MAPS_API_KEY } from "../hooks/useGoogleMapsLoader.js";
 import { useWalkingLegPaths } from "../hooks/useWalkingLegPaths.js";
 import { getRouteColorMeta } from "../utils/routeColorHelpers.js";
@@ -96,7 +96,7 @@ function RoutePolylines({ route }) {
             <JeepSegmentPolylines
               key={`${keyBase}-seg-${index}`}
               path={path}
-              accentColor={route.accentColor}
+              accentColor={segment.color ?? route.accentColor}
               keyPrefix={`${keyBase}-seg-${index}`}
             />
           );

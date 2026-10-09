@@ -494,3 +494,22 @@
   }
 }
 
+
+/* Back to the previous screen (or home when opened directly). */
+.auth-layout__panel {
+  position: relative;
+}
+
+.auth-layout__back {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+}
+
+@media (min-width: 900px) {
+  .auth-layout__back {
+    top: 28px;
+    left: 32px;
+  }
+}
+

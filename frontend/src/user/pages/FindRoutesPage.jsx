@@ -393,7 +393,7 @@ useEffect(() => {
         routes={
           viewMode === "results" ? (focusedRoute ? [focusedRoute] : routes) : []
         }
-        showDirections={Boolean(originPlace && destinationPlace)}
+        showDirections={viewMode !== "results" && Boolean(originPlace && destinationPlace)}
       />
 
       <div className="find-routes-page__overlay">

@@ -4,6 +4,7 @@ import LocationAutocompleteInput from "./LocationAutocompleteInput.jsx";
 import MascotReveal from "./MascotReveal.jsx";
 import { savedRouteLabel } from "../../shared/utils/savedRoutesStorage.js";
 import SavedRoutesDialog from "./SavedRoutesDialog.jsx";
+import BackButton from "../../shared/components/BackButton.jsx";
 import "./TripSearchCard.css";
 
 // How much of the sheet's total height stays off-screen (below the
@@ -119,6 +120,8 @@ function TripSearchCard({
       >
         <span className="trip-search-card__drag-handle-bar" />
       </div>
+
+      <BackButton fallback="/about-you" variant="link" className="trip-search-card__back" />
 
       <div className="trip-search-card__header-row">
         <div className="trip-search-card__header-copy">
@@ -268,3 +271,4 @@ function TripSearchCard({
 }
 
 export default TripSearchCard;
+

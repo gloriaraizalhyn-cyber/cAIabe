@@ -10,6 +10,7 @@ import { getRouteColorMeta } from "../../shared/utils/routeColorHelpers.js";
 import { saveRoute, removeSavedRouteByKey, isRouteSaved } from "../../shared/utils/savedRoutesStorage.js";
 import { isDemoPassengerFrame } from "../../demo/demoTripParams.js";
 import DemoOnRoute from "./DemoOnRoute.jsx";
+import BackButton from "../../shared/components/BackButton.jsx";
 import "./OnRoutePage.css";
 
 function findRouteWithJourney(routeId) {
@@ -139,6 +140,7 @@ function OnRouteClassic() {
   return (
     <main className="on-route-page">
       <div className="on-route-page__map-container">
+        <BackButton fallback="/routes" className="on-route-page__back" />
         <MapView
           origin={originMarker}
           destination={destinationMarker}
@@ -182,3 +184,4 @@ function OnRoutePage() {
 }
 
 export default OnRoutePage;
+

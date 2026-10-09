@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { GraduationCap, Accessibility, UserRound, User, ArrowRight, Check } from "lucide-react";
 import { PASSENGER_TYPES } from "../../shared/constants/passengerTypes.js";
 import SiteHeader from "../components/SiteHeader.jsx";
+import BackButton from "../../shared/components/BackButton.jsx";
 import "./AboutYouPage.css";
 
 const PASSENGER_TYPE_ICONS = {
@@ -27,6 +28,7 @@ function AboutYouPage() {
   return (
     <main className="about-you-page">
       <SiteHeader />
+      <BackButton fallback="/" className="about-you-page__back" />
 
       <div className="about-you-page__card">
         <h1 className="about-you-page__question">Tell us about yourself.</h1>
@@ -81,3 +83,4 @@ function AboutYouPage() {
 }
 
 export default AboutYouPage;
+

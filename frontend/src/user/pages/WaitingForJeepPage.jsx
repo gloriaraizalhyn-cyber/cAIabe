@@ -10,6 +10,7 @@ import { supabase } from "../../shared/lib/supabaseClient.js";
 import { isDemoPassengerFrame } from "../../demo/demoTripParams.js";
 import { getDemoSpeed, sendFleetSpeed, setDemoSpeed } from "../../demo/lib/demoFleetCommands.js";
 import DemoSpeedChip from "../components/DemoSpeedChip.jsx";
+import BackButton from "../../shared/components/BackButton.jsx";
 import "./WaitingForJeepPage.css";
 
 function haversineDistanceKm(p1, p2) {
@@ -538,6 +539,7 @@ function WaitingForJeepPage() {
       {/* Floating AI Route & Navigation Guide Banner */}
       <div className="waiting-for-jeep-page__nav-guide">
         <div className="waiting-for-jeep-page__nav-top">
+          {!isDemoPassenger && <BackButton variant="icon" onClick={handleSeeOtherOptions} label="Back to route options" />}
           <span
             className="waiting-for-jeep-page__route-badge"
             style={{
@@ -648,3 +650,4 @@ function WaitingForJeepPage() {
 }
 
 export default WaitingForJeepPage;
+

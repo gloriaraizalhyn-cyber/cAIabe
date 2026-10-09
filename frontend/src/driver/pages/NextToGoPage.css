@@ -45,3 +45,13 @@
   box-shadow: 0 4px 14px rgba(20, 23, 31, 0.12);
 }
 
+
+/* Back button, badge, then the terminal name pushed to the far right. */
+.next-to-go-page__top-bar {
+  justify-content: flex-start;
+}
+
+.next-to-go-page__terminal-name {
+  margin-left: auto;
+}
+

@@ -181,3 +181,18 @@
     font-size: 0.86rem;
   }
 }
+
+/* Back to the landing page (or whichever screen opened this one). */
+.about-you-page__back {
+  position: absolute;
+  top: 76px;
+  left: 16px;
+  z-index: 3;
+}
+
+
+/* Leave room under the header for the back button. */
+.about-you-page {
+  padding-top: 128px;
+}
+

@@ -874,3 +874,12 @@ button.trip-search-card__saved-routes-empty:hover {
 
 
 
+
+/* Back to the previous screen ("Tell us about yourself"). Sits above the
+   title, in the same flex order slot as the header, ahead of it in the DOM. */
+.trip-search-card__back {
+  order: 1;
+  align-self: flex-start;
+  margin: 2px 0 6px -2px;
+}
+

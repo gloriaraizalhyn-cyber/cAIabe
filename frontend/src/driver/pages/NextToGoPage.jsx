@@ -10,6 +10,7 @@ import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import { fetchOwnQueueEntry } from "../utils/queue.js";
 import { supabase } from "../../shared/lib/supabaseClient.js";
 import { isDemoDriverFrame } from "../../demo/demoTripParams.js";
+import BackButton from "../../shared/components/BackButton.jsx";
 import "./NextToGoPage.css";
 
 const LOCATION_UPDATE_MIN_INTERVAL_MS = 10000;
@@ -206,6 +207,13 @@ function NextToGoPage() {
       />
 
       <div className="next-to-go-page__top-bar">
+        {!isDemoDriverFrame() && (
+          <BackButton
+            variant="icon"
+            label="Back to dashboard"
+            onClick={() => navigate("/driver/dashboard", { state: { shiftStage: "arrived" } })}
+          />
+        )}
         <span className="next-to-go-page__badge">NEXT TO GO</span>
         <span className="next-to-go-page__terminal-name">{driver.terminal?.name ?? "—"}</span>
       </div>
@@ -231,3 +239,4 @@ function NextToGoPage() {
 }
 
 export default NextToGoPage;
+

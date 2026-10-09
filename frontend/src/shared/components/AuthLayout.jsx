@@ -1,4 +1,5 @@
 import AuthPattern from "./AuthPattern.jsx";
+import BackButton from "./BackButton.jsx";
 import "./AuthLayout.css";
 
 // Shared shell for the driver and admin log-in pages: a brand panel beside a
@@ -24,6 +25,7 @@ function AuthLayout({ role, tagline, points = [], art, eyebrow, title, subtitle,
         </aside>
 
         <section className="auth-layout__panel">
+          <BackButton fallback="/" variant="link" className="auth-layout__back" />
           <div className="auth-layout__card">
             <header className="auth-layout__header">
               <span className="auth-layout__eyebrow">{eyebrow}</span>
@@ -43,6 +45,7 @@ function AuthLayout({ role, tagline, points = [], art, eyebrow, title, subtitle,
 }
 
 export default AuthLayout;
+
 
 
 
