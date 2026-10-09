@@ -9,6 +9,7 @@ import { buildPassengerFrameUrl } from "../demoTripParams.js";
 import {
   DEMO_BEATS,
   DEMO_JOURNEY,
+  DEMO_LEAD_PANE_SLOT,
   DEMO_LEAD_ROUTE,
   DEMO_PANE_DRIVER_UNIT,
   DEMO_ROUTES,
@@ -41,7 +42,7 @@ function driverFrameUrl(slot, route, unit) {
   )}`;
 }
 
-const DRIVER_FRAME_URL = driverFrameUrl("grey", DEMO_LEAD_ROUTE, DEMO_PANE_DRIVER_UNIT);
+const DRIVER_FRAME_URL = driverFrameUrl(DEMO_LEAD_PANE_SLOT, DEMO_LEAD_ROUTE, DEMO_PANE_DRIVER_UNIT);
 
 // The yellow (Telabastagan) driver's phone — same page, its own login slot.
 const YELLOW_DRIVER_ROUTE = DEMO_ROUTES[1];
@@ -68,6 +69,8 @@ function DemoStagePage() {
     fleet,
     demand,
     stageDriver,
+    leadPaneMode,
+    isFastForward,
     smsThread,
     activity,
     levers,
@@ -229,8 +232,11 @@ function DemoStagePage() {
         onNext={goNext}
         levers={{ ...levers, throwTraffic, clearTraffic, idle, resume }}
         activity={activity}
-        isTrafficThrown={isTrafficThrown}
-        isIdle={isIdle}
+        // A self-driving pane reports what its jeep is actually doing; the
+        // simulator path has no read-back, so it keeps the local flags.
+        isTrafficThrown={leadPaneMode ? leadPaneMode === "slow" : isTrafficThrown}
+        isIdle={leadPaneMode ? leadPaneMode === "idle" : isIdle}
+        isFastForward={isFastForward}
       />
     </main>
   );

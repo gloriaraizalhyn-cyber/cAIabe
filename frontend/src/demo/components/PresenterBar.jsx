@@ -1,4 +1,4 @@
-import { DEMO_BEATS } from "../constants/demoScript.js";
+import { DEMO_BEATS, DEMO_FAST_FORWARD_SCALE } from "../constants/demoScript.js";
 
 // The presenter's whole control surface: the scripted beats on the left so
 // the narrative can't derail, and the live levers on the right so judges can
@@ -12,6 +12,7 @@ function PresenterBar({
   activity,
   isTrafficThrown,
   isIdle,
+  isFastForward,
 }) {
   const beat = DEMO_BEATS[beatIndex];
 
@@ -76,6 +77,16 @@ function PresenterBar({
             onClick={() => (isTrafficThrown ? levers.clearTraffic() : levers.throwTraffic())}
           >
             {isTrafficThrown ? "Clear traffic" : "Throw traffic"}
+          </button>
+          <button
+            type="button"
+            className={
+              isFastForward ? "presenter-bar__lever presenter-bar__lever--active" : "presenter-bar__lever"
+            }
+            onClick={levers.toggleFastForward}
+            aria-pressed={isFastForward}
+          >
+            {isFastForward ? `⏩ Fast-forward x${DEMO_FAST_FORWARD_SCALE}` : "⏩ Fast-forward"}
           </button>
         </div>
         {activity && (

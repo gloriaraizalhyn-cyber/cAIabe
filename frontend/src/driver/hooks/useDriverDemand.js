@@ -14,7 +14,14 @@ const REALTIME_DEBOUNCE_MS = 1500;
 // waiting channel (the same channel waiting-start/waiting-clear already
 // publish to) — so GO/WAIT and CONTINUE/GARAGE react live as demand
 // actually changes, not only on the next poll tick.
-export function useDriverDemand({ routeId, position, isActive, trendWindowMinutes, roadsideIdleMinutes }) {
+export function useDriverDemand({
+  routeId,
+  position,
+  isActive,
+  trendWindowMinutes,
+  roadsideIdleMinutes,
+  roadsideIdleStartedAt,
+}) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,18 +33,26 @@ export function useDriverDemand({ routeId, position, isActive, trendWindowMinute
   // poll interval on every tick (see the effect below's own comment).
   const roadsideIdleMinutesRef = useRef(roadsideIdleMinutes);
   roadsideIdleMinutesRef.current = roadsideIdleMinutes;
+  const roadsideIdleStartedAtRef = useRef(roadsideIdleStartedAt);
+  roadsideIdleStartedAtRef.current = roadsideIdleStartedAt;
 
   const refresh = useCallback(async () => {
     const pos = positionRef.current;
     if (!pos) return;
     setIsLoading(true);
     const idleMinutes = roadsideIdleMinutesRef.current;
+    const idleStartedAt = roadsideIdleStartedAtRef.current;
     const { data: result, error: fnError } = await supabase.functions.invoke("driver-demand-check", {
       body: {
         lat: pos.lat,
         lng: pos.lng,
         ...(trendWindowMinutes ? { trend_window_minutes: trendWindowMinutes } : {}),
         ...(typeof idleMinutes === "number" ? { roadside_idle_minutes: idleMinutes } : {}),
+        // The idle episode's real start — keeps it one episode server-side
+        // even when the idle clock is fast-forwarded (see driver-demand-check).
+        ...(typeof idleMinutes === "number" && idleStartedAt
+          ? { roadside_idle_started_at: new Date(idleStartedAt).toISOString() }
+          : {}),
       },
     });
     setIsLoading(false);

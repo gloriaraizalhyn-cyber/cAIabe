@@ -433,14 +433,39 @@ async function applyDemoAction(action, target, payload = {}) {
   for (const [label, state] of matches) {
     const tag = `${state.driverId.slice(0, 8)} (${label})`;
     if (action === "slow") {
+      // Remember the speed it had (e.g. the passenger demo's x8) so clearing
+      // the traffic puts it back there rather than at real time.
+      state.speedBeforeTraffic ??= state.delayMultiplier;
       state.delayMultiplier = 6;
       state.jumpBackRequested = true;
       state.idleStartedAt = null;
       console.log(`🐢 [${tag}] simulating heavy traffic — jumped back on its path and slowed down.`);
     } else if (action === "idle") {
-      state.idleStartedAt ??= Date.now();
-      console.log(`🛑 [${tag}] engine idling at its current roadside position.`);
+      // `time_scale` (the stage's fast-forward) makes the idle clock run that
+      // many times faster. Re-sending "idle" only updates the scale — the
+      // episode, and the minutes already accrued, carry on.
+      const timeScale = Number(payload.time_scale);
+      state.idleTimeScale = timeScale > 0 ? timeScale : 1;
+      if (!state.idleStartedAt) {
+        state.idleStartedAt = Date.now();
+        state.idleLastAt = state.idleStartedAt;
+        state.idleMinutes = 0;
+      }
+      console.log(
+        `🛑 [${tag}] engine idling at its current roadside position` +
+          (state.idleTimeScale !== 1 ? ` (idle clock x${state.idleTimeScale}).` : "."),
+      );
+    } else if (action === "resume" && payload.multiplier === undefined) {
+      // The stage's "Resume jeep" / "Clear traffic": lift the idle or the
+      // traffic and nothing else. Leaves the speed and pinned seats the
+      // passenger demo set — resetting those would leave her jeep crawling at
+      // real time, or let it turn "full" and drive past her.
+      state.idleStartedAt = null;
+      if (state.speedBeforeTraffic != null) state.delayMultiplier = state.speedBeforeTraffic;
+      state.speedBeforeTraffic = null;
+      console.log(`✅ [${tag}] idle/traffic lifted.`);
     } else if (action === "resume") {
+      state.speedBeforeTraffic = null;
       // `multiplier` < 1 fast-forwards (the passenger demo's "demo speed"
       // control sends 1/8 for x8); `capacity` pins the unit's seats open/full
       // until the next resume without one. Sent through the existing "resume"
@@ -796,6 +821,11 @@ async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps
     delayMultiplier: 1,
     lockCapacity: null, // "available" | "full" while pinned by the passenger demo
     jumpBackRequested: false,
+    speedBeforeTraffic: null, // delayMultiplier to restore when traffic clears
+    idleStartedAt: null, // wall-clock start of a roadside idle (the "idle" lever)
+    idleLastAt: null,
+    idleMinutes: 0, // idle clock — runs idleTimeScale times real time
+    idleTimeScale: 1,
     accessToken: session.accessToken,
     driverId: session.userId,
     terminalId: terminal.id,
@@ -818,7 +848,10 @@ async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps
       const point = circuit[currentIdx];
 
       if (demoState.idleStartedAt) {
-        const idleMinutes = (Date.now() - demoState.idleStartedAt) / 60000;
+        const now = Date.now();
+        demoState.idleMinutes += ((now - demoState.idleLastAt) / 60000) * demoState.idleTimeScale;
+        demoState.idleLastAt = now;
+        const idleMinutes = demoState.idleMinutes;
         await callFunction(
           "driver-location-update",
           session.accessToken,
@@ -832,6 +865,7 @@ async function driveSingleJeep(route, terminal, circuit, driverIndex, totalJeeps
             lat: point.lat,
             lng: point.lng,
             roadside_idle_minutes: idleMinutes,
+            roadside_idle_started_at: new Date(demoState.idleStartedAt).toISOString(),
           },
           { quiet: true },
         );

@@ -79,19 +79,31 @@ export const DEMO_YELLOW_PANE_DRIVER_UNIT = 3;
 //   grey:   within 100 m of its end point at 0-314 m, 1,086-1,220 m (a small
 //           loop around SM City Clark) and 10,422-10,530 m; length 10,530 m
 //   yellow: within 100 m at 0-127 m and 4,737-4,815 m only; length 4,815 m
+// `clearOfStartMeters` is the first distance past that opening stretch — the
+// "Throw traffic" lever never pushes a unit back further than this, because
+// inside it the drive stops reporting and the unit would go stale on the map.
 export const DEMO_DRIVE_ROUTES = {
   "e5f1a7fe-d258-44ca-a823-0360df2d1221": {
     terminal: { lat: 15.1682564, lng: 120.5823745 },
     lengthMeters: 10530,
     startAlongMeters: 0,
+    clearOfStartMeters: 320,
   },
   "f821d810-ef7e-43f9-9b8a-b419d6309615": {
     terminal: { lat: 15.122755, lng: 120.599655 },
     lengthMeters: 4815,
     startAlongMeters: 0,
+    clearOfStartMeters: 135,
   },
 };
 export const DEMO_DRIVE_STEP_INTERVAL_MS = 2000;
+// "Throw traffic" on a pane driver: same as the simulator's "slow" — jump back
+// a third of the route, then crawl at 1/6 speed until resumed.
+export const DEMO_TRAFFIC_SLOWDOWN = 6;
+// The presenter bar's "Fast-forward": how many times faster the driver panes'
+// drives and every roadside-idle clock run. At x8 the idle card shows after
+// ~15 s and the ENGINE OFF prompt after ~38 s, instead of 2 and 5 minutes.
+export const DEMO_FAST_FORWARD_SCALE = 8;
 // ~40 m along the route from its first point (route start/end: 15.1682564,
 // 120.5823745). NOT on that closing point itself: the demand engine projects a
 // driver standing exactly there to the END of the loop, which turns every
@@ -109,6 +121,9 @@ export const DEMO_LEAD_TERMINAL = { name: "Public Transport Terminal (SM Clark)"
 // It also makes a better story: this driver is parked at the terminal
 // deciding whether to roll out, which is exactly what WaitOrGoCard answers.
 export const DEMO_PANE_DRIVER_UNIT = 4;
+// The stage's iframe slot for that pane (its ?demoSlot=, which also keys its
+// own login storage — see supabaseClient.js).
+export const DEMO_LEAD_PANE_SLOT = "grey";
 export const DEMO_SIM_JEEPS_PER_ROUTE = 3;
 
 // Must match slugify() in mock-fleet-simulator.js, which is what names the

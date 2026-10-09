@@ -35,20 +35,42 @@ function classifyIdleStatus(minutes) {
 // verdict (headline, fuel estimate, whether this counts as a problem) comes
 // from driver-demand-check server-side (see DrivingPage.jsx, which reports
 // this hook's minutes back to useDriverDemand).
-export function useRoadsideIdleTracker({ position, terminalPosition, isActive }) {
+//
+// `timeScale` (default 1, real time) makes the idle clock run that many times
+// faster — only the demo stage's fast-forward sets it. `stationarySince` is
+// always the real wall-clock start, which the server uses to keep one episode.
+export function useRoadsideIdleTracker({ position, terminalPosition, isActive, timeScale = 1 }) {
   const [isNearTerminal, setIsNearTerminal] = useState(false);
   const [isStationary, setIsStationary] = useState(false);
   const [roadsideIdleMinutes, setRoadsideIdleMinutes] = useState(0);
   const [idleStatus, setIdleStatus] = useState("none");
+  const [stationarySince, setStationarySince] = useState(null);
 
   const anchorRef = useRef(null);
   const outOfRangeStreakRef = useRef(0);
   const stationarySinceRef = useRef(null);
+  // The idle clock accumulates per tick (rather than now - since) so changing
+  // timeScale mid-episode speeds it up from that point instead of jumping.
+  const accumulatedMinutesRef = useRef(0);
+  const lastTickAtRef = useRef(null);
+  const timeScaleRef = useRef(timeScale);
+  timeScaleRef.current = timeScale > 0 ? timeScale : 1;
+
+  const startClock = () => {
+    const now = Date.now();
+    stationarySinceRef.current = now;
+    lastTickAtRef.current = now;
+    accumulatedMinutesRef.current = 0;
+    setStationarySince(now);
+  };
 
   const resetAll = () => {
     anchorRef.current = null;
     outOfRangeStreakRef.current = 0;
     stationarySinceRef.current = null;
+    lastTickAtRef.current = null;
+    accumulatedMinutesRef.current = 0;
+    setStationarySince(null);
     setIsStationary(false);
     setRoadsideIdleMinutes(0);
     setIdleStatus("none");
@@ -76,7 +98,7 @@ export function useRoadsideIdleTracker({ position, terminalPosition, isActive })
 
     if (!anchorRef.current) {
       anchorRef.current = position;
-      stationarySinceRef.current = Date.now();
+      startClock();
       setIsStationary(true);
       return;
     }
@@ -91,7 +113,7 @@ export function useRoadsideIdleTracker({ position, terminalPosition, isActive })
     if (outOfRangeStreakRef.current >= STATIONARY_CONFIRM_STREAK) {
       anchorRef.current = position;
       outOfRangeStreakRef.current = 0;
-      stationarySinceRef.current = Date.now();
+      startClock();
       setRoadsideIdleMinutes(0);
       setIdleStatus("none");
       // still stationary at the new anchor, just restarting the clock
@@ -108,7 +130,10 @@ export function useRoadsideIdleTracker({ position, terminalPosition, isActive })
 
     const tick = () => {
       if (!stationarySinceRef.current) return;
-      const minutes = (Date.now() - stationarySinceRef.current) / 60000;
+      const now = Date.now();
+      accumulatedMinutesRef.current += ((now - lastTickAtRef.current) / 60000) * timeScaleRef.current;
+      lastTickAtRef.current = now;
+      const minutes = accumulatedMinutesRef.current;
       setRoadsideIdleMinutes(minutes);
       setIdleStatus(classifyIdleStatus(minutes));
     };
@@ -118,5 +143,5 @@ export function useRoadsideIdleTracker({ position, terminalPosition, isActive })
     return () => clearInterval(intervalId);
   }, [isActive]);
 
-  return { roadsideIdleMinutes, idleStatus, isStationary, isNearTerminal };
+  return { roadsideIdleMinutes, idleStatus, isStationary, isNearTerminal, stationarySince };
 }
