@@ -25,7 +25,7 @@ function AuthLayout({ role, tagline, points = [], art, eyebrow, title, subtitle,
         </aside>
 
         <section className="auth-layout__panel">
-          <BackButton fallback="/" variant="link" className="auth-layout__back" />
+          <BackButton to="/" variant="link" className="auth-layout__back" />
           <div className="auth-layout__card">
             <header className="auth-layout__header">
               <span className="auth-layout__eyebrow">{eyebrow}</span>
@@ -45,6 +45,7 @@ function AuthLayout({ role, tagline, points = [], art, eyebrow, title, subtitle,
 }
 
 export default AuthLayout;
+
 
 
 
