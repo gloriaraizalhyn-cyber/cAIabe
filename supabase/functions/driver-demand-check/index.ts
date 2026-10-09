@@ -128,6 +128,7 @@ Deno.serve(async (req: Request) => {
       lng?: number;
       trend_window_minutes?: number;
       roadside_idle_minutes?: number;
+      roadside_idle_started_at?: string;
     };
     if (body.lat === undefined || body.lng === undefined) {
       return json({ error: "lat and lng are required" }, 400);
@@ -223,7 +224,13 @@ Deno.serve(async (req: Request) => {
         ? estimateIdleFuelRange("jeepney", roadsideIdleMinutes ?? 0)
         : null;
     if (idleFuel) {
-      await logRoadsideIdleEpisode(supabase, driverId, driver.route_id, roadsideIdleMinutes ?? 0);
+      await logRoadsideIdleEpisode(
+        supabase,
+        driverId,
+        driver.route_id,
+        roadsideIdleMinutes ?? 0,
+        parseEpisodeStart(body.roadside_idle_started_at),
+      );
     }
 
     const reasons = buildGoWaitReasons({
@@ -694,14 +701,28 @@ function buildFallbackCopy(input: {
 // check the driver is actually waiting on.
 const EPISODE_MATCH_TOLERANCE_MS = 90_000;
 
+// Optional wall-clock start of the episode, sent by clients whose idle clock
+// runs faster than real time (the demo stage's fast-forward). There,
+// now - minutes drifts further back on every poll, so each poll would start a
+// "new" episode; the real start time keeps them one episode. Ignored unless
+// it is a sane past timestamp.
+function parseEpisodeStart(value: unknown): Date | null {
+  if (typeof value !== "string") return null;
+  const date = new Date(value);
+  const age = Date.now() - date.getTime();
+  if (!Number.isFinite(age) || age < -60_000 || age > MAX_ROADSIDE_IDLE_MINUTES * 60000) return null;
+  return date;
+}
+
 async function logRoadsideIdleEpisode(
   supabase: ReturnType<typeof getServiceClient>,
   driverId: string,
   routeId: string,
   minutes: number,
+  reportedStart: Date | null = null,
 ) {
   try {
-    const startedAt = new Date(Date.now() - minutes * 60000);
+    const startedAt = reportedStart ?? new Date(Date.now() - minutes * 60000);
 
     const { data: existing } = await supabase
       .from("carbon_impact_events")

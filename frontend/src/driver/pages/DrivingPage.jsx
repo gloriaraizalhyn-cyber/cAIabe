@@ -25,7 +25,14 @@ import {
   DEMO_DRIVE_ROUTES,
   DEMO_ROUTE_END_ZONE_METERS,
   DEMO_TERMINUS_RADIUS_METERS,
+  DEMO_TRAFFIC_SLOWDOWN,
 } from "../../demo/constants/demoScript.js";
+import {
+  getDemoSlot,
+  listenToDemoStage,
+  postToDemoStage,
+  useDemoTimeScale,
+} from "../../demo/lib/demoStageChannel.js";
 import { haversineDistanceMeters } from "../../shared/utils/geo.js";
 import "./DrivingPage.css";
 
@@ -34,6 +41,9 @@ import "./DrivingPage.css";
 // rows broadcast per route. Everything else on this page (GPS tracking,
 // end-of-route detection, capacity toggle, and the map itself) is real.
 const LOCATION_UPDATE_MIN_INTERVAL_MS = 10000;
+// How often a stage driver pane tells the stage it is driving (see
+// demoStageChannel.js). The stage treats a pane as gone after a few misses.
+const DEMO_PRESENCE_INTERVAL_MS = 3000;
 
 function DrivingPage() {
   const navigate = useNavigate();
@@ -56,6 +66,19 @@ function DrivingPage() {
   const watchIdRef = useRef(null);
   const startedAtRef = useRef(Date.now());
 
+  // Presenter levers for the scripted drive ("normal" | "idle" | "slow"), set
+  // from the stage's "Idle jeep" / "Throw traffic" buttons. Refs, because the
+  // drive loop's interval reads them on every tick without restarting.
+  const demoLeverModeRef = useRef("normal");
+  const demoJumpBackRef = useRef(false);
+
+  // The stage's fast-forward (1 = real time). Speeds up the scripted drive
+  // and the roadside-idle clock, so a 2-minute demo can reach the idle
+  // prompt. Always 1 outside the stage's driver frames.
+  const demoTimeScale = useDemoTimeScale(isDemoDriverFrame());
+  const demoTimeScaleRef = useRef(demoTimeScale);
+  demoTimeScaleRef.current = demoTimeScale;
+
   // Only start polling once a live position is actually on file — driver-fuel-check
   // needs one already broadcast via driver-location-update.
   const fuelInfo = useDriverFuelCheck(Boolean(currentPosition) && !isTripComplete);
@@ -65,10 +88,15 @@ function DrivingPage() {
   // driven below; no second location tracker. Only ticks a local timer —
   // the actual verdict/copy/fuel estimate comes back from
   // driver-demand-check via the minutes reported into useDriverDemand below.
-  const { roadsideIdleMinutes, idleStatus: localIdleStatus } = useRoadsideIdleTracker({
+  const {
+    roadsideIdleMinutes,
+    idleStatus: localIdleStatus,
+    stationarySince,
+  } = useRoadsideIdleTracker({
     position: currentPosition,
     terminalPosition: driver?.terminal?.position ?? null,
     isActive: !isTripComplete,
+    timeScale: demoTimeScale,
   });
 
   // Sak.AI "CONTINUE or GARAGE?" — same demand engine as NextToGoPage's
@@ -81,6 +109,7 @@ function DrivingPage() {
     position: currentPosition,
     isActive: !isTripComplete,
     roadsideIdleMinutes: localIdleStatus !== "none" ? roadsideIdleMinutes : null,
+    roadsideIdleStartedAt: stationarySince,
   });
 
   // Nudge an immediate refresh when the locally-ticking idle severity
@@ -163,21 +192,48 @@ function DrivingPage() {
     const geometry = DEMO_DRIVE_ROUTES[driver.route.id];
     if (!geometry) return undefined;
     let distance = geometry.startAlongMeters;
+    let lastPoint = null;
     let inFlight = false;
 
     const tick = async () => {
       if (inFlight) return;
       inFlight = true;
-      distance += DEMO_DRIVE_STEP_METERS;
-      const { data: points } = await supabase.rpc("get_route_point_at_distance", {
-        p_route_id: driver.route.id,
-        p_distance_meters: distance,
-      });
-      const point = points?.[0];
+
+      // Presenter levers (see the stage-lever listener below). Idling keeps
+      // reporting the SAME point, so the server, the map and the roadside-idle
+      // tracker all see a genuinely stopped jeepney rather than a silent one.
+      const mode = demoLeverModeRef.current;
+      // Fast-forward covers more ground per tick rather than ticking faster:
+      // every tick already waits on two server round trips.
+      const step = DEMO_DRIVE_STEP_METERS * demoTimeScaleRef.current;
+      if (demoJumpBackRef.current) {
+        demoJumpBackRef.current = false;
+        distance = Math.max(
+          geometry.clearOfStartMeters ?? geometry.startAlongMeters,
+          distance - geometry.lengthMeters / 3
+        );
+      } else if (mode === "slow") {
+        distance += step / DEMO_TRAFFIC_SLOWDOWN;
+      } else if (mode !== "idle" || !lastPoint) {
+        distance += step;
+      }
+      // A big fast-forward step must land ON the route's end (which finishes
+      // the trip), never past it, where there is no point to report.
+      distance = Math.min(distance, geometry.lengthMeters);
+
+      let point = mode === "idle" ? lastPoint : null;
+      if (!point) {
+        const { data: points } = await supabase.rpc("get_route_point_at_distance", {
+          p_route_id: driver.route.id,
+          p_distance_meters: distance,
+        });
+        point = points?.[0];
+      }
       if (!isMounted || !point) {
         inFlight = false;
         return;
       }
+      lastPoint = point;
       const here = { lat: point.lat, lng: point.lng };
       setCurrentPosition(here);
 
@@ -213,6 +269,54 @@ function DrivingPage() {
       clearInterval(id);
     };
   }, [isDemoDrive, driver?.route?.id, session?.user?.id, isTripComplete]);
+
+  // Stage levers for this pane's scripted drive. The fleet simulator can only
+  // idle or slow units it drives itself; this jeepney is driven by THIS page,
+  // so the stage's "Idle jeep" / "Throw traffic" have to land here. Announces
+  // itself every few seconds so the stage knows to aim its levers at it.
+  const demoSlot = isDemoDriverFrame() ? getDemoSlot() : null;
+  const isStageDrive = Boolean(demoSlot && isDemoDrive && driver?.route?.id && !isTripComplete);
+  const driverId = session?.user?.id ?? null;
+
+  useEffect(() => {
+    if (!isStageDrive) return undefined;
+
+    const announce = (isDriving) =>
+      postToDemoStage({
+        kind: "drive-presence",
+        slot: demoSlot,
+        driverId,
+        isDriving,
+        mode: demoLeverModeRef.current,
+      });
+
+    const unsubscribe = listenToDemoStage((message) => {
+      if (message.kind !== "lever" || message.slot !== demoSlot) return;
+      if (message.action === "idle") {
+        demoLeverModeRef.current = "idle";
+      } else if (message.action === "slow") {
+        demoLeverModeRef.current = "slow";
+        demoJumpBackRef.current = true;
+      } else if (message.action === "resume") {
+        demoLeverModeRef.current = "normal";
+        demoJumpBackRef.current = false;
+      } else {
+        return;
+      }
+      postToDemoStage({ kind: "lever-ack", slot: demoSlot, id: message.id, mode: demoLeverModeRef.current });
+      announce(true);
+    });
+
+    announce(true);
+    const presenceId = setInterval(() => announce(true), DEMO_PRESENCE_INTERVAL_MS);
+    return () => {
+      unsubscribe();
+      clearInterval(presenceId);
+      demoLeverModeRef.current = "normal";
+      demoJumpBackRef.current = false;
+      announce(false);
+    };
+  }, [isStageDrive, demoSlot, driverId]);
 
   // Big "ENGINE OFF" prompt — shown once per idling episode, when the server
   // says the stop is long enough to count as idling. Resets when the driver

@@ -4,9 +4,12 @@ import { useLiveDriverPositions } from "../../shared/hooks/useLiveDriverPosition
 import { adaptRouteSearchResult } from "../../user/utils/adaptRouteSearchResult.js";
 import { demoStageClient, signInDemoStageDriver } from "../lib/demoStageClient.js";
 import { DEMO_SIM_DRIVER_PASSWORD } from "../DemoFrameBootstrap.jsx";
+import { listenToDemoStage, postToDemoStage, sendPaneLever } from "../lib/demoStageChannel.js";
 import {
+  DEMO_FAST_FORWARD_SCALE,
   DEMO_JOURNEY,
   DEMO_ROUTES,
+  DEMO_LEAD_PANE_SLOT,
   DEMO_LEAD_ROUTE,
   DEMO_LEAD_TERMINAL,
   DEMO_PANE_DRIVER_UNIT,
@@ -17,6 +20,9 @@ import {
 
 const DEMAND_POLL_MS = 15000;
 const SMS_POLL_MS = 10000;
+// A driver pane announces itself every 3 s while driving (see DrivingPage);
+// three misses and it is treated as stopped.
+const PANE_PRESENCE_STALE_MS = 9000;
 
 // Live jeepneys across BOTH demo routes, merged and tagged with each route's
 // own colour so MapView renders the grey Balibago units and the yellow
@@ -205,56 +211,168 @@ export function useDemoStage() {
     return !error;
   }, [say]);
 
-  // Target a MOVING unit on the boarding route — the pane driver is parked at
-  // the terminal, so slowing it down would change nothing anyone can see.
-  // Picking the closest one to the waiting passenger is also the unit whose
-  // ETA the passenger screen is actually counting down.
-  const trafficTarget = useMemo(
-    () => fleet.jeepneys.find((jeep) => jeep.routeLeg === 1) ?? null,
-    [fleet.jeepneys]
+  // ---- driver panes that drive themselves ----
+  //
+  // Once a pane driver taps "start driving", its jeepney is moved by that
+  // pane's own page (DrivingPage's scripted drive), not by the simulator —
+  // which therefore can't idle or slow it. The pane announces itself over
+  // demoStageChannel while driving; while it does, the levers go to it.
+  const [leadPane, setLeadPane] = useState(null);
+  const [paneDriverIds, setPaneDriverIds] = useState(() => new Set());
+
+  useEffect(() => {
+    const unsubscribe = listenToDemoStage((message) => {
+      if (message.kind !== "drive-presence") return;
+      if (message.driverId) {
+        setPaneDriverIds((ids) => (ids.has(message.driverId) ? ids : new Set(ids).add(message.driverId)));
+      }
+      if (message.slot !== DEMO_LEAD_PANE_SLOT) return;
+      setLeadPane(
+        message.isDriving ? { driverId: message.driverId, mode: message.mode ?? "normal", at: Date.now() } : null
+      );
+    });
+    const prune = setInterval(() => {
+      setLeadPane((pane) => (pane && Date.now() - pane.at > PANE_PRESENCE_STALE_MS ? null : pane));
+    }, PANE_PRESENCE_STALE_MS / 3);
+    return () => {
+      unsubscribe();
+      clearInterval(prune);
+    };
+  }, []);
+
+  const isLeadPaneDriving = Boolean(leadPane);
+
+  const paneLever = useCallback(
+    async (action) => {
+      const mode = await sendPaneLever(DEMO_LEAD_PANE_SLOT, action);
+      if (mode === null) {
+        say("The driver pane didn't answer — is it still on its driving screen?");
+        return null;
+      }
+      setLeadPane((pane) => (pane ? { ...pane, mode, at: Date.now() } : pane));
+      return mode;
+    },
+    [say]
   );
 
+  // Otherwise: target a MOVING simulated unit on the boarding route — the
+  // pane driver is parked at the terminal, so slowing it down would change
+  // nothing anyone can see. Pane drivers are never picked: the simulator
+  // doesn't hold their session, and an unknown id makes it fall back to
+  // hitting every unit on the route.
+  const trafficTarget = useMemo(
+    () => fleet.jeepneys.find((jeep) => jeep.routeLeg === 1 && !paneDriverIds.has(jeep.id)) ?? null,
+    [fleet.jeepneys, paneDriverIds]
+  );
+
+  // ---- fast-forward ----
+  //
+  // Speeds up the driver panes' scripted drives and every roadside-idle clock
+  // (pane and simulator), so a short demo reaches the idle prompt. Panes are
+  // told over demoStageChannel — now, and whenever one loads and asks.
+  const [timeScale, setTimeScale] = useState(1);
+  const timeScaleRef = useRef(timeScale);
+  timeScaleRef.current = timeScale;
+
+  useEffect(() => {
+    postToDemoStage({ kind: "time-scale", scale: timeScale });
+    return listenToDemoStage((message) => {
+      if (message.kind === "time-scale-request") {
+        postToDemoStage({ kind: "time-scale", scale: timeScaleRef.current });
+      }
+    });
+  }, [timeScale]);
+
+  // The simulated unit each lever last hit. "First grey jeep in the list"
+  // changes as units move, so Resume / Clear traffic must go back to the
+  // same unit rather than re-picking.
+  const simIdleTargetRef = useRef(null);
+  const simTrafficTargetRef = useRef(null);
+
+  const isFastForward = timeScale > 1;
+  const toggleFastForward = useCallback(async () => {
+    const next = isFastForward ? 1 : DEMO_FAST_FORWARD_SCALE;
+    setTimeScale(next);
+    // A simulated unit already idling keeps its episode; re-sending "idle"
+    // only changes how fast its clock runs from here (see applyDemoAction).
+    if (simIdleTargetRef.current) {
+      await enqueue("idle", { target: simIdleTargetRef.current, route: DEMO_LEAD_ROUTE.name, time_scale: next });
+    }
+    say(next > 1 ? `Fast-forward on — idle clocks and driver drives run x${next}.` : "Back to real time.");
+  }, [enqueue, isFastForward, say]);
+
   const throwTraffic = useCallback(async () => {
-    if (!trafficTarget) {
-      say("No moving unit on the boarding route yet — is the fleet simulator running?");
-      return;
-    }
-    if (await enqueue("slow", { target: trafficTarget.id, route: DEMO_LEAD_ROUTE.name })) {
-      say("Heavy traffic on that unit — it just fell back along its route.");
+    if (isLeadPaneDriving) {
+      if ((await paneLever("slow")) !== "slow") return false;
+      say("Heavy traffic on the driver's jeep — it just fell back along its route and slowed to a crawl.");
       return true;
     }
-    return false;
-  }, [enqueue, say, trafficTarget]);
-
-  const clearTraffic = useCallback(async () => {
-    if (!trafficTarget) return false;
-    if (await enqueue("resume", { target: trafficTarget.id, route: DEMO_LEAD_ROUTE.name })) {
-      say("Traffic cleared — back to normal speed.");
-      return true;
-    }
-    return false;
-  }, [enqueue, say, trafficTarget]);
-
-  const idle = useCallback(async () => {
     if (!trafficTarget) {
       say("No moving unit on the boarding route yet — is the fleet simulator running?");
       return false;
     }
-    if (await enqueue("idle", { target: trafficTarget.id, route: DEMO_LEAD_ROUTE.name })) {
+    if (await enqueue("slow", { target: trafficTarget.id, route: DEMO_LEAD_ROUTE.name })) {
+      simTrafficTargetRef.current = trafficTarget.id;
+      // "slow" also ends an idle on that unit (see applyDemoAction).
+      if (simIdleTargetRef.current === trafficTarget.id) simIdleTargetRef.current = null;
+      say("Heavy traffic on that unit — it just fell back along its route.");
+      return true;
+    }
+    return false;
+  }, [enqueue, isLeadPaneDriving, paneLever, say, trafficTarget]);
+
+  const clearTraffic = useCallback(async () => {
+    if (isLeadPaneDriving) {
+      if ((await paneLever("resume")) !== "normal") return false;
+      say("Traffic cleared — back to normal speed.");
+      return true;
+    }
+    const target = simTrafficTargetRef.current ?? trafficTarget?.id;
+    if (!target) return false;
+    if (await enqueue("resume", { target, route: DEMO_LEAD_ROUTE.name })) {
+      simTrafficTargetRef.current = null;
+      if (simIdleTargetRef.current === target) simIdleTargetRef.current = null;
+      say("Traffic cleared — back to normal speed.");
+      return true;
+    }
+    return false;
+  }, [enqueue, isLeadPaneDriving, paneLever, say, trafficTarget]);
+
+  const idle = useCallback(async () => {
+    if (isLeadPaneDriving) {
+      if ((await paneLever("idle")) !== "idle") return false;
+      say("The driver's jeep is idling roadside — idle time is being measured.");
+      return true;
+    }
+    if (!trafficTarget) {
+      say("No moving unit on the boarding route yet — is the fleet simulator running?");
+      return false;
+    }
+    const payload = { target: trafficTarget.id, route: DEMO_LEAD_ROUTE.name, time_scale: timeScaleRef.current };
+    if (await enqueue("idle", payload)) {
+      simIdleTargetRef.current = trafficTarget.id;
       say("That unit is idling roadside — fuel waste is being measured.");
       return true;
     }
     return false;
-  }, [enqueue, say, trafficTarget]);
+  }, [enqueue, isLeadPaneDriving, paneLever, say, trafficTarget]);
 
   const resume = useCallback(async () => {
-    if (!trafficTarget) return false;
-    if (await enqueue("resume", { target: trafficTarget.id, route: DEMO_LEAD_ROUTE.name })) {
+    if (isLeadPaneDriving) {
+      if ((await paneLever("resume")) !== "normal") return false;
+      say("The driver's jeep is moving again.");
+      return true;
+    }
+    const target = simIdleTargetRef.current ?? trafficTarget?.id;
+    if (!target) return false;
+    if (await enqueue("resume", { target, route: DEMO_LEAD_ROUTE.name })) {
+      simIdleTargetRef.current = null;
+      if (simTrafficTargetRef.current === target) simTrafficTargetRef.current = null;
       say("That unit is moving again.");
       return true;
     }
     return false;
-  }, [enqueue, say, trafficTarget]);
+  }, [enqueue, isLeadPaneDriving, paneLever, say, trafficTarget]);
 
   const sendSms = useCallback(
     async (text) => {
@@ -274,8 +392,12 @@ export function useDemoStage() {
     demand,
     stageDriver,
     trafficTarget,
+    // What the lead driver pane's own drive is doing ("normal" | "idle" |
+    // "slow"), or null when the simulator is the one taking the levers.
+    leadPaneMode: leadPane?.mode ?? null,
+    isFastForward,
     smsThread,
     activity,
-    levers: { surge, clearDemand, throwTraffic, clearTraffic, idle, resume, sendSms },
+    levers: { surge, clearDemand, throwTraffic, clearTraffic, idle, resume, sendSms, toggleFastForward },
   };
 }

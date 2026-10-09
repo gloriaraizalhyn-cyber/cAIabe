@@ -64,12 +64,29 @@ function DemoOnRoute() {
   const legStartedAtRef = useRef(Date.now());
   const didResetRouteRef = useRef(false);
   const hasSeenJeepRef = useRef(false);
+  const lastPositionRef = useRef(null);
 
   useEffect(() => {
     if (remainingM === null) return;
-    lastSeenRef.current = Date.now();
     if (initialRemainingRef.current === null) initialRemainingRef.current = Math.max(remainingM, 1);
   }, [remainingM]);
+
+  // "Last seen" is the jeep's last BROADCAST, not its last change of position:
+  // a jeep idling roadside (the stage's "Idle jeep" lever) keeps reporting the
+  // same point, and keying this off movement used to declare it lost after
+  // 30 s and send her to the transfer from wherever it had stopped. The leg's
+  // time limit is paused for the same stretch — a stopped jeep isn't stalling.
+  useEffect(() => {
+    if (!boarded) return;
+    const now = Date.now();
+    const last = lastPositionRef.current;
+    if (last && last.lat === boarded.lat && last.lng === boarded.lng) {
+      legStartedAtRef.current += now - lastSeenRef.current;
+    }
+    lastPositionRef.current = { lat: boarded.lat, lng: boarded.lng };
+    lastSeenRef.current = now;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boarded?.updatedAt]);
 
   const progress =
     remainingM !== null && initialRemainingRef.current
