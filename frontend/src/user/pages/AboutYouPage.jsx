@@ -28,7 +28,7 @@ function AboutYouPage() {
   return (
     <main className="about-you-page">
       <SiteHeader />
-      <BackButton fallback="/" className="about-you-page__back" />
+      <BackButton to="/" className="about-you-page__back" />
 
       <div className="about-you-page__card">
         <h1 className="about-you-page__question">Tell us about yourself.</h1>
@@ -83,4 +83,5 @@ function AboutYouPage() {
 }
 
 export default AboutYouPage;
+
 
