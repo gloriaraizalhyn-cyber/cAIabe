@@ -81,3 +81,27 @@
     background: #d8dbe3;
   }
 }
+
+/* Easier-to-grab handle on phones: a tall touch target (about 42px) plus an
+   invisible zone above and below it, and a more visible grip bar. */
+@media (max-width: 640px) {
+  .card-shell__drag-handle {
+    padding: 16px 0 20px;
+  }
+
+  .card-shell__drag-handle::after {
+    content: "";
+    position: absolute;
+    top: -12px;
+    bottom: -6px;
+    left: 0;
+    right: 0;
+  }
+
+  .card-shell__drag-handle-bar {
+    width: 56px;
+    height: 6px;
+    background: #b4bbd0;
+  }
+}
+

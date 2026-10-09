@@ -28,7 +28,19 @@ function useBottomSheetDrag() {
   const handlePointerUp = () => {
     if (!dragStateRef.current) return;
     const max = peekOffsetPx();
-    setIsExpanded((liveDragY ?? dragStateRef.current.baseline) < max / 2);
+    const { baseline } = dragStateRef.current;
+    const finalY = liveDragY ?? baseline;
+    if (Math.abs(finalY - baseline) < 6) {
+      // A tap on the handle toggles the sheet.
+      setIsExpanded(!isExpanded);
+    } else if (isExpanded) {
+      // Pulling down only closes it once it has been dragged a little way.
+      setIsExpanded(finalY < max * 0.15);
+    } else {
+      // Pulling up opens it after roughly the first sixth of the travel,
+      // instead of needing to cross the halfway point.
+      setIsExpanded(finalY < max * 0.85);
+    }
     dragStateRef.current = null;
     setLiveDragY(null);
   };
@@ -43,3 +55,4 @@ function useBottomSheetDrag() {
 }
 
 export default useBottomSheetDrag;
+

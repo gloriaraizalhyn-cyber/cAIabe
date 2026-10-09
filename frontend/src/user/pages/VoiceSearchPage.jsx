@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../shared/lib/supabaseClient.js";
-import { ChevronLeft, Mic, RotateCcw, Check, Square, Quote } from "lucide-react";
+import { ChevronLeft, Mic, RotateCcw, Check, Square } from "lucide-react";
 //import { mockTranscribeAndParseVoice } from "../utils/mockVoiceParse.js";
 import LoadingScreen from "../../shared/components/LoadingScreen.jsx";
 import { useGoogleMapsLoader } from "../../shared/hooks/useGoogleMapsLoader.js";
@@ -371,18 +371,6 @@ setStage("confirm");
 
         {stage === "confirm" && parsedResult && (
           <div className="voice-search-page__confirm">
-
-            <div className="voice-search-page__transcript">
-              <Quote
-                size={20}
-                strokeWidth={2}
-                className="voice-search-page__transcript-icon"
-              />
-
-              <p className="voice-search-page__transcript-text">
-                {parsedResult.transcript}
-              </p>
-            </div>
 
             <div className="voice-search-page__parsed-field">
               <span className="voice-search-page__parsed-label">

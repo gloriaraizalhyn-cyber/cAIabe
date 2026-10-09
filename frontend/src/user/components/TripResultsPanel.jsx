@@ -95,7 +95,19 @@ function TripResultsPanel({
   const handleDragPointerUp = () => {
     if (!dragStateRef.current) return;
     const max = peekOffsetPx();
-    setIsSheetExpanded((liveDragY ?? dragStateRef.current.baseline) < max / 2);
+    const { baseline } = dragStateRef.current;
+    const finalY = liveDragY ?? baseline;
+    if (Math.abs(finalY - baseline) < 6) {
+      // A tap on the handle toggles the sheet.
+      setIsSheetExpanded(!isSheetExpanded);
+    } else if (isSheetExpanded) {
+      // Pulling down only closes it once it has been dragged a little way.
+      setIsSheetExpanded(finalY < max * 0.15);
+    } else {
+      // Pulling up opens it after roughly the first sixth of the travel,
+      // instead of needing to cross the halfway point.
+      setIsSheetExpanded(finalY < max * 0.85);
+    }
     dragStateRef.current = null;
     setLiveDragY(null);
   };
@@ -195,3 +207,4 @@ function TripResultsPanel({
 }
 
 export default TripResultsPanel;
+

@@ -351,3 +351,21 @@
 
 
 
+
+/* Easier-to-grab handle on phones: a taller touch target plus an invisible
+   zone above and below it. */
+@media (max-width: 640px) {
+  .trip-results-panel__drag-handle {
+    padding: 16px 0 20px;
+  }
+
+  .trip-results-panel__drag-handle::after {
+    content: "";
+    position: absolute;
+    top: -12px;
+    bottom: -6px;
+    left: 0;
+    right: 0;
+  }
+}
+

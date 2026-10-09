@@ -1,10 +1,23 @@
 .voice-search-page {
+  --vs-red: #ce1126;
+  --vs-blue: #0038a8;
+  --vs-navy: #00227a;
+  --vs-ink: #0a1f66;
+  --vs-text: #3d4663;
+  --vs-yellow: #fcd116;
+  --vs-line: rgba(20, 23, 31, 0.08);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
-  padding: 24px 20px;
+  padding: 20px 20px 28px;
+  background:
+    url("/images/background_no-gradient.png") center / cover no-repeat,
+    #fbf6ec;
+  color: var(--vs-ink);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
 }
+
+/* ===== Header ===== */
 
 .voice-search-page__header {
   display: flex;
@@ -18,25 +31,35 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid #d8dade;
-  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--vs-line);
+  border-radius: 50%;
   background: #ffffff;
-  color: #1a1a1a;
+  color: var(--vs-blue);
+  box-shadow: 0 4px 14px rgba(20, 23, 31, 0.14);
+  transition: background-color 0.15s ease;
 }
 
 .voice-search-page__back-button:hover {
-  border-color: #1a1a1a;
+  background: #eef2fb;
+}
+
+.voice-search-page__back-button:focus-visible {
+  outline: 3px solid var(--vs-yellow);
+  outline-offset: 2px;
 }
 
 .voice-search-page__title {
   margin: 0;
-  font-family: "DM Sans", sans-serif;
-  font-size: 1.4rem;
+  font-family: "LL Karatula", "DM Sans", sans-serif;
+  font-size: 1.6rem;
   font-weight: 800;
-  color: #1a1a1a;
+  letter-spacing: -0.01em;
+  color: var(--vs-ink);
 }
+
+/* ===== Body ===== */
 
 .voice-search-page__body {
   flex: 1;
@@ -44,26 +67,44 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 26px;
   text-align: center;
-  padding-bottom: 10vh;
+  padding-bottom: 8vh;
 }
+
+.voice-search-page__instruction {
+  margin: 0;
+  max-width: 300px;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--vs-text);
+}
+
+/* ===== Mic button ===== */
 
 .voice-search-page__mic-button {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 96px;
-  height: 96px;
+  width: 124px;
+  height: 124px;
   border: none;
   border-radius: 50%;
-  background: #fdecc0;
-  color: #c58d16;
+  background: #fdf1cc;
+  color: var(--vs-navy);
+  box-shadow: 0 10px 28px rgba(0, 34, 122, 0.16);
+  transition: background-color 0.15s ease;
 }
 
 .voice-search-page__mic-button:hover {
-  background: #fbe3a5;
+  background: #fbe9a8;
+}
+
+.voice-search-page__mic-button:focus-visible {
+  outline: 3px solid var(--vs-blue);
+  outline-offset: 4px;
 }
 
 .voice-search-page__mic-button svg {
@@ -75,7 +116,7 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: #ffdd66;
+  background: var(--vs-yellow);
   opacity: 0;
   animation: voice-search-idle-flow 3.6s ease-out infinite;
 }
@@ -100,19 +141,20 @@
 }
 
 .voice-search-page__mic-button--recording {
-  background: #d71920;
+  background: var(--vs-red);
   color: #ffffff;
+  box-shadow: 0 10px 28px rgba(206, 17, 38, 0.3);
 }
 
 .voice-search-page__mic-button--recording:hover {
-  background: #b3151b;
+  background: #a90e1f;
 }
 
 .voice-search-page__pulse-ring {
   position: absolute;
   inset: -12px;
   border-radius: 50%;
-  border: 3px solid #d71920;
+  border: 3px solid var(--vs-red);
   animation: voice-search-pulse 1.4s ease-out infinite;
 }
 
@@ -127,71 +169,62 @@
   }
 }
 
-.voice-search-page__instruction {
-  margin: 0;
-  max-width: 280px;
-  font-size: 0.92rem;
-  line-height: 1.5;
-  color: #6a6f79;
-}
-
+/* ===== Confirm card: what we heard (From / To) ===== */
 
 .voice-search-page__confirm {
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.voice-search-page__transcript {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  background: #f0f8ff;
-  border-top: 3px solid #d71920;
-  border-radius: 12px;
-  padding: 18px 20px;
-  margin: 0 0 4px;
-}
-
-.voice-search-page__transcript-icon {
-  color: #d71920;
-}
-
-.voice-search-page__transcript-text {
-  margin: 0;
-  font-size: 0.92rem;
-  font-weight: 600;
-  line-height: 1.5;
-  text-align: center;
-  color: #1a1a1a;
+  gap: 12px;
+  padding: 22px 20px 20px;
+  border: 1px solid var(--vs-line);
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(20, 23, 31, 0.04), 0 18px 44px rgba(0, 34, 122, 0.18);
 }
 
 .voice-search-page__parsed-field {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #f3f6fd;
   text-align: left;
-  padding: 12px 14px;
-  border: 1px solid #edeef1;
-  border-left: 4px solid #1b3fa0;
-  border-radius: 10px;
-  background: #faf6f0;
 }
 
 .voice-search-page__parsed-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #9a9fa8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a909b;
+}
+
+/* A small dot ties each row to the From / To markers used elsewhere. */
+.voice-search-page__parsed-label::before {
+  content: "";
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--vs-blue);
+}
+
+.voice-search-page__parsed-field:nth-of-type(2) .voice-search-page__parsed-label::before {
+  background: var(--vs-red);
 }
 
 .voice-search-page__parsed-value {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--vs-ink);
+  overflow-wrap: anywhere;
 }
 
 .voice-search-page__confirm-actions {
@@ -200,40 +233,48 @@
   margin-top: 6px;
 }
 
-.voice-search-page__retake-button {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 1px solid #d8dade;
-  border-radius: 10px;
-  background: #ffffff;
-  color: #1a1a1a;
-  font-size: 0.9rem;
-  font-weight: 700;
-  padding: 13px;
-}
-
-.voice-search-page__retake-button:hover {
-  border-color: #1a1a1a;
-}
-
+/* Flat pill buttons (house rule: never raised / 3D) */
+.voice-search-page__retake-button,
 .voice-search-page__confirm-button {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: none;
-  border-radius: 10px;
-  background: #1b3fa0;
-  color: #ffffff;
-  font-size: 0.9rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
   font-weight: 700;
-  padding: 13px;
+  padding: 14px;
+  transition: background-color 0.15s ease;
+}
+
+.voice-search-page__retake-button {
+  border: 1.5px solid var(--vs-blue);
+  background: #ffffff;
+  color: var(--vs-blue);
+}
+
+.voice-search-page__retake-button:hover {
+  background: #eef2fb;
+}
+
+.voice-search-page__confirm-button {
+  border: none;
+  background: var(--vs-blue);
+  color: #ffffff;
 }
 
 .voice-search-page__confirm-button:hover {
-  background: #142f7e;
+  background: #00267f;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-search-page * {
+    transition: none !important;
+  }
+
+  .voice-search-page__idle-ring,
+  .voice-search-page__pulse-ring {
+    animation: none;
+  }
 }

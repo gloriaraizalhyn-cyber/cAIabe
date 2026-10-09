@@ -24,11 +24,11 @@ const FEATURES = [
     alt: "A jeepney route winding across a city map",
   },
   {
-    title: "Just ask cAIabe",
+    title: "Just say where you're going",
     description:
-      "Type or speak where you're headed — the AI answers in plain language and explains why it's the best pick.",
+      "Tap the mic and say where you are and where you're headed, in Kapampangan or your own words. cAIabe fills in your trip for you.",
     image: "/images/banner_chatbot.png",
-    alt: "The cAIabe chatbot answering a commuter's question",
+    alt: "The cAIabe mascot with a speech bubble greeting a commuter",
   },
 ];
 
@@ -389,3 +389,4 @@ function LandingPage() {
 }
 
 export default LandingPage;
+
